@@ -4,7 +4,7 @@ import { createContext, ReactNode, useEffect, useReducer } from "react";
 
 import { ActionMap, AuthState, AuthUser, JWTContextType } from "@/types/auth";
 import { isValidToken, setSession } from "@/utils/jwt";
-import { authService } from "services/auth.service";
+import { api } from "@lootzone/trpc-shared";
 
 // Note: If you're trying to connect JWT to your own backend, don't forget
 // to remove the Axios mocks in the `/src/pages/_app.tsx` file.
@@ -73,6 +73,7 @@ const JWTReducer = (
 const AuthContext = createContext<JWTContextType | null>(null);
 
 function AuthProvider({ children }: { children: ReactNode }) {
+  const loginMutation = api.auth.login.useMutation();
   const [state, dispatch] = useReducer(JWTReducer, initialState);
 
   useEffect(() => {
@@ -98,7 +99,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
           setSession(accessToken);
 
           // Verify token with LootZone API
-          const response = await authService.verifyToken(accessToken);
+          const response = await fetch(`/api/auth/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: accessToken }),
+          }).then(res => res.json());
 
           if (response.valid) {
             dispatch({
@@ -155,7 +160,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const response = await authService.login(email, password);
+    const response = await loginMutation.mutateAsync({ email, password });
 
     if (response.success) {
       const { token, user } = response;

@@ -6,7 +6,7 @@
   "private": true,
   "license": "https://mui.com/store/license/",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
     "lint": "next lint --fix",
@@ -50,7 +50,7 @@
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
-    "@lootzone/trpc": "workspace:*",
+    "@lootzone/trpc-shared": "file:../../packages/trpc-shared",
     "animate.css": "4.1.1",
     "apexcharts": "4.5.0",
     "axios": "0.30.0",
@@ -98,13 +98,15 @@
     "prettier": "2.8.8",
     "typescript": "5.8.3"
   },
-  "resolutions": {
-    "jss": "10.9.2"
-  },
   "overrides": {
     "@react-jvectormap/core": {
       "react": "^19",
       "react-dom": "^19"
     }
+  },
+  "resolutions": {
+    "jss": "10.9.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   }
 }

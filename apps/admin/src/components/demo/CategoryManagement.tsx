@@ -1,58 +1,35 @@
-import React from "react";
+import { api } from "@lootzone/trpc-shared";
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  CircularProgress,
-  Alert,
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CircularProgress,
+    Typography,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/utils/api";
 
 function CategoryManagement() {
-  const queryClient = useQueryClient();
-
-  // ✅ This is the syntax you wanted!
+  // tRPC hooks
   const {
-    data: categoriesData,
+    data: categories = [],
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => api.category.getAll(),
+  } = api.category.getAll.useQuery();
+
+  const { data: smartCategories = [], isLoading: isLoadingSmart } =
+    api.category.getSmart.useQuery();
+
+  const utils = api.useContext();
+
+  // Mutations
+  const createCategory = api.category.create.useMutation({
+    onSuccess: () => utils.category.getAll.invalidate(),
   });
 
-  const { data: smartCategoriesData, isLoading: isLoadingSmart } = useQuery({
-    queryKey: ['smartCategories'],
-    queryFn: () => api.category.getSmart(),
-  });
-
-  const categories = categoriesData?.result?.data;
-  const smartCategories = smartCategoriesData?.result?.data;
-
-  // ✅ Mutations with full type safety
-  const createCategory = useMutation({
-    mutationFn: (data: { name: string; description?: string }) => api.category.create(data),
-    onSuccess: () => {
-      // Invalidate and refetch categories
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-    },
-    onError: (error: any) => {
-      console.error("Failed to create category:", error);
-    },
-  });
-
-  const deleteCategory = useMutation({
-    mutationFn: (data: { id: string }) => api.category.delete(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-    },
-    onError: (error: any) => {
-      console.error("Failed to delete category:", error);
-    },
+  const deleteCategory = api.category.delete.useMutation({
+    onSuccess: () => utils.category.getAll.invalidate(),
   });
 
   if (isLoading) {
@@ -76,8 +53,9 @@ function CategoryManagement() {
   const handleCreateCategory = () => {
     createCategory.mutate({
       name: `New Category ${Date.now()}`,
-      description: "Auto-generated category",
-    });
+      slug: `new-category-${Date.now()}`,
+      type: "PRODUCT", // default type
+    } as any);
   };
 
   const handleDeleteCategory = (id: string) => {
@@ -87,7 +65,7 @@ function CategoryManagement() {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", width: 90 },
     { field: "name", headerName: "Name", width: 200 },
-    { field: "description", headerName: "Description", width: 300 },
+    { field: "slug", headerName: "Slug", width: 200 },
     {
       field: "actions",
       headerName: "Actions",
@@ -98,9 +76,9 @@ function CategoryManagement() {
           color="error"
           size="small"
           onClick={() => handleDeleteCategory(params.row.id)}
-          disabled={deleteCategory.isPending}
+          disabled={deleteCategory.isLoading}
         >
-          {deleteCategory.isPending ? "Deleting..." : "Delete"}
+          {deleteCategory.isLoading ? "Deleting..." : "Delete"}
         </Button>
       ),
     },
@@ -109,7 +87,7 @@ function CategoryManagement() {
   return (
     <Box p={4}>
       <Typography variant="h4" gutterBottom>
-        API Demo - Category Management
+        Category Management (tRPC)
       </Typography>
 
       <Box display="flex" gap={3}>
@@ -124,7 +102,7 @@ function CategoryManagement() {
                 <CircularProgress size={24} />
               ) : (
                 <Box>
-                  {smartCategories?.map((category: any) => (
+                  {smartCategories.map((category: any) => (
                     <Box
                       key={category.id}
                       display="flex"
@@ -133,7 +111,7 @@ function CategoryManagement() {
                     >
                       <Typography variant="body2">{category.name}</Typography>
                       <Typography variant="body2" color="text.secondary">
-                        ({category.count})
+                        ({category.children?.length ?? 0})
                       </Typography>
                     </Box>
                   ))}
@@ -157,14 +135,14 @@ function CategoryManagement() {
                 <Button
                   variant="contained"
                   onClick={handleCreateCategory}
-                  disabled={createCategory.isPending}
+                  disabled={createCategory.isLoading}
                 >
-                  {createCategory.isPending ? "Creating..." : "Add Category"}
+                  {createCategory.isLoading ? "Creating..." : "Add Category"}
                 </Button>
               </Box>
 
               <DataGrid
-                rows={categories || []}
+                rows={categories}
                 columns={columns}
                 autoHeight
                 disableRowSelectionOnClick

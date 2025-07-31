@@ -11,6 +11,7 @@ module.exports = {
     "@mui/icons-material",
     "@mui/x-data-grid",
     "@mui/x-date-pickers",
+    "@lootzone/trpc-shared",
   ],
   modularizeImports: {
     "@mui/material": {

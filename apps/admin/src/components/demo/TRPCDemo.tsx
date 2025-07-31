@@ -1,4 +1,4 @@
-import { api } from "@/utils/api";
+import { api } from "@lootzone/trpc-shared";
 import {
     Alert,
     Box,
@@ -8,28 +8,23 @@ import {
     List,
     ListItem,
     ListItemText,
-    Typography
+    Typography,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 
 function TRPCDemo() {
-  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => api.category.getAll(),
-  });
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    error: categoriesError,
+  } = api.category.getAll.useQuery();
 
-  const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => api.product.getAll(),
-  });
-
-  const categories = categoriesData?.result?.data;
-  const products = productsData?.result?.data;
+  const { data: products = [], isLoading: productsLoading } =
+    api.product.getAll.useQuery();
 
   return (
     <Box p={4}>
       <Typography variant="h4" gutterBottom>
-        API Integration Status
+        tRPC Demo
       </Typography>
 
       <Card sx={{ mb: 3 }}>
@@ -37,21 +32,16 @@ function TRPCDemo() {
           <Typography variant="h6" gutterBottom color="success.main">
             ✅ Setup Complete!
           </Typography>
-
           <Typography variant="body1" paragraph>
-            Your API integration is now connected to the T3 app. Here's what we've set up:
+            Your admin dashboard is now speaking to the T3 backend through tRPC.
           </Typography>
-
           <Box component="ul" sx={{ pl: 2 }}>
-            <li>✅ React Query for data fetching</li>
-            <li>✅ TRPCProvider added to your app layout</li>
-            <li>✅ REST API client for T3 app</li>
-            <li>✅ API client configured with proper authentication</li>
-            <li>✅ Simple and reliable connection</li>
+            <li>✅ tRPC shared package</li>
+            <li>✅ React Query integration</li>
+            <li>✅ End-to-end type safety</li>
           </Box>
-
           <Alert severity="success" sx={{ mt: 2 }}>
-            <strong>Status:</strong> Connected to T3 app with REST API!
+            <strong>Status:</strong> Connected to T3 app with tRPC!
           </Alert>
         </CardContent>
       </Card>
@@ -61,7 +51,6 @@ function TRPCDemo() {
           <Typography variant="h6" gutterBottom>
             Categories from T3 App
           </Typography>
-
           {categoriesLoading ? (
             <Box display="flex" justifyContent="center" p={2}>
               <CircularProgress />
@@ -72,12 +61,9 @@ function TRPCDemo() {
             </Alert>
           ) : (
             <List>
-              {categories?.map((category: any) => (
+              {categories.map((category: any) => (
                 <ListItem key={category.id}>
-                  <ListItemText
-                    primary={category.name}
-                    secondary={category.description}
-                  />
+                  <ListItemText primary={category.name} />
                 </ListItem>
               ))}
             </List>
@@ -88,20 +74,19 @@ function TRPCDemo() {
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Products from T3 App
+            Products (sample 5)
           </Typography>
-
           {productsLoading ? (
             <Box display="flex" justifyContent="center" p={2}>
               <CircularProgress />
             </Box>
           ) : (
             <List>
-              {products?.slice(0, 5).map((product: any) => (
+              {products.slice(0, 5).map((product: any) => (
                 <ListItem key={product.id}>
                   <ListItemText
                     primary={product.name}
-                    secondary={`$${product.price} - ${product.description}`}
+                    secondary={`$${product.price}`}
                   />
                 </ListItem>
               ))}

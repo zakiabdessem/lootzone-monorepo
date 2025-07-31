@@ -72,6 +72,15 @@
       ],
       "@/theme": [
         "theme/index"
+      ],
+      "@lootzone/trpc-shared": [
+        "../../packages/trpc-shared/src"
+      ],
+      "@lootzone/trpc-shared/*": [
+        "../../packages/trpc-shared/src/*"
+      ],
+      "@lootzone/trpc-shared/react": [
+        "../../packages/trpc-shared/src/react"
       ]
     },
     "plugins": [
