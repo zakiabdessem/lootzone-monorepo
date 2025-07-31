@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+    // Further reading:
+    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+    url      = env("DATABASE_URL")
+}
+
+// Necessary for Next auth
+model Account {
+    id                       String  @id @default(cuid())
+    userId                   String
+    type                     String
+    provider                 String
+    providerAccountId        String
+    refresh_token            String? // @db.Text
+    access_token             String? // @db.Text
+    expires_at               Int?
+    token_type               String?
+    scope                    String?
+    id_token                 String? // @db.Text
+    session_state            String?
+    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    refresh_token_expires_in Int?
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+    id            String    @id @default(cuid())
+    firstName     String    // Required field
+    lastName      String    // Required field
+    phone         String   
+    email         String   @unique
+    emailVerified DateTime?
+    image         String?
+    password      String?   // For credentials authentication
+    role          String    @default("user") // Add role field with default value
+    accounts      Account[]
+    sessions      Session[]
+    orders        Order[]
+    favorites     UserFavorite[]
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+}
+
+model Category {
+    id          String    @id @default(cuid())
+    name        String    @unique
+    slug        String    @unique
+    description String?
+    icon        String?
+    color       String?   // For UI theming (hex color)
+    displayOrder Int      @default(0) // For sorting categories
+    isActive    Boolean   @default(true)
+    type        String    @default("product") // "product", "smart", "simple"
+    parentId    String?
+    parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+    children    Category[] @relation("CategoryHierarchy")
+    products    Product[]
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    @@index([slug])
+    @@index([parentId])
+    @@index([type])
+    @@index([isActive])
+    @@index([displayOrder])
+}
+
+model Product {
+    id                String           @id @default(cuid())
+    slug              String           @unique
+    title             String
+    description       String           @db.Text
+    image             String
+    gallery           String[]
+    platformIcon      String?
+    platformName      String?
+    region            String           @default("GLOBAL")
+    isDlc             Boolean          @default(false)
+    categoryId        String
+    category          Category         @relation(fields: [categoryId], references: [id])
+    variants          ProductVariant[]
+    keyFeatures       String[]
+    deliveryInfo      String?
+    deliverySteps     String[]
+    terms             String?          @db.Text
+    importantNotes    String[]
+    isActive          Boolean          @default(true)
+    orderItems        OrderItem[]
+    favorites         UserFavorite[]
+    slides            Slide[]          // Slides featuring this product
+    createdAt         DateTime         @default(now())
+    updatedAt         DateTime         @updatedAt
+
+    @@index([slug])
+    @@index([categoryId])
+    @@index([region])
+    @@index([isActive])
+    @@index([createdAt])
+}
+
+model ProductVariant {
+    id              String      @id @default(cuid())
+    productId       String
+    product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+    name            String
+    price           Decimal     @db.Decimal(10, 2)
+    originalPrice   Decimal     @db.Decimal(10, 2)
+    attributes      Json?
+    isActive        Boolean     @default(true)
+    stock           Int?        @default(0)
+    isInfiniteStock Boolean     @default(false)
+    orderItems      OrderItem[]
+    createdAt       DateTime    @default(now())
+    updatedAt       DateTime    @updatedAt
+
+    @@index([productId])
+    @@index([isActive])
+    @@index([isInfiniteStock])
+}
+
+model Order {
+    id            String         @id @default(cuid())
+    userId        String
+    user          User           @relation(fields: [userId], references: [id])
+    status        String         @default("pending")
+    paymentMethod String
+    totalAmount   Decimal        @db.Decimal(10, 2)
+    currency      String         @default("USD")
+    items         OrderItem[]
+    paymentId     String?
+    notes         String?
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+
+    @@index([userId])
+    @@index([status])
+    @@index([createdAt])
+}
+
+model OrderItem {
+    id              String         @id @default(cuid())
+    orderId         String
+    order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    productId       String
+    product         Product        @relation(fields: [productId], references: [id])
+    variantId       String
+    variant         ProductVariant @relation(fields: [variantId], references: [id])
+    quantity        Int            @default(1)
+    price           Decimal        @db.Decimal(10, 2)
+    totalPrice      Decimal        @db.Decimal(10, 2)
+    deliveryInfo    String?
+    createdAt       DateTime       @default(now())
+    updatedAt       DateTime       @updatedAt
+
+    @@index([orderId])
+    @@index([productId])
+    @@index([variantId])
+}
+
+model UserFavorite {
+    id        String   @id @default(cuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    productId String
+    product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+
+    @@unique([userId, productId])
+    @@index([userId])
+    @@index([productId])
+}
+
+model Slide {
+    id          String   @id @default(cuid())
+    title       String   // e.g., "MINTY\nLEGENDS"
+    productId   String   // Featured product
+    product     Product  @relation(fields: [productId], references: [id])
+    isActive    Boolean  @default(true) // Admin can enable/disable
+    startDate   DateTime? // Optional: when slide should start showing
+    endDate     DateTime? // Optional: when slide should stop showing
+    createdBy   String   // Admin user who created it
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([isActive])
+    @@index([startDate])
+    @@index([endDate])
+    @@index([createdBy])
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}

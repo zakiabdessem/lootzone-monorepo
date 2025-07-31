@@ -1,0 +1,37 @@
+{
+  "siteName": "LootZone",
+  "currency": "DZD",
+  "siteAnnouncementHtml": "<strong class=\"mr-1\">Grand Launch Celebration:</strong> Stand a chance to win Membership giveaways! <a href=\"#\" class=\"underline ml-2 font-medium hover:text-gray-200\">Join Now</a>",
+  "siteSubAnnouncement": "Sale 21% Off Now",
+  "defaultProduct": {
+    "keyFeatures": [
+      "Instant digital delivery",
+      "Compatible with all devices",
+      "No expiration date",
+      "Perfect for gifting"
+    ],
+    "deliveryInfo": "Digital delivery via email after payment.",
+    "deliverySteps": [
+      "Complete your purchase",
+      "Receive confirmation email",
+      "Get your digital code instantly",
+      "Redeem on your preferred platform",
+      "Keep your receipt for support"
+    ],
+    "terms": "No refunds available for digital products once delivered.",
+    "importantNotes": [
+      "Digital products are non-refundable",
+      "One-time use codes only",
+      "Region restrictions may apply",
+      "Keep your receipt for support"
+    ]
+  },
+  "supportEmail": "support@lootzone.com",
+  "whatsappNumber": "+213556032355",
+  "whatsappLink": "https://wa.me/+213556032355",
+  "telegramLink": "https://t.me/lootzone",
+  "theme": {
+    "primaryColor": "#4618AC",
+    "accentColor": "#23c299"
+  }
+}

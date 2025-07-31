@@ -1,0 +1,46 @@
+/* HeroTextAnimated.module.css */
+.wrapper {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+}
+
+.slice {
+  flex: 0 0 50%; /* Changed from 33.333% to 50% for 2 slices */
+  overflow: hidden;
+}
+
+.text {
+  font-family: var(--font-display);
+  font-size: var(--text-mega);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  width: 100%;
+}
+
+/* initial offsets like the CodePen */
+.slice:nth-of-type(2) .text {
+  transform: translateX(-100%);
+}
+.slice:nth-of-type(3) .text {
+  transform: translateX(-200%);
+}
+
+@media (max-width: 1113px) {
+  .text {
+    font-size: clamp(2rem, 12vw, 4rem);
+    white-space: normal; /* Allow text wrapping */
+    text-align: center; /* Center align on mobile */
+  }
+
+  .slice {
+    flex: 0 0 100%; /* Full width on mobile */
+  }
+
+  /* Reset transforms on mobile */
+  .slice:nth-of-type(2) .text,
+  .slice:nth-of-type(3) .text {
+    transform: none !important;
+  }
+}

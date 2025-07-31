@@ -1,0 +1,297 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+@import 'tailwindcss';
+
+@layer base {
+  :root {
+    --font-size-min: 16;
+    --font-size-max: 20;
+    --font-ratio-min: 1.2;
+    --font-ratio-max: 1.33;
+    --font-width-min: 375;
+    --font-width-max: 1500;
+    /* Colors */
+    --color-primary: #4618ac;
+    --color-secondary: #161616;
+    --color-accent: #ff2c2c;
+    --color-text: rgb(55 65 81); /* Softer gray color */
+    --color-text-muted: rgba(245, 245, 245, 0.7);
+    --color-border: rgba(255, 255, 255, 0.05);
+    --color-overlay: rgba(0, 0, 0, 0.5);
+    /* Typography */
+    --font-primary: 'Rubik', sans-serif;
+    --font-display: 'Boldonse', serif;
+    --font-serif: 'EB Garamond', serif;
+    --text-xs: 0.7rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.2rem;
+    --text-xl: 1.5rem;
+    --text-2xl: 2rem;
+    --text-3xl: 3rem;
+    --text-mega: clamp(7rem, 15vw, 12rem);
+    /* Spacing */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-8: 3rem;
+    --space-10: 4rem;
+    --space-12: 6rem;
+    /* Layout */
+    --panel-padding: 5%;
+    /* Animations */
+    --transition-fast: 0.2s ease;
+    --transition-medium: 0.3s ease;
+    --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Shadcn theme variables */
+    --background: 0 0% 100%;
+    --foreground: 220 20% 27%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 27%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 27%;
+    --primary: 246 61% 38%; /* #4618AC converted to HSL */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 220 20% 27%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 220 20% 27%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 246 61% 38%; /* #4618AC converted to HSL */
+    --radius: 0.5rem;
+  }
+
+  html {
+    color-scheme: light only;
+  }
+
+  [data-theme='light'] {
+    color-scheme: light only;
+  }
+
+  [data-theme='dark'] {
+    color-scheme: dark only;
+  }
+
+  *,
+  *:after,
+  *:before {
+    box-sizing: border-box;
+  }
+
+  body {
+    display: block;
+    min-height: 100vh;
+    font-family: 'Rubik', sans-serif;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  /* Grid background only on elements with .grid-overlay class */
+  .grid-overlay {
+    position: relative; /* establish containing block for ::before */
+  }
+
+  .grid-overlay::before {
+    --size: 45px;
+    --line: color-mix(in hsl, canvasText, transparent 80%);
+    content: '';
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    background: linear-gradient(90deg, var(--line) 1px, transparent 1px var(--size))
+        calc(var(--size) * 0.36) 50% / var(--size) var(--size),
+      linear-gradient(var(--line) 1px, transparent 1px var(--size)) 0% calc(var(--size) * 0.32) /
+        var(--size) var(--size);
+    mask: linear-gradient(-20deg, transparent 50%, rgb(124, 52, 52));
+    top: 0;
+    transform-style: flat;
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+/* Content positioned above canvas */
+.content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Utility: hide scrollbar */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera*/
+}
+
+.section {
+  height: calc(100vh - 110px); /* Adjust for navbar height */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* align left */
+.section-inner {
+  width: 100%;
+  padding: 0 var(--panel-padding);
+  max-width: 1800px;
+  margin: 0;
+  pointer-events: auto; /* Ensure clickable */
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-mega);
+  line-height: 1.2;
+  margin-bottom: var(--space-6);
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.description {
+  font-family: var(--font-primary);
+  font-size: var(--text-lg);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  max-width: 600px;
+}
+
+.heart {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  position: relative;
+  transform: rotate(-45deg);
+  background-color: var(--color-gray-200);
+  margin-right: 4px;
+}
+
+.heart:before,
+.heart:after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--color-gray-200);
+}
+
+.heart:before {
+  bottom: 0px;
+  left: -6px;
+}
+
+.heart:after {
+  top: -6px;
+  right: 0px;
+}
+
+.heart.is-active {
+  background-color: #ff4757;
+  transform: rotate(-45deg) scale(1.2);
+  transition: all 0.3s ease;
+}
+
+.heart.is-active:before,
+.heart.is-active:after {
+  background-color: #ff4757;
+  transition: all 0.3s ease;
+}
+
+/* ===== Silver Shimmer Animation ===== */
+@keyframes silver-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Silver shimmer container */
+.silver-shimmer {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+/* Rolling highlight */
+.silver-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -200%;
+  width: 200%;
+  height: 100%;
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(230, 230, 230, 0.1) 40%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(230, 230, 230, 0.1) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: silver-shimmer 4s linear infinite;
+  z-index: 2; /* place highlight above text */
+  mix-blend-mode: lighten; /* lighten underlying text */
+  pointer-events: none;
+}
+
+/* Ensure badge content stays above background but below highlight */
+.silver-shimmer > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Game Categories Card Styles ===== */
+.UCOPAE {
+  font-weight: 800;
+  font-size: 1.3rem;
+  line-height: 1;
+  background: #5825cc;
+
+  &:hover {
+    background: #6b2fe6;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  transition: all 150ms ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 140px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 7px 15px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* ===== Dotted Background ===== */
+.dot-background {
+  background-color: #f9fafb;
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 16px 16px;
+}
