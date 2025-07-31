@@ -8,12 +8,13 @@
  */
 
 import { initTRPC, TRPCError } from "@trpc/server";
+import { jwtVerify } from "jose";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { UserRole } from "~/constants/enums";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { UserRole } from "~/constants/enums";
 
 /**
  * 1. CONTEXT
@@ -30,9 +31,36 @@ import { UserRole } from "~/constants/enums";
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const session = await auth();
 
+  // Handle custom JWT token from Authorization header
+  let customUser = null;
+  const authHeader = opts.headers.get("authorization");
+
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+    try {
+      // Verify JWT token (you'll need to use the same secret as your admin app)
+      const secret = process.env.JWT_SECRET || "your-secret-key";
+      const { payload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(secret)
+      );
+
+      if (payload) {
+        customUser = {
+          id: payload.sub || payload.id as string,
+          email: payload.email as string,
+          role: payload.role as UserRole,
+        };
+      }
+    } catch (error) {
+      console.error("JWT verification failed:", error);
+    }
+  }
+
   return {
     db,
     session,
+    customUser, // Add custom user from JWT
     ...opts,
   };
 };
@@ -137,16 +165,20 @@ export const protectedProcedure = t.procedure
  * Admin-only procedure
  *
  * Ensures the user is authenticated and has admin role
+ * Supports both NextAuth session and custom JWT tokens
  */
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
   .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
+    // Check for either NextAuth session or custom JWT user
+    const user = ctx.session?.user || ctx.customUser;
+
+    if (!user) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
 
     // Type-safe role check using enum
-    if (ctx.session.user.role !== UserRole.ADMIN) {
+    if (user.role !== UserRole.ADMIN) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required",
@@ -155,7 +187,8 @@ export const adminProcedure = t.procedure
 
     return next({
       ctx: {
-        session: { ...ctx.session, user: ctx.session.user },
+        session: { ...ctx.session, user },
+        customUser: ctx.customUser,
       },
     });
   });
