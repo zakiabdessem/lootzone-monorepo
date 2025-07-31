@@ -2,6 +2,7 @@
   "name": "lootzone-monorepo",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ]
 }

@@ -22,7 +22,7 @@ const config = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: "http://localhost:3000", // Allow requests from your external app
+            value: "http://localhost:3002", // Explicitly allow the admin app's origin
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -30,11 +30,7 @@ const config = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value: "Content-Type, Authorization",
-          },
-          {
-            key: "Access-Control-Allow-Credentials",
-            value: "true",
+            value: "Content-Type, Authorization, x-trpc-source, trpc-accept",
           },
         ],
       },
