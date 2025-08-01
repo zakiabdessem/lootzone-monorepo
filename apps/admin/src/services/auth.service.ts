@@ -8,7 +8,7 @@ export class AuthService {
   async login(input: LoginInput): Promise<LoginOutput> {
     // We call the mutation directly; the shared TRPC client is already
     // configured with auth headers via TRPCProvider.
-    return api.auth.login.mutateAsync(input);
+    return api.auth.login.useMutation().mutateAsync(input);
   }
 
   /**

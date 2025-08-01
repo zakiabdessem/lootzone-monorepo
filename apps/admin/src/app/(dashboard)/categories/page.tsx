@@ -1,7 +1,6 @@
 "use client";
 
-import { useCategories } from "@/hooks/useCategories";
-import { useCategoryMutations } from "@/hooks/useCategoryMutations";
+import { api } from "@lootzone/trpc-shared";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -83,22 +82,36 @@ const columns: GridColDef[] = [
 ];
 
 const CategoryTablePage: React.FC = () => {
-  const { categories, loading, error, refetch } = useCategories();
-  const { updateCategory, deleteCategory, toggleCategoryActive, updateLoading, deleteLoading, toggleLoading } = useCategoryMutations();
+  const {
+    data: categories = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = api.category.getAll.useQuery();
+
+  const { mutateAsync: updateCategory } = api.category.update.useMutation({
+    onSuccess: () => refetch(),
+  });
+  const { mutateAsync: deleteCategory } = api.category.delete.useMutation({
+    onSuccess: () => refetch(),
+  });
+  const { mutateAsync: toggleCategoryActive } = api.category.toggleActive.useMutation({
+    onSuccess: () => refetch(),
+  });
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
-    await deleteCategory(id);
+    await deleteCategory({ id });
     refetch();
   };
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
-    await toggleCategoryActive(id, !isActive);
+    await toggleCategoryActive({ id, isActive: !isActive });
     refetch();
   };
 
-        const handleRowEditStop = async (params: any, event: any) => {
+    const handleRowEditStop = async (params: any, event: any) => {
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
       event.defaultMuiPrevented = true;
     }
@@ -158,14 +171,14 @@ const CategoryTablePage: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : error ? (
-          <Typography color="error">{error}</Typography>
+          <Typography color="error">{error.message}</Typography>
         ) : (
           <div style={{ height: 600, width: "100%" }}>
                         <StyledDataGrid
               rows={rows}
               columns={columns}
               getRowId={(row) => row.id}
-              loading={updateLoading || deleteLoading || toggleLoading}
+              loading={loading}
               getRowClassName={(params) =>
                 savingRowId === params.id ? 'saving-row' : ''
               }

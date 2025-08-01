@@ -169,7 +169,18 @@ function AuthProvider({ children }: { children: ReactNode }) {
       // Only do this on the client side to avoid hydration mismatches
       if (typeof window !== 'undefined') {
         window.localStorage.setItem("accessToken", token);
-        document.cookie = `accessToken=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
+        // In dev over HTTP, the Secure flag prevents the cookie from being set.
+        // We add it only when we're actually using HTTPS.
+        const baseCookie = [
+          `accessToken=${token}`,
+          "path=/",
+          `max-age=${7 * 24 * 60 * 60}`,
+          "samesite=strict",
+        ];
+        if (window.location.protocol === "https:") {
+          baseCookie.push("secure");
+        }
+        document.cookie = baseCookie.join("; ");
         setSession(token);
       }
 
@@ -179,13 +190,13 @@ function AuthProvider({ children }: { children: ReactNode }) {
           user: {
             id: user.id,
             email: user.email,
-            name: user.name || null,
+            name: user.firstName + " " + user.lastName || null,
             role: user.role,
           },
         },
       });
     } else {
-      throw new Error(response.error || "Login failed");
+      throw new Error("Login failed");
     }
   };
 

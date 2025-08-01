@@ -17,8 +17,17 @@ const setSession = (accessToken: string | null) => {
 
   if (accessToken) {
     localStorage.setItem("accessToken", accessToken);
-    // Also set in cookies for middleware compatibility
-    document.cookie = `accessToken=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
+    // Also set in cookies for middleware compatibility (Secure flag only on HTTPS)
+    const baseCookie = [
+      `accessToken=${accessToken}`,
+      "path=/",
+      `max-age=${7 * 24 * 60 * 60}`,
+      "samesite=strict",
+    ];
+    if (window.location.protocol === "https:") {
+      baseCookie.push("secure");
+    }
+    document.cookie = baseCookie.join("; ");
   } else {
     localStorage.removeItem("accessToken");
     // Remove from cookies as well

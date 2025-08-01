@@ -87,7 +87,8 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "composite": true
   },
   "include": [
     "src",
@@ -95,5 +96,9 @@
   ],
   "exclude": [
     "node_modules"
+  ],
+  "references": [
+    { "path": "../../packages/trpc-shared" },
+    { "path": "../trpc-app" }
   ]
 }
