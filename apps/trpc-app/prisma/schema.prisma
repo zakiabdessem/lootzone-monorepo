@@ -46,7 +46,7 @@ model User {
     id            String    @id @default(cuid())
     firstName     String    // Required field
     lastName      String    // Required field
-    phone         String   
+    phone         String
     email         String   @unique
     emailVerified DateTime?
     image         String?
@@ -94,7 +94,6 @@ model Product {
     platformIcon      String?
     platformName      String?
     region            String           @default("GLOBAL")
-    isDlc             Boolean          @default(false)
     categoryId        String
     category          Category         @relation(fields: [categoryId], references: [id])
     variants          ProductVariant[]
@@ -123,8 +122,7 @@ model ProductVariant {
     product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
     name            String
     price           Decimal     @db.Decimal(10, 2)
-    originalPrice   Decimal     @db.Decimal(10, 2)
-    attributes      Json?
+    originalPrice   Decimal?     @db.Decimal(10, 2)
     isActive        Boolean     @default(true)
     stock           Int?        @default(0)
     isInfiniteStock Boolean     @default(false)

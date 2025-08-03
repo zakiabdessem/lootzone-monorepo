@@ -20,8 +20,6 @@ export interface ProductVariant {
   originalPrice: number;
   /** Region code using enum */
   region?: Region;
-  /** Any other variant-specific attributes */
-  attributes?: Record<string, any>;
 }
 
 /**
@@ -42,8 +40,6 @@ export interface IProductCard {
   /** Platform info using enum */
   platformIcon?: string | null;
   platformName?: Platform | null;
-  /** Is downloadable content (DLC) */
-  isDlc?: boolean;
   /** Array of purchasable variants */
   variants: ProductVariant[];
   /** Whether to show platform badge */

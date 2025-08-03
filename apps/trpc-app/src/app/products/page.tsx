@@ -11,6 +11,7 @@ import { ProductCard } from '../_components/landing/product/ProductCard';
 import { Checkbox } from '../_components/landing/ui/checkbox';
 import { CollapsibleSection } from '../_components/landing/product/CollapsibleSection';
 import { CategoryFilter } from '../_components/landing/product/CategoryFilter';
+import { Platform, Region } from '~/constants/enums';
 
 // TEMPORARY demo data – in real app this would come from API
 const SAMPLE_PRODUCTS: IProductCard[] = [
@@ -22,7 +23,7 @@ const SAMPLE_PRODUCTS: IProductCard[] = [
     platformIcon: null,
     platformName: null,
     title: 'Netflix Gift Card 50 USD',
-    region: 'GLOBAL',
+    region: Region.GLOBAL,
     variants: [
       {
         id: 'netflix-gift-card-50-1',
@@ -40,7 +41,7 @@ const SAMPLE_PRODUCTS: IProductCard[] = [
     platformIcon: null,
     platformName: null,
     title: 'Spotify Gift Card 30 EUR',
-    region: 'EUROPE',
+    region: Region.EU,
     variants: [
       {
         id: 'spotify-gift-card-30-1',
@@ -56,9 +57,9 @@ const SAMPLE_PRODUCTS: IProductCard[] = [
     image: '/product-placeholder.jpg',
     platformShow: true,
     platformIcon: '/drms/xbox.svg',
-    platformName: 'Xbox Live',
+    platformName: Platform.XBOX,
     title: 'Apple Gift Card 100 USD',
-    region: 'USA',
+    region: Region.EU,
     variants: [
       {
         id: 'apple-gift-card-100-1',

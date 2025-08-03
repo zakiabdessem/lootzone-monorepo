@@ -1,40 +1,39 @@
 "use client";
 
-import React from "react";
-import type { ReactElement } from "react";
 import styled from "@emotion/styled";
 import NextLink from "next/link";
+import React from "react";
 
 import {
-  Box,
-  Breadcrumbs as MuiBreadcrumbs,
-  Button,
-  Checkbox,
-  Divider as MuiDivider,
-  Grid,
-  IconButton,
-  Link,
-  Paper as MuiPaper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  Toolbar,
-  Tooltip,
-  Typography,
+    Add as AddIcon,
+    Archive as ArchiveIcon,
+    FilterList as FilterListIcon,
+    RemoveRedEye as RemoveRedEyeIcon,
+    Star as StarIcon,
+} from "@mui/icons-material";
+import {
+    Box,
+    Button,
+    Checkbox,
+    Grid,
+    IconButton,
+    Link,
+    Breadcrumbs as MuiBreadcrumbs,
+    Divider as MuiDivider,
+    Paper as MuiPaper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    Toolbar,
+    Tooltip,
+    Typography,
 } from "@mui/material";
 import { orange } from "@mui/material/colors";
-import {
-  Add as AddIcon,
-  Archive as ArchiveIcon,
-  FilterList as FilterListIcon,
-  RemoveRedEye as RemoveRedEyeIcon,
-  Star as StarIcon,
-} from "@mui/icons-material";
 import { spacing } from "@mui/system";
 
 const Divider = styled(MuiDivider)(spacing);
@@ -562,10 +561,12 @@ function Products() {
         </Grid>
         <Grid>
           <div>
-            <Button variant="contained" color="primary">
-              <AddIcon />
-              New Product
-            </Button>
+            <NextLink href="/products/create" passHref>
+              <Button variant="contained" color="primary">
+                <AddIcon />
+                New Product
+              </Button>
+            </NextLink>
           </div>
         </Grid>
       </Grid>

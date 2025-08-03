@@ -37,7 +37,19 @@ export enum Platform {
   PLAYSTATION = "PlayStation",
   NINTENDO = "Nintendo",
   ROCKSTAR = "Rockstar",
-  MOBILE = "Mobile",
+  DISCORD = "Discord",
+  WINDOWS_STORE = "Windows Store",
+  EPIC_GAMES = "Epic Games",
+  WINDOWS = "Windows",
+  GOOGLE_PLAY = "Google Play",
+  NETFLIX = "Netflix",
+  APPLE = "Apple",
+  CURSOR = "Cursor",
+  JETBRAINS = "JetBrains",
+  SPOTIFY = "Spotify",
+  CRUNCHYROLL = "Crunchyroll",
+  DUOLINGO = "Duolingo",
+  AUTODESK = "Autodesk",
 }
 
 /**

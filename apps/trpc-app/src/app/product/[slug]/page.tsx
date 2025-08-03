@@ -22,7 +22,6 @@ interface SampleProduct {
   platformIcon?: string;
   platformName?: string;
   region: Region;
-  isDlc?: boolean;
   // categoryId would be required for real DB operations
   variants: ProductVariant[];
   keyFeatures: string[];
@@ -48,7 +47,6 @@ const sampleProduct: SampleProduct = {
   platformIcon: "/drms/apple.svg",
   platformName: "Apple",
   region: Region.GLOBAL,
-  isDlc: false,
   isActive: true,
   // Note: These prices should be in cents (999 = $9.99) to match Decimal storage
   variants: [
@@ -58,7 +56,6 @@ const sampleProduct: SampleProduct = {
       price: 9.99, // Changed to decimal format
       originalPrice: 12.0,
       region: Region.GLOBAL,
-      attributes: {},
     },
     {
       id: "2",
@@ -66,7 +63,6 @@ const sampleProduct: SampleProduct = {
       price: 29.99,
       originalPrice: 35.0,
       region: Region.GLOBAL,
-      attributes: {},
     },
     {
       id: "3",
@@ -74,7 +70,6 @@ const sampleProduct: SampleProduct = {
       price: 54.99,
       originalPrice: 60.0,
       region: Region.GLOBAL,
-      attributes: {},
     },
     {
       id: "4",
@@ -82,7 +77,6 @@ const sampleProduct: SampleProduct = {
       price: 89.0,
       originalPrice: 100.0,
       region: Region.GLOBAL,
-      attributes: {},
     },
     {
       id: "5",
@@ -90,7 +84,6 @@ const sampleProduct: SampleProduct = {
       price: 89.0,
       originalPrice: 110.0,
       region: Region.GLOBAL,
-      attributes: {},
     },
     {
       id: "6",
@@ -98,7 +91,6 @@ const sampleProduct: SampleProduct = {
       price: 89.0,
       originalPrice: 120.0,
       region: Region.GLOBAL,
-      attributes: {},
     },
   ],
   keyFeatures: siteSettings.defaultProduct.keyFeatures,
@@ -117,7 +109,6 @@ function ProductPage({ product = sampleProduct }: { product?: SampleProduct }) {
       price: 0,
       originalPrice: 0,
       region: Region.GLOBAL,
-      attributes: {},
     }
   );
 

@@ -11,9 +11,9 @@ import {
   Layout,
   List,
   Map,
-  ShoppingCart,
   Package,
   PieChart,
+  ShoppingCart,
   Sliders,
   Users,
 } from "lucide-react";
@@ -70,6 +70,11 @@ const pagesSection = [
     icon: Briefcase,
     title: "Projects",
     badge: "8",
+  },
+  {
+    href: "/categories",
+    icon: List,
+    title: "Categories",
   },
   {
     href: "/orders",

@@ -94,7 +94,6 @@ CREATE TABLE "ProductVariant" (
     "name" TEXT NOT NULL,
     "price" DECIMAL(10,2) NOT NULL,
     "originalPrice" DECIMAL(10,2) NOT NULL,
-    "attributes" JSONB,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "stock" INTEGER DEFAULT 0,
     "isInfiniteStock" BOOLEAN NOT NULL DEFAULT false,

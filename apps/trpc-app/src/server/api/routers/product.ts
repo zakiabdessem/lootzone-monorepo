@@ -1,11 +1,11 @@
 import { z } from "zod";
+import { Platform, ProductCategory, Region } from "~/constants/enums";
 import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
   adminProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
 } from "../trpc";
-import { Platform, Region, ProductCategory } from "~/constants/enums";
 
 // Zod schemas for input validation
 const createProductSchema = z.object({
@@ -20,7 +20,6 @@ const createProductSchema = z.object({
   platformIcon: z.string().optional(),
   platformName: z.nativeEnum(Platform).optional(),
   region: z.nativeEnum(Region).default(Region.GLOBAL),
-  isDlc: z.boolean().default(false),
   category: z.nativeEnum(ProductCategory),
   variants: z
     .array(
@@ -30,7 +29,6 @@ const createProductSchema = z.object({
         price: z.number().positive(),
         originalPrice: z.number().positive(),
         region: z.nativeEnum(Region).optional(),
-        attributes: z.record(z.any()).optional(),
       })
     )
     .min(1),
@@ -46,6 +44,25 @@ const updateProductSchema = createProductSchema.partial().extend({
 });
 
 export const productRouter = createTRPCRouter({
+  checkSlug: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input, ctx }) => {
+      if (!input.slug) {
+        return null;
+      }
+
+      const product = await ctx.db.product.findUnique({
+        where: {
+          slug: input.slug,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      return product === null;
+    }),
+
   // Public procedures - anyone can access
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
@@ -61,7 +78,6 @@ export const productRouter = createTRPCRouter({
         platformIcon: "steam-icon",
         platformName: Platform.STEAM,
         region: Region.GLOBAL,
-        isDlc: false,
         category: ProductCategory.PRODUCT,
         variants: [
           {
@@ -70,7 +86,6 @@ export const productRouter = createTRPCRouter({
             price: 29.99,
             originalPrice: 39.99,
             region: Region.GLOBAL,
-            attributes: {},
           },
         ],
         keyFeatures: ["Feature 1", "Feature 2"],
@@ -107,7 +122,6 @@ export const productRouter = createTRPCRouter({
             platformIcon: "steam-icon",
             platformName: Platform.STEAM,
             region: Region.GLOBAL,
-            isDlc: false,
             category: ProductCategory.PRODUCT,
             variants: [
               {
@@ -116,7 +130,6 @@ export const productRouter = createTRPCRouter({
                 price: 29.99,
                 originalPrice: 39.99,
                 region: Region.GLOBAL,
-                attributes: {},
               },
             ],
             keyFeatures: ["Feature 1", "Feature 2"],

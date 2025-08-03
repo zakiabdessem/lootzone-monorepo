@@ -3,10 +3,10 @@
 import type { Slide } from "@/types/product";
 import { gsap } from "gsap";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Platform, Region } from "~/constants/enums";
 import MembershipBadge from "../_components/MembershipBadge";
 import { ProductCard } from "../product/ProductCard";
 import HeroTextAnimated from "./HeroTextAnimated";
-import { Region, Platform } from "~/constants/enums";
 
 export default function HeroCarousel() {
   const slides: Slide[] = [
@@ -29,12 +29,6 @@ export default function HeroCarousel() {
             price: 5.25,
             originalPrice: 29.99,
             region: Region.GLOBAL,
-            attributes: {
-              platform: "Xbox Live",
-              type: "Game Pack + V-Bucks",
-              includes: ["Minty Legends Pack", "1000 V-Bucks"],
-              activationRegion: "Global",
-            },
           },
         ],
       },
@@ -58,17 +52,6 @@ export default function HeroCarousel() {
             price: 1.99,
             originalPrice: 19.99,
             region: Region.GLOBAL,
-            attributes: {
-              platform: "Rockstar Games Launcher",
-              type: "Full Game",
-              includes: [
-                "Base Game",
-                "Criminal Enterprise Starter Pack",
-                "GTA$ 1,000,000",
-              ],
-              activationRegion: "Global",
-              languages: ["English", "French", "Spanish", "German", "Italian"],
-            },
           },
         ],
       },
@@ -92,14 +75,6 @@ export default function HeroCarousel() {
             price: 44.99,
             originalPrice: 50.0,
             region: Region.EU,
-            attributes: {
-              platform: "Steam",
-              type: "Gift Card",
-              value: "50 EUR",
-              currency: "EUR",
-              activationRegion: "Europe",
-              validity: "No expiration",
-            },
           },
         ],
       },
