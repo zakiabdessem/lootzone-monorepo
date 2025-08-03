@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -16,14 +15,19 @@ import {
   IconButton,
   InputAdornment,
   InputLabel,
+  List,
+  ListItem,
+  ListItemSecondaryAction,
+  ListItemText,
   MenuItem,
-  Divider as MuiDivider,
+  Paper,
   Select,
   Switch,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
+import { Add, Delete } from "@mui/icons-material";
 import { spacing } from "@mui/system";
 import { FieldArray, FormikProvider, useFormik } from "formik";
 import { CheckCircle, Plus, Trash2, XCircle } from "lucide-react";
@@ -110,7 +114,7 @@ const validationSchema = Yup.object().shape({
   region: Yup.string().oneOf(Object.values(Region)).required("Region is required"),
   isActive: Yup.boolean(),
   categoryId: Yup.string().required("Category is required"),
-  keyFeaturesString: Yup.string(),
+  keyFeatures: Yup.array().min(1, "At least one key feature is required"),
   deliveryInfo: Yup.string(),
   deliveryStepsString: Yup.string(),
   terms: Yup.string(),
@@ -131,10 +135,31 @@ interface ProductCreateFormProps {
   isLoading?: boolean;
 }
 
+interface ProductFormValues {
+  title: string;
+  slug: string;
+  description: string;
+  image: string;
+  gallery: string[];
+  platformName: Platform | null;
+  platformIcon: string | null;
+  region: Region;
+  isActive: boolean;
+  categoryId: string;
+  keyFeatures: string[];
+  deliveryInfo: string;
+  deliveryStepsString: string;
+  terms: string;
+  importantNotesString: string;
+  variants: ProductVariant[];
+}
+
 export default function ProductCreateForm({ onSubmit, isLoading = false }: ProductCreateFormProps) {
   const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [newFeature, setNewFeature] = useState<string>("");
 
-  const formik = useFormik({
+  const formik = useFormik<ProductFormValues>({
     initialValues: {
       title: "",
       slug: "",
@@ -146,7 +171,7 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
       region: Region.GLOBAL,
       isActive: true,
       categoryId: "",
-      keyFeaturesString: "",
+      keyFeatures: [],
       deliveryInfo: "",
       deliveryStepsString: "",
       terms: "",
@@ -158,7 +183,6 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
       // Transform the form values to match Prisma schema
       const transformedValues = {
         ...values,
-        keyFeatures: stringToArray(values.keyFeaturesString),
         deliverySteps: stringToArray(values.deliveryStepsString),
         importantNotes: stringToArray(values.importantNotesString),
       };
@@ -218,6 +242,28 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
   const removeGalleryImage = (index: number) => {
     const newGallery = values.gallery.filter((_, i) => i !== index);
     setFieldValue("gallery", newGallery);
+  };
+
+  const handleTagToggle = (tag: string) => {
+    const newTags = selectedTags.includes(tag)
+      ? selectedTags.filter((t) => t !== tag)
+      : [...selectedTags, tag];
+
+    setSelectedTags(newTags);
+    formik.setFieldValue("tags", newTags);
+  };
+
+  const handleAddFeature = () => {
+    if (newFeature.trim()) {
+      const updatedFeatures = [...formik.values.keyFeatures, newFeature.trim()];
+      formik.setFieldValue("keyFeatures", updatedFeatures);
+      setNewFeature("");
+    }
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    const updatedFeatures = formik.values.keyFeatures.filter((_, i) => i !== index);
+    formik.setFieldValue("keyFeatures", updatedFeatures);
   };
 
   return (
@@ -453,16 +499,54 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  name="keyFeaturesString"
-                  label="Key Features (comma-separated)"
-                  value={values.keyFeaturesString}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.keyFeaturesString && Boolean(errors.keyFeaturesString)}
-                  helperText={touched.keyFeaturesString && errors.keyFeaturesString}
-                  fullWidth
-                />
+                <Box sx={{ mt: 2, mb: 1 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Key Features
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    id="newFeature"
+                    label="Add new feature"
+                    value={newFeature}
+                    onChange={(e) => setNewFeature(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddFeature();
+                      }
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <IconButton onClick={handleAddFeature} disabled={!newFeature.trim()}>
+                          <Add />
+                        </IconButton>
+                      ),
+                    }}
+                  />
+                  {formik.values.keyFeatures.length > 0 && (
+                    <Paper sx={{ mt: 2, maxHeight: 200, overflow: 'auto' }}>
+                      <List>
+                        {formik.values.keyFeatures.map((feature, index) => (
+                          <ListItem key={index} divider>
+                            <ListItemText primary={feature} />
+                            <ListItemSecondaryAction>
+                              <IconButton
+                                edge="end"
+                                onClick={() => handleRemoveFeature(index)}
+                                size="small"
+                              >
+                                <Delete />
+                              </IconButton>
+                            </ListItemSecondaryAction>
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  )}
+                  {touched.keyFeatures && errors.keyFeatures && (
+                    <FormHelperText error={true}>{errors.keyFeatures}</FormHelperText>
+                  )}
+                </Box>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
