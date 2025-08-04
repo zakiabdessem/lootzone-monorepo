@@ -8,6 +8,8 @@ import { Box, Button, Card, CardContent, CircularProgress, Switch, Typography } 
 import { styled } from "@mui/material/styles";
 import { DataGrid, GridActionsCellItem, GridColDef, GridRowEditStopReasons } from "@mui/x-data-grid";
 import React, { useState } from "react";
+import CategoryIcon from "../../../components/ui/CategoryIcon";
+import CategoryCreateModal from "../../../components/categories/CategoryCreateModal";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   '& .saving-row': {
@@ -19,6 +21,19 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
 }));
 
 const columns: GridColDef[] = [
+  {
+    field: "icon",
+    headerName: "Icon",
+    width: 80,
+    renderCell: (params) => (
+      <CategoryIcon 
+        name={params.row.name}
+        iconPath={params.row.icon}
+        size={24}
+      />
+    ),
+    sortable: false,
+  },
   {
     field: "name",
     headerName: "Name",
@@ -191,13 +206,11 @@ const CategoryTablePage: React.FC = () => {
             />
           </div>
         )}
-        {/* Placeholder for Create Modal */}
-        {createModalOpen && (
-          <Box mt={2}>
-            <Typography>Category creation modal goes here.</Typography>
-            <Button onClick={() => setCreateModalOpen(false)}>Close</Button>
-          </Box>
-        )}
+        <CategoryCreateModal
+          open={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          onSuccess={() => refetch()}
+        />
       </CardContent>
     </Card>
   );
