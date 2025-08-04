@@ -16,27 +16,28 @@ const createProductSchema = z.object({
     .min(1)
     .regex(/^[a-z0-9-]+$/),
   image: z.string().url(),
-  gallery: z.array(z.string().url()).optional(),
-  platformIcon: z.string().optional(),
+  gallery: z.array(z.string().url()).optional().default([]),
+  platformIcon: z.string().url().optional(),
   platformName: z.nativeEnum(Platform).optional(),
   region: z.nativeEnum(Region).default(Region.GLOBAL),
-  category: z.nativeEnum(ProductCategory),
+  category: z.string(), // Accept categoryId as string instead of enum
+  isActive: z.boolean().default(true),
   variants: z
     .array(
       z.object({
         id: z.string(),
-        name: z.string(),
+        name: z.string().min(1),
         price: z.number().positive(),
         originalPrice: z.number().positive(),
         region: z.nativeEnum(Region).optional(),
       })
     )
     .min(1),
-  keyFeatures: z.array(z.string()).optional(),
-  deliveryInfo: z.string().optional(),
-  deliverySteps: z.array(z.string()).optional(),
-  terms: z.string().optional(),
-  importantNotes: z.array(z.string()).optional(),
+  keyFeatures: z.array(z.string()).min(1),
+  deliveryInfo: z.string().min(1),
+  deliverySteps: z.array(z.string()).min(1),
+  terms: z.string().min(1),
+  importantNotes: z.array(z.string()).min(1),
 });
 
 const updateProductSchema = createProductSchema.partial().extend({
@@ -155,13 +156,53 @@ export const productRouter = createTRPCRouter({
   create: adminProcedure
     .input(createProductSchema)
     .mutation(async ({ input, ctx }) => {
-      // TODO: Create product in database
-      return {
-        id: "new-product-id",
-        ...input,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      console.log('Creating product with input:', input);
+      
+      // Validate that the category exists
+      const categoryExists = await ctx.db.category.findUnique({
+        where: { id: input.category },
+      });
+      
+      if (!categoryExists) {
+        throw new Error("Category not found");
+      }
+      
+      // Create the product
+      const product = await ctx.db.product.create({
+        data: {
+          title: input.title,
+          description: input.description,
+          slug: input.slug,
+          image: input.image,
+          gallery: input.gallery || [],
+          platformIcon: input.platformIcon || null,
+          platformName: input.platformName || null,
+          region: input.region,
+          categoryId: input.category,
+          keyFeatures: input.keyFeatures,
+          deliveryInfo: input.deliveryInfo,
+          deliverySteps: input.deliverySteps,
+          terms: input.terms,
+          importantNotes: input.importantNotes,
+          isActive: input.isActive,
+          variants: {
+            create: input.variants.map(variant => ({
+              name: variant.name,
+              price: variant.price,
+              originalPrice: variant.originalPrice,
+              isActive: true,
+              stock: 0,
+              isInfiniteStock: true,
+            }))
+          }
+        },
+        include: {
+          variants: true,
+          category: true,
+        }
+      });
+      
+      return product;
     }),
 
   update: adminProcedure

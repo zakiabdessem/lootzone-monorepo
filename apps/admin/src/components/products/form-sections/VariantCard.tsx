@@ -1,18 +1,16 @@
-
-"use client";
-
+import React from "react";
 import {
   Card,
   CardContent,
   Grid,
   TextField,
   IconButton,
-  Typography,
-  Box,
-  FormControlLabel,
   Switch,
+  FormControlLabel,
+  Typography,
 } from "@mui/material";
 import { Trash2 } from "lucide-react";
+import { useFormikContext } from "formik";
 
 interface ProductVariant {
   id: string;
@@ -26,7 +24,7 @@ interface ProductVariant {
 interface VariantCardProps {
   variant: ProductVariant;
   index: number;
-  handleChange: (e: any) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: () => void;
 }
 
@@ -36,76 +34,108 @@ export default function VariantCard({
   handleChange,
   onRemove,
 }: VariantCardProps) {
+  const formik = useFormikContext<any>();
+
+  const getFieldError = (fieldName: string) => {
+    const errors = formik.errors.variants;
+    const touched = formik.touched.variants;
+
+    if (Array.isArray(errors) && Array.isArray(touched) && 
+        errors[index] && touched[index] && 
+        typeof errors[index] === 'object' && typeof touched[index] === 'object') {
+      return (errors[index] as any)[fieldName] && (touched[index] as any)[fieldName] ? (errors[index] as any)[fieldName] : null;
+    }
+    return null;
+  };
+
+  const isFieldTouched = (fieldName: string) => {
+    const touched = formik.touched.variants;
+    if (Array.isArray(touched) && touched[index] && typeof touched[index] === 'object') {
+      return !!(touched[index] as any)[fieldName];
+    }
+    return false;
+  };
+
   return (
-    <Card sx={{ mt: 2, p: 2 }}>
+    <Card sx={{ mb: 2 }}>
       <CardContent>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-          <Typography variant="subtitle1">
-            Variant {index + 1}
-          </Typography>
-          <IconButton
-            color="error"
-            onClick={onRemove}
-            size="small"
-          >
-            <Trash2 size={16} />
-          </IconButton>
-        </Box>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid size={{ xs: 12, md: 3 }}>
             <TextField
+              name={`variants[${index}].name`}
               label="Variant Name"
-              name={`variants.${index}.name`}
               value={variant.name}
               onChange={handleChange}
+              onBlur={formik.handleBlur}
+              error={isFieldTouched('name') && Boolean(getFieldError('name'))}
+              helperText={isFieldTouched('name') && getFieldError('name')}
               fullWidth
+              size="small"
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid size={{ xs: 6, md: 2 }}>
             <TextField
+              name={`variants[${index}].price`}
               label="Price"
               type="number"
-              name={`variants.${index}.price`}
               value={variant.price}
               onChange={handleChange}
+              onBlur={formik.handleBlur}
+              error={isFieldTouched('price') && Boolean(getFieldError('price'))}
+              helperText={isFieldTouched('price') && getFieldError('price')}
               fullWidth
+              size="small"
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid size={{ xs: 6, md: 2 }}>
             <TextField
+              name={`variants[${index}].originalPrice`}
               label="Original Price"
               type="number"
-              name={`variants.${index}.originalPrice`}
               value={variant.originalPrice}
               onChange={handleChange}
+              onBlur={formik.handleBlur}
+              error={isFieldTouched('originalPrice') && Boolean(getFieldError('originalPrice'))}
+              helperText={isFieldTouched('originalPrice') && getFieldError('originalPrice')}
               fullWidth
+              size="small"
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid size={{ xs: 6, md: 2 }}>
+            <TextField
+              name={`variants[${index}].stock`}
+              label="Stock"
+              type="number"
+              value={variant.stock || 0}
+              onChange={handleChange}
+              onBlur={formik.handleBlur}
+              error={!variant.isInfiniteStock && isFieldTouched('stock') && Boolean(getFieldError('stock'))}
+              helperText={!variant.isInfiniteStock && isFieldTouched('stock') && getFieldError('stock')}
+              disabled={variant.isInfiniteStock}
+              fullWidth
+              size="small"
+            />
+          </Grid>
+          <Grid size={{ xs: 6, md: 2 }}>
             <FormControlLabel
               control={
                 <Switch
-                  name={`variants.${index}.isInfiniteStock`}
+                  name={`variants[${index}].isInfiniteStock`}
                   checked={variant.isInfiniteStock}
                   onChange={handleChange}
-                  color="primary"
+                  size="small"
                 />
               }
-              label="Infinite Stock"
+              label={
+                <Typography variant="caption">Infinite Stock</Typography>
+              }
             />
           </Grid>
-          {!variant.isInfiniteStock && (
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                label="Stock"
-                type="number"
-                name={`variants.${index}.stock`}
-                value={variant.stock || 0}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-          )}
+          <Grid size={{ xs: 12, md: 1 }}>
+            <IconButton onClick={onRemove} color="error">
+              <Trash2 size={16} />
+            </IconButton>
+          </Grid>
         </Grid>
       </CardContent>
     </Card>
