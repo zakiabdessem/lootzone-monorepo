@@ -30,6 +30,8 @@ import {
 import BasicInformationSection from "./form-sections/BasicInformationSection";
 import MediaSection from "./form-sections/MediaSection";
 import KeyFeaturesManager from "./form-sections/KeyFeaturesManager";
+import ImportantNotesManager from "./form-sections/ImportantNotesManager";
+import DeliveryStepsManager from "./form-sections/DeliveryStepsManager";
 import VariantCard from "./form-sections/VariantCard";
 
 const Divider = styled(MuiDivider)(spacing);
@@ -87,15 +89,7 @@ type ProductVariant = {
   isInfiniteStock: boolean;
 };
 
-// Helper function to convert comma-separated string to array
-const stringToArray = (str: string): string[] => {
-  return str.split(",").map(item => item.trim()).filter(item => item.length > 0);
-};
 
-// Helper function to convert array to comma-separated string
-const arrayToString = (arr: string[]): string => {
-  return arr.join(", ");
-};
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().max(255).required("Title is required"),
@@ -110,9 +104,9 @@ const validationSchema = Yup.object().shape({
   categoryId: Yup.string().required("Category is required"),
   keyFeatures: Yup.array().min(1, "At least one key feature is required"),
   deliveryInfo: Yup.string(),
-  deliveryStepsString: Yup.string(),
+  deliverySteps: Yup.array().of(Yup.string()),
   terms: Yup.string(),
-  importantNotesString: Yup.string(),
+  importantNotes: Yup.array().of(Yup.string()),
   variants: Yup.array().of(
     Yup.object().shape({
       name: Yup.string().max(255).required("Variant name is required"),
@@ -142,9 +136,9 @@ interface ProductFormValues {
   categoryId: string;
   keyFeatures: string[];
   deliveryInfo: string;
-  deliveryStepsString: string;
+  deliverySteps: string[];
   terms: string;
-  importantNotesString: string;
+  importantNotes: string[];
   variants: ProductVariant[];
 }
 
@@ -165,20 +159,15 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
       categoryId: "",
       keyFeatures: [],
       deliveryInfo: "",
-      deliveryStepsString: "",
+      deliverySteps: [],
       terms: "",
-      importantNotesString: "",
+      importantNotes: [],
       variants: [] as ProductVariant[],
     },
     validationSchema,
     onSubmit: async (values) => {
-      // Transform the form values to match Prisma schema
-      const transformedValues = {
-        ...values,
-        deliverySteps: stringToArray(values.deliveryStepsString),
-        importantNotes: stringToArray(values.importantNotesString),
-      };
-      onSubmit(transformedValues);
+      // No transformation needed since we're already using arrays
+      onSubmit(values);
     },
   });
 
@@ -387,16 +376,21 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                 />
               </Grid>
 
-              <Grid size={12}>
-                <TextField
-                  name="deliveryStepsString"
-                  label="Delivery Steps (comma-separated)"
-                  value={values.deliveryStepsString}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.deliveryStepsString && Boolean(errors.deliveryStepsString)}
-                  helperText={touched.deliveryStepsString && errors.deliveryStepsString}
-                  fullWidth
+              <Grid size={{ xs: 12, md: 6 }}>
+                <DeliveryStepsManager
+                  deliverySteps={values.deliverySteps}
+                  setFieldValue={setFieldValue}
+                  error={errors.deliverySteps}
+                  touched={touched.deliverySteps}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <ImportantNotesManager
+                  importantNotes={values.importantNotes}
+                  setFieldValue={setFieldValue}
+                  error={errors.importantNotes}
+                  touched={touched.importantNotes}
                 />
               </Grid>
 
@@ -411,19 +405,6 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                   rows={4}
                   error={touched.terms && Boolean(errors.terms)}
                   helperText={touched.terms && errors.terms}
-                  fullWidth
-                />
-              </Grid>
-
-              <Grid size={12}>
-                <TextField
-                  name="importantNotesString"
-                  label="Important Notes (comma-separated)"
-                  value={values.importantNotesString}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.importantNotesString && Boolean(errors.importantNotesString)}
-                  helperText={touched.importantNotesString && errors.importantNotesString}
                   fullWidth
                 />
               </Grid>
