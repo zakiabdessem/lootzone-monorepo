@@ -7,36 +7,30 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   FormControl,
   FormControlLabel,
   FormHelperText,
   Grid,
-  IconButton,
-  InputAdornment,
   InputLabel,
-  List,
-  ListItem,
-  ListItemSecondaryAction,
-  ListItemText,
   MenuItem,
-  Paper,
   Select,
   Switch,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import { Add, Delete } from "@mui/icons-material";
 import { spacing } from "@mui/system";
 import { FieldArray, FormikProvider, useFormik } from "formik";
-import { CheckCircle, Plus, Trash2, XCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
 import {
   Platform,
   Region,
 } from "../../../../trpc-app/src/constants/enums";
+import BasicInformationSection from "./form-sections/BasicInformationSection";
+import MediaSection from "./form-sections/MediaSection";
+import KeyFeaturesManager from "./form-sections/KeyFeaturesManager";
+import VariantCard from "./form-sections/VariantCard";
 
 const Divider = styled(MuiDivider)(spacing);
 
@@ -156,8 +150,6 @@ interface ProductFormValues {
 
 export default function ProductCreateForm({ onSubmit, isLoading = false }: ProductCreateFormProps) {
   const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [newFeature, setNewFeature] = useState<string>("");
 
   const formik = useFormik<ProductFormValues>({
     initialValues: {
@@ -229,43 +221,6 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
 
   const { data: categories } = api.category.getProduct.useQuery();
 
-  // Handle gallery image input
-  const [galleryInput, setGalleryInput] = useState("");
-
-  const addGalleryImage = () => {
-    if (galleryInput.trim()) {
-      setFieldValue("gallery", [...values.gallery, galleryInput.trim()]);
-      setGalleryInput("");
-    }
-  };
-
-  const removeGalleryImage = (index: number) => {
-    const newGallery = values.gallery.filter((_, i) => i !== index);
-    setFieldValue("gallery", newGallery);
-  };
-
-  const handleTagToggle = (tag: string) => {
-    const newTags = selectedTags.includes(tag)
-      ? selectedTags.filter((t) => t !== tag)
-      : [...selectedTags, tag];
-
-    setSelectedTags(newTags);
-    formik.setFieldValue("tags", newTags);
-  };
-
-  const handleAddFeature = () => {
-    if (newFeature.trim()) {
-      const updatedFeatures = [...formik.values.keyFeatures, newFeature.trim()];
-      formik.setFieldValue("keyFeatures", updatedFeatures);
-      setNewFeature("");
-    }
-  };
-
-  const handleRemoveFeature = (index: number) => {
-    const updatedFeatures = formik.values.keyFeatures.filter((_, i) => i !== index);
-    formik.setFieldValue("keyFeatures", updatedFeatures);
-  };
-
   return (
     <FormikProvider value={formik}>
       <form onSubmit={formik.handleSubmit}>
@@ -273,123 +228,35 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
           <CardContent>
             <Grid container spacing={3}>
               {/* Basic Information */}
-              <Grid size={12}>
-                <Typography variant="h6" gutterBottom>
-                  Basic Information
-                </Typography>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  name="title"
-                  label="Title"
-                  value={values.title}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.title && Boolean(errors.title)}
-                  helperText={touched.title && errors.title}
-                  fullWidth
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  name="slug"
-                  label="Slug"
-                  value={values.slug}
-                  InputProps={{
-                    readOnly: true,
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        {isSlugChecking ? (
-                          <CircularProgress size={20} />
-                        ) : isSlugAvailable === true ? (
-                          <Tooltip title="Slug is available">
-                            <CheckCircle color="green" />
-                          </Tooltip>
-                        ) : isSlugAvailable === false ? (
-                          <Tooltip title="Slug is already taken">
-                            <XCircle color="red" />
-                          </Tooltip>
-                        ) : null}
-                      </InputAdornment>
-                    ),
-                  }}
-                  error={touched.slug && Boolean(errors.slug)}
-                  helperText={touched.slug && errors.slug}
-                  fullWidth
-                />
-              </Grid>
-
-              <Grid size={12}>
-                <TextField
-                  name="description"
-                  label="Description"
-                  value={values.description}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  multiline
-                  rows={4}
-                  error={touched.description && Boolean(errors.description)}
-                  helperText={touched.description && errors.description}
-                  fullWidth
-                />
-              </Grid>
+              <BasicInformationSection
+                values={{
+                  title: values.title,
+                  slug: values.slug,
+                  description: values.description,
+                }}
+                errors={errors}
+                touched={touched}
+                handleChange={handleChange}
+                handleBlur={handleBlur}
+                isSlugChecking={isSlugChecking}
+                isSlugAvailable={isSlugAvailable}
+              />
 
               {/* Media */}
               <Grid size={12}>
                 <Divider my={3} />
-                <Typography variant="h6" gutterBottom>
-                  Media
-                </Typography>
               </Grid>
-
-              <Grid size={{ xs: 12, md: 6 }}>
-                <TextField
-                  name="image"
-                  label="Main Image URL"
-                  value={values.image}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.image && Boolean(errors.image)}
-                  helperText={touched.image && errors.image}
-                  fullWidth
-                />
-              </Grid>
-
-              <Grid size={12}>
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Gallery Images
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                    <TextField
-                      label="Image URL"
-                      value={galleryInput}
-                      onChange={(e) => setGalleryInput(e.target.value)}
-                      size="small"
-                      sx={{ flexGrow: 1 }}
-                    />
-                    <Button
-                      variant="outlined"
-                      onClick={addGalleryImage}
-                      startIcon={<Plus size={16} />}
-                    >
-                      Add
-                    </Button>
-                  </Box>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {values.gallery.map((imageUrl, index) => (
-                      <Chip
-                        key={index}
-                        label={`Image ${index + 1}`}
-                        onDelete={() => removeGalleryImage(index)}
-                        variant="outlined"
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              </Grid>
+              <MediaSection
+                values={{
+                  image: values.image,
+                  gallery: values.gallery,
+                }}
+                errors={errors}
+                touched={touched}
+                handleChange={handleChange}
+                handleBlur={handleBlur}
+                setFieldValue={setFieldValue}
+              />
 
               {/* Platform & Region */}
               <Grid size={12}>
@@ -499,54 +366,12 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <Box sx={{ mt: 2, mb: 1 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Key Features
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    id="newFeature"
-                    label="Add new feature"
-                    value={newFeature}
-                    onChange={(e) => setNewFeature(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddFeature();
-                      }
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <IconButton onClick={handleAddFeature} disabled={!newFeature.trim()}>
-                          <Add />
-                        </IconButton>
-                      ),
-                    }}
-                  />
-                  {formik.values.keyFeatures.length > 0 && (
-                    <Paper sx={{ mt: 2, maxHeight: 200, overflow: 'auto' }}>
-                      <List>
-                        {formik.values.keyFeatures.map((feature, index) => (
-                          <ListItem key={index} divider>
-                            <ListItemText primary={feature} />
-                            <ListItemSecondaryAction>
-                              <IconButton
-                                edge="end"
-                                onClick={() => handleRemoveFeature(index)}
-                                size="small"
-                              >
-                                <Delete />
-                              </IconButton>
-                            </ListItemSecondaryAction>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Paper>
-                  )}
-                  {touched.keyFeatures && errors.keyFeatures && (
-                    <FormHelperText error={true}>{errors.keyFeatures}</FormHelperText>
-                  )}
-                </Box>
+                <KeyFeaturesManager
+                  keyFeatures={values.keyFeatures}
+                  setFieldValue={setFieldValue}
+                  error={errors.keyFeatures}
+                  touched={touched.keyFeatures}
+                />
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
@@ -614,78 +439,13 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                   render={(arrayHelpers) => (
                     <div>
                       {values.variants.map((variant, index) => (
-                        <Card key={variant.id} sx={{ mt: 2, p: 2 }}>
-                          <CardContent>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                              <Typography variant="subtitle1">
-                                Variant {index + 1}
-                              </Typography>
-                              <IconButton
-                                color="error"
-                                onClick={() => arrayHelpers.remove(index)}
-                                size="small"
-                              >
-                                <Trash2 size={16} />
-                              </IconButton>
-                            </Box>
-                            <Grid container spacing={2}>
-                              <Grid size={{ xs: 12, sm: 6 }}>
-                                <TextField
-                                  label="Variant Name"
-                                  name={`variants.${index}.name`}
-                                  value={variant.name}
-                                  onChange={handleChange}
-                                  fullWidth
-                                />
-                              </Grid>
-                              <Grid size={{ xs: 12, sm: 6 }}>
-                                <TextField
-                                  label="Price"
-                                  type="number"
-                                  name={`variants.${index}.price`}
-                                  value={variant.price}
-                                  onChange={handleChange}
-                                  fullWidth
-                                />
-                              </Grid>
-                              <Grid size={{ xs: 12, sm: 6 }}>
-                                <TextField
-                                  label="Original Price"
-                                  type="number"
-                                  name={`variants.${index}.originalPrice`}
-                                  value={variant.originalPrice}
-                                  onChange={handleChange}
-                                  fullWidth
-                                />
-                              </Grid>
-                              <Grid size={{ xs: 12, sm: 6 }}>
-                                <FormControlLabel
-                                  control={
-                                    <Switch
-                                      name={`variants.${index}.isInfiniteStock`}
-                                      checked={variant.isInfiniteStock}
-                                      onChange={handleChange}
-                                      color="primary"
-                                    />
-                                  }
-                                  label="Infinite Stock"
-                                />
-                              </Grid>
-                              {!variant.isInfiniteStock && (
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    label="Stock"
-                                    type="number"
-                                    name={`variants.${index}.stock`}
-                                    value={variant.stock || 0}
-                                    onChange={handleChange}
-                                    fullWidth
-                                  />
-                                </Grid>
-                              )}
-                            </Grid>
-                          </CardContent>
-                        </Card>
+                        <VariantCard
+                          key={variant.id}
+                          variant={variant}
+                          index={index}
+                          handleChange={handleChange}
+                          onRemove={() => arrayHelpers.remove(index)}
+                        />
                       ))}
                       <Button
                         variant="outlined"
