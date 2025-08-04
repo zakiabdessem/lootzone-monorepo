@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   Sliders,
   Users,
+  Security,
 } from "lucide-react";
 
 const pagesSection = [
@@ -338,5 +339,7 @@ const navItems = [
     pages: docsSection,
   },
 ];
+
+const SecurityIcon = Security;
 
 export default navItems;
