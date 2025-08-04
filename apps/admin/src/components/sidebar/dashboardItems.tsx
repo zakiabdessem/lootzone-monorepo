@@ -338,6 +338,21 @@ const navItems = [
     title: "Mira Pro",
     pages: docsSection,
   },
+  {
+    title: "Admin",
+    pages: [
+      {
+        href: "/site-settings",
+        icon: Sliders,
+        title: "Site Settings",
+      },
+      {
+        href: "/hero-slides",
+        icon: Layout,
+        title: "Hero Slides",
+      },
+    ] as SidebarItemsType[],
+  },
 ];
 
 const SecurityIcon = Security;

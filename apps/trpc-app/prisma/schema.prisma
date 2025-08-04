@@ -106,6 +106,7 @@ model Product {
     orderItems        OrderItem[]
     favorites         UserFavorite[]
     slides            Slide[]          // Slides featuring this product
+    heroSlides        HeroSlide[]      // Hero carousel slides
     createdAt         DateTime         @default(now())
     updatedAt         DateTime         @updatedAt
 
@@ -211,4 +212,34 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model SiteSettings {
+    id                      String   @id @default(cuid())
+    siteName                String   @default("LootZone")
+    currency                String   @default("DZD")
+    siteAnnouncementHtml    String   @db.Text
+    siteSubAnnouncement     String
+    supportEmail            String   @default("support@lootzone.com")
+    whatsappNumber          String   @default("+213556032355")
+    whatsappLink            String   @default("https://wa.me/+213556032355")
+    telegramLink            String   @default("https://t.me/lootzone")
+    primaryColor            String   @default("#4618AC")
+    accentColor             String   @default("#23c299")
+    createdAt               DateTime @default(now())
+    updatedAt               DateTime @updatedAt
+}
+
+model HeroSlide {
+    id          String   @id @default(cuid())
+    label       String   // e.g., "MINTY\nLEGENDS"
+    productId   String
+    product     Product  @relation(fields: [productId], references: [id])
+    isActive    Boolean  @default(true)
+    displayOrder Int     @default(0)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([isActive])
+    @@index([displayOrder])
 }

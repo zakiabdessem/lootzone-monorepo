@@ -4,97 +4,52 @@ import type { Slide } from "@/types/product";
 import { gsap } from "gsap";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Platform, Region } from "~/constants/enums";
+import { api } from "~/trpc/react";
 import MembershipBadge from "../_components/MembershipBadge";
 import { ProductCard } from "../product/ProductCard";
 import HeroTextAnimated from "./HeroTextAnimated";
 
 export default function HeroCarousel() {
-  const slides: Slide[] = [
-    {
-      label: "MINTY\nLEGENDS",
-      product: {
-        id: "clm8k5x2g0001abc123def456",
-        slug: "fortnite-minty-legends-pack-1000-vbucks",
-        image: "/product-placeholder.jpg",
-        platformShow: true,
-        platformIcon: "/drms/xbox.svg",
-        platformName: Platform.XBOX,
-        title: "Fortnite Minty Legends Pack + 1000 V-Bucks",
-        region: Region.GLOBAL,
-        liked: true,
-        variants: [
-          {
-            id: "var_minty_legends_001",
-            name: "Xbox Live Key - GLOBAL",
-            price: 5.25,
-            originalPrice: 29.99,
-            region: Region.GLOBAL,
-          },
-        ],
-      },
-    },
-    {
-      label: "OPEN\nWORLD",
-      product: {
-        id: "clm8k5x2g0002ghi789jkl012",
-        slug: "grand-theft-auto-v-premium-online-edition-rockstar",
-        image: "/product-placeholder2.jpg",
-        platformShow: true,
-        platformIcon: "/drms/rockstar.svg",
-        platformName: Platform.ROCKSTAR,
-        title: "Grand Theft Auto V: Premium Online Edition",
-        region: Region.GLOBAL,
-        liked: false,
-        variants: [
-          {
-            id: "var_gta_v_premium_001",
-            name: "Rockstar Games Launcher Key - GLOBAL",
-            price: 1.99,
-            originalPrice: 19.99,
-            region: Region.GLOBAL,
-          },
-        ],
-      },
-    },
-    {
-      label: "GIFT\nCARDS",
-      product: {
-        id: "clm8k5x2g0003mno345pqr678",
-        slug: "steam-wallet-gift-card-50-eur",
-        image: "/product-placeholder.jpg",
-        platformShow: true,
-        platformIcon: "/drms/steam.svg",
-        platformName: Platform.STEAM,
-        title: "Steam Wallet Gift Card 50 EUR",
-        region: Region.EU,
-        liked: false,
-        variants: [
-          {
-            id: "var_steam_card_50_eur",
-            name: "Steam Gift Card 50 EUR - Europe",
-            price: 44.99,
-            originalPrice: 50.0,
-            region: Region.EU,
-          },
-        ],
-      },
-    },
-  ];
-
+  const { data: heroSlides, isLoading } = api.heroSlide.getAll.useQuery();
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Transform database slides to component format
+  const slides: Slide[] = heroSlides?.map((slide) => ({
+    label: slide.label,
+    product: {
+      id: slide.product.id,
+      slug: slide.product.slug,
+      image: slide.product.image,
+      platformShow: !!slide.product.platformIcon,
+      platformIcon: slide.product.platformIcon,
+      platformName: slide.product.platformName as Platform,
+      title: slide.product.title,
+      region: slide.product.region as Region,
+      liked: false, // This would need to be determined by user preferences
+      variants: slide.product.variants.map((variant) => ({
+        id: variant.id,
+        name: variant.name,
+        price: Number(variant.price),
+        originalPrice: variant.originalPrice ? Number(variant.originalPrice) : undefined,
+        region: slide.product.region as Region,
+      })),
+    },
+  })) || [];
 
   /* -----------------------------
    * Auto-cycle every 7 seconds (uses fresh index)
    * ---------------------------*/
   useEffect(() => {
+    if (slides.length === 0) return;
+
     const timeout = setTimeout(() => {
       goToSlide((index + 1) % slides.length);
     }, 7000);
 
     return () => clearTimeout(timeout);
-  }, [index]);
+  }, [index, slides.length]);
 
   // Update vertical bar progress as the slide advances
   useEffect(() => {
@@ -169,6 +124,26 @@ export default function HeroCarousel() {
     dragState.current.startX = null;
   };
 
+  // Show loading or empty state
+  if (isLoading || slides.length === 0) {
+    return (
+      <section className="section grid-overlay overflow-x-hidden">
+        <div className="flex flex-col justify-center items-center relative bottom-12 w-full">
+          <div className="flex justify-center py-6 relative bottom-8 w-full">
+            <MembershipBadge />
+          </div>
+          <div className="flex justify-center items-center h-96">
+            {isLoading ? (
+              <div className="text-center">Loading...</div>
+            ) : (
+              <div className="text-center">No hero slides configured</div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   // Add guard clause to prevent rendering if no current slide
   if (!currentSlide) {
     return null;
@@ -227,14 +202,6 @@ export default function HeroCarousel() {
               </div>
             ))}
           </div>
-          {/* Right arrow */}
-          {/* <button
-          onClick={next}
-          aria-label="Next slide"
-          className="absolute right-0 cursor-pointer translate-x-full sm:translate-x-1/2 bg-[#4618AC]/80 text-white p-2 rounded-full hover:bg-[#4618AC] z-40 flex items-center justify-center max-[1113px]:hidden"
-        >
-          <ArrowRight className="w-5 h-5" />
-        </button> */}
         </div>
       </div>
     </section>

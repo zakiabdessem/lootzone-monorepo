@@ -2,8 +2,10 @@ import { productRouter } from "~/server/api/routers/product";
 import { userRouter } from "~/server/api/routers/user";
 import { orderRouter } from "~/server/api/routers/order";
 import { categoryRouter } from "~/server/api/routers/category";
+import { heroSlideRouter } from "~/server/api/routers/hero-slide";
 import { authRouter } from "~/server/api/routers/auth";
 import { sessionRouter } from "~/server/api/routers/session";
+import { siteSettingsRouter } from "~/server/api/routers/site-settings";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -18,6 +20,8 @@ export const appRouter = createTRPCRouter({
   category: categoryRouter,
   auth: authRouter,
   session: sessionRouter,
+  heroSlide: heroSlideRouter,
+  siteSettings: siteSettingsRouter,
 });
 
 // export type definition of API
