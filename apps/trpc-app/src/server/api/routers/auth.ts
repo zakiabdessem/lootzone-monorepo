@@ -114,6 +114,18 @@ export const authRouter = createTRPCRouter({
         { expiresIn: "7d" }
       );
 
+      // Create database session for tracking
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+      await ctx.db.session.create({
+        data: {
+          sessionToken: token,
+          userId: user.id,
+          expires: expiresAt,
+        },
+      });
+
       return {
         success: true,
         token,
