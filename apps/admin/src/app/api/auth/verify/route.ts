@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+
+<old_str>import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,31 +11,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const secret = process.env.JWT_SECRET || "your-secret-key";
-
-    // Verify signature & expiration
-    await jwtVerify(token, new TextEncoder().encode(secret));
-
-    // If verification passes, decode payload for user info
-    const payload = JSON.parse(
-      Buffer.from(token.split(".")[1], "base64url").toString()
-    );
-
-    // Check if the session still exists by making a request to the main trpc app
-    const sessionCheckResponse = await fetch(`http://localhost:5000/api/auth/verify`, {
+    // Make tRPC call to the main app using the correct port
+    const trpcUrl = "http://0.0.0.0:5000/api/trpc/session.verifyToken";
+    const response = await fetch(trpcUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        json: { token },
+      }),
     });
 
-    const sessionCheck = await sessionCheckResponse.json();
+    const data = await response.json();
     
-    if (!sessionCheck.valid) {
-      return NextResponse.json({ valid: false, message: "Session has been revoked" }, { status: 401 });
+    if (!response.ok || !data.result?.data?.valid) {
+      return NextResponse.json({ valid: false, message: "Invalid token" }, { status: 401 });
     }
 
-    return NextResponse.json({ valid: true, user: payload });
+    return NextResponse.json({ valid: true, user: data.result.data.user });
   } catch (err) {
     return NextResponse.json({ valid: false, message: "Invalid token" }, { status: 401 });
   }
-}
+}</old_str>
+<new_str>import { NextRequest, NextResponse } from "next/server";
+import { authService } from "../../../services/auth.service";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { token } = await req.json();
+    if (!token || typeof token !== "string") {
+      return NextResponse.json(
+        { valid: false, message: "Token missing" },
+        { status: 400 }
+      );
+    }
+
+    const result = await authService.verifyToken(token);
+    
+    if (!result.valid) {
+      return NextResponse.json({ valid: false, message: "Invalid token" }, { status: 401 });
+    }
+
+    return NextResponse.json(result);
+  } catch (err) {
+    return NextResponse.json({ valid: false, message: "Invalid token" }, { status: 401 });
+  }
+}</new_str>

@@ -1,13 +1,56 @@
-
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import jwt from "jsonwebtoken";
+import { env } from "~/env";
+
 
 export const sessionRouter = createTRPCRouter({
+  // Verify if a token is valid and session exists
+  verifyToken: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        // Verify JWT signature and expiration
+        const decoded = jwt.verify(input.token, env.JWT_SECRET || "your-secret-key") as {
+          userId: string;
+          email: string;
+          role: string;
+        };
+
+        // Check if the session still exists in the database
+        const session = await ctx.db.session.findFirst({
+          where: {
+            sessionToken: input.token,
+            userId: decoded.userId,
+            expires: {
+              gt: new Date(), // Not expired
+            },
+          },
+        });
+
+        if (!session) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Session has been revoked",
+          });
+        }
+
+        return {
+          valid: true,
+          user: decoded,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid or expired token",
+        });
+      }
+    }),
   // Get all active sessions for current user
   getUserSessions: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session?.user?.id || ctx.customUser?.id;
-    
+
     if (!userId) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
