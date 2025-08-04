@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   CardContent,
+  Divider as MuiDivider,
   FormControl,
   FormControlLabel,
   FormHelperText,
