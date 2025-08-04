@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { db } from "~/server/db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -17,6 +18,24 @@ export async function POST(req: NextRequest) {
         email: string;
         role: string;
       };
+
+      // Check if the session still exists in the database
+      const session = await db.session.findFirst({
+        where: {
+          sessionToken: token,
+          userId: decoded.userId,
+          expires: {
+            gt: new Date(), // Not expired
+          },
+        },
+      });
+
+      if (!session) {
+        return NextResponse.json(
+          { valid: false, error: "Session has been revoked" },
+          { status: 401 }
+        );
+      }
 
       return NextResponse.json({
         valid: true,
