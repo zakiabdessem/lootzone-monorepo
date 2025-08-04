@@ -1,8 +1,31 @@
-modules = ["nodejs-20", "web"]
-run = "npm run dev"
+modules = ["nodejs-20", "web", "postgresql-16"]
+run = "cd apps/trpc-app && npm run dev"
 
 [nix]
 channel = "stable-25_05"
 
 [deployment]
-run = ["sh", "-c", "npm run dev"]
+run = ["sh", "-c", "npm run start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[workflows]
+
+[[workflows.workflow]]
+name = "Trpc-app"
+mode = "sequential"
+author = 17669667
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/trpc-app"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+# [[ports]]
+# localPort = 5000
+# externalPort = 80
