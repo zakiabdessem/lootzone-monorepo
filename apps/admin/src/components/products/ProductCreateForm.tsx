@@ -18,6 +18,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { Divider as MuiDivider } from "@mui/material";
 import { spacing } from "@mui/system";
 import { FieldArray, FormikProvider, useFormik } from "formik";
 import { Plus } from "lucide-react";
@@ -92,30 +93,35 @@ type ProductVariant = {
 
 
 const validationSchema = Yup.object().shape({
-  title: Yup.string().max(255).required("Title is required"),
-  slug: Yup.string().max(255).required("Slug is required"),
-  description: Yup.string().max(10000).required("Description is required"),
+  title: Yup.string().min(1, "Title is required").max(255, "Title must be less than 255 characters").required("Title is required"),
+  slug: Yup.string().min(1, "Slug is required").max(255, "Slug must be less than 255 characters").required("Slug is required"),
+  description: Yup.string().min(10, "Description must be at least 10 characters").max(10000, "Description must be less than 10000 characters").required("Description is required"),
   image: Yup.string().url("Must be a valid URL").required("Image is required"),
-  gallery: Yup.array().of(Yup.string().url("Must be valid URLs")),
-  platformName: Yup.string().nullable(),
-  platformIcon: Yup.string().nullable(),
-  region: Yup.string().oneOf(Object.values(Region)).required("Region is required"),
-  isActive: Yup.boolean(),
-  categoryId: Yup.string().required("Category is required"),
-  keyFeatures: Yup.array().min(1, "At least one key feature is required"),
-  deliveryInfo: Yup.string(),
-  deliverySteps: Yup.array().of(Yup.string()),
-  terms: Yup.string(),
-  importantNotes: Yup.array().of(Yup.string()),
+  gallery: Yup.array().of(Yup.string().url("Must be valid URLs")).default([]),
+  platformName: Yup.mixed().oneOf([...Object.values(Platform), null]).nullable(),
+  platformIcon: Yup.string().url("Must be a valid URL").nullable(),
+  region: Yup.string().oneOf(Object.values(Region), "Invalid region").required("Region is required"),
+  isActive: Yup.boolean().default(true),
+  categoryId: Yup.string().min(1, "Category is required").required("Category is required"),
+  keyFeatures: Yup.array().of(Yup.string().min(1, "Key feature cannot be empty")).min(1, "At least one key feature is required").required("Key features are required"),
+  deliveryInfo: Yup.string().min(5, "Delivery info must be at least 5 characters").required("Delivery info is required"),
+  deliverySteps: Yup.array().of(Yup.string().min(1, "Delivery step cannot be empty")).min(1, "At least one delivery step is required").required("Delivery steps are required"),
+  terms: Yup.string().min(10, "Terms must be at least 10 characters").required("Terms are required"),
+  importantNotes: Yup.array().of(Yup.string().min(1, "Note cannot be empty")).min(1, "At least one important note is required").required("Important notes are required"),
   variants: Yup.array().of(
     Yup.object().shape({
-      name: Yup.string().max(255).required("Variant name is required"),
-      price: Yup.number().min(1).required("Price is required"),
-      originalPrice: Yup.number().min(1).required("Original price is required"),
-      stock: Yup.number().min(0),
-      isInfiniteStock: Yup.boolean(),
+      id: Yup.string().required("Variant ID is required"),
+      name: Yup.string().min(1, "Variant name is required").max(255, "Variant name must be less than 255 characters").required("Variant name is required"),
+      price: Yup.number().positive("Price must be positive").required("Price is required"),
+      originalPrice: Yup.number().positive("Original price must be positive").required("Original price is required"),
+      stock: Yup.number().min(0, "Stock cannot be negative").when('isInfiniteStock', {
+        is: false,
+        then: (schema) => schema.required("Stock is required when not infinite"),
+        otherwise: (schema) => schema.notRequired()
+      }),
+      isInfiniteStock: Yup.boolean().default(false),
     })
-  ).min(1, "At least one variant is required"),
+  ).min(1, "At least one variant is required").required("Variants are required"),
 });
 
 interface ProductCreateFormProps {
@@ -165,9 +171,14 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
       variants: [] as ProductVariant[],
     },
     validationSchema,
-    onSubmit: async (values) => {
-      // No transformation needed since we're already using arrays
-      onSubmit(values);
+    onSubmit: async (values, { setSubmitting, setFieldError }) => {
+      try {
+        console.log('Form values before submission:', values);
+        await onSubmit(values);
+      } catch (error) {
+        console.error('Form submission error:', error);
+        setSubmitting(false);
+      }
     },
   });
 
@@ -433,7 +444,7 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                         sx={{ mt: 2 }}
                         onClick={() =>
                           arrayHelpers.push({
-                            id: `${Date.now()}`,
+                            id: `variant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                             name: "",
                             price: 0,
                             originalPrice: 0,
@@ -445,6 +456,11 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                       >
                         Add Variant
                       </Button>
+                      {touched.variants && errors.variants && typeof errors.variants === 'string' && (
+                        <FormHelperText error sx={{ mt: 1 }}>
+                          {errors.variants}
+                        </FormHelperText>
+                      )}
                     </div>
                   )}
                 />
