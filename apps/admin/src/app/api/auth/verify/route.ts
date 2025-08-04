@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+
 import { jwtVerify } from "jose";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,8 +33,12 @@ export async function POST(req: NextRequest) {
     // Check if the session still exists by making a request to the main trpc app
     const sessionCheckResponse = await fetch(`${apiUrl}/api/auth/verify`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        json: { token },
+      }),
     });
 
     const sessionCheck = await sessionCheckResponse.json();
