@@ -121,7 +121,18 @@ const validationSchema = Yup.object().shape({
       }),
       isInfiniteStock: Yup.boolean().default(false),
     })
-  ).min(1, "At least one variant is required").required("Variants are required"),
+  ).min(1, "At least one variant is required").required("Variants are required")
+    .test('variants-not-empty', 'Please fill in all variant details before submitting', function(variants) {
+      if (!variants || variants.length === 0) return false;
+      
+      return variants.every(variant => 
+        variant && 
+        variant.name && 
+        variant.name.trim() !== '' &&
+        variant.price > 0 &&
+        variant.originalPrice > 0
+      );
+    }),
 });
 
 interface ProductCreateFormProps {
@@ -174,7 +185,32 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
         console.log('Form values before submission:', values);
-        await onSubmit(values);
+        
+        // Transform the data to match TRPC schema expectations
+        const transformedValues = {
+          ...values,
+          // Handle platform fields - if no platform selected, don't include them
+          ...(values.platformName ? {
+            platformName: values.platformName,
+            platformIcon: values.platformIcon || undefined
+          } : {}),
+          // Map categoryId to category field expected by backend
+          category: values.categoryId,
+          // Ensure variants have the correct structure
+          variants: values.variants.map(variant => ({
+            id: variant.id,
+            name: variant.name,
+            price: variant.price,
+            originalPrice: variant.originalPrice,
+            region: values.region, // Use product region for variants
+          }))
+        };
+        
+        // Remove categoryId since we're sending it as category
+        delete transformedValues.categoryId;
+        
+        console.log('Transformed values for submission:', transformedValues);
+        await onSubmit(transformedValues);
       } catch (error) {
         console.error('Form submission error:', error);
         setSubmitting(false);
