@@ -19,7 +19,7 @@ import { useState } from "react";
 interface KeyFeaturesManagerProps {
   keyFeatures: string[];
   setFieldValue: (field: string, value: any) => void;
-  error?: string;
+  error?: string | string[] | undefined;
   touched?: boolean;
 }
 
@@ -89,7 +89,7 @@ export default function KeyFeaturesManager({
         </Paper>
       )}
       {touched && error && (
-        <FormHelperText error={true}>{error}</FormHelperText>
+        <FormHelperText error={true}>{Array.isArray(error) ? error.join(", ") : error}</FormHelperText>
       )}
     </Box>
   );

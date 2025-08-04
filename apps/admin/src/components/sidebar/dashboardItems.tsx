@@ -1,4 +1,5 @@
 import { SidebarItemsType } from "@/types/sidebar";
+import { Security } from "@mui/icons-material";
 
 import {
   BookOpen,
@@ -16,7 +17,6 @@ import {
   ShoppingCart,
   Sliders,
   Users,
-  Security,
 } from "lucide-react";
 
 const pagesSection = [

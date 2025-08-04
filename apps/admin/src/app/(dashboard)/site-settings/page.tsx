@@ -6,7 +6,6 @@ import {
   Button, 
   Card, 
   CardContent, 
-  Grid2 as Grid, 
   TextField, 
   Typography, 
   Alert,
@@ -15,8 +14,9 @@ import {
 import { Formik, Form } from "formik";
 import { Save } from "@mui/icons-material";
 import * as Yup from "yup";
-import { api } from "~/utils/trpc";
 import { useState } from "react";
+import { Grid } from "@mui/system";
+import { api } from "@lootzone/trpc-shared";
 
 const validationSchema = Yup.object({
   siteName: Yup.string().required("Site name is required"),
