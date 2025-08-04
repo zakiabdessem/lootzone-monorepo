@@ -13,7 +13,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "dev": "next dev --turbo",
+    "dev": "next dev -H 0.0.0.0 -p 5000",
     "postinstall": "prisma generate",
     "preview": "next build && next start",
     "start": "next start",
