@@ -63,12 +63,12 @@ export default function ProductVariantsModal({
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="body2" color="textSecondary">
-                      ${variant.originalPrice.toFixed(2)}
+                      {variant.originalPrice.toFixed(2)}DA
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight="bold">
-                      ${variant.price.toFixed(2)}
+                      {variant.price.toFixed(2)}DA
                     </Typography>
                   </TableCell>
                   <TableCell align="center">

@@ -24,10 +24,7 @@ import { FieldArray, FormikProvider, useFormik } from "formik";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
-import {
-  Platform,
-  Region,
-} from "../../../../trpc-app/src/constants/enums";
+import { Platform, Region } from "../../../../trpc-app/src/constants/enums";
 import BasicInformationSection from "./form-sections/BasicInformationSection";
 import MediaSection from "./form-sections/MediaSection";
 import KeyFeaturesManager from "./form-sections/KeyFeaturesManager";
@@ -90,49 +87,93 @@ type ProductVariant = {
   isInfiniteStock: boolean;
 };
 
-
-
 const validationSchema = Yup.object().shape({
-  title: Yup.string().min(1, "Title is required").max(255, "Title must be less than 255 characters").required("Title is required"),
-  slug: Yup.string().min(1, "Slug is required").max(255, "Slug must be less than 255 characters").required("Slug is required"),
-  description: Yup.string().min(10, "Description must be at least 10 characters").max(10000, "Description must be less than 10000 characters").required("Description is required"),
+  title: Yup.string()
+    .min(1, "Title is required")
+    .max(255, "Title must be less than 255 characters")
+    .required("Title is required"),
+  slug: Yup.string()
+    .min(1, "Slug is required")
+    .max(255, "Slug must be less than 255 characters")
+    .required("Slug is required"),
+  description: Yup.string()
+    .min(10, "Description must be at least 10 characters")
+    .max(10000, "Description must be less than 10000 characters")
+    .required("Description is required"),
   image: Yup.string().url("Must be a valid URL").required("Image is required"),
   gallery: Yup.array().of(Yup.string().url("Must be valid URLs")).default([]),
-  platformName: Yup.mixed().oneOf([...Object.values(Platform)]).nullable(),
-  platformIcon: Yup.string().url("Must be a valid URL").nullable(),
-  region: Yup.string().oneOf(Object.values(Region), "Invalid region").required("Region is required"),
+  platformName: Yup.mixed()
+    .oneOf([...Object.values(Platform)])
+    .nullable(),
+  platformIcon: Yup.string().nullable(),
+  region: Yup.string()
+    .oneOf(Object.values(Region), "Invalid region")
+    .required("Region is required"),
   isActive: Yup.boolean().default(true),
-  categoryId: Yup.string().min(1, "Category is required").required("Category is required"),
-  keyFeatures: Yup.array().of(Yup.string().min(1, "Key feature cannot be empty")).min(1, "At least one key feature is required").required("Key features are required"),
-  deliveryInfo: Yup.string().min(5, "Delivery info must be at least 5 characters").required("Delivery info is required"),
-  deliverySteps: Yup.array().of(Yup.string().min(1, "Delivery step cannot be empty")).min(1, "At least one delivery step is required").required("Delivery steps are required"),
-  terms: Yup.string().min(10, "Terms must be at least 10 characters").required("Terms are required"),
-  importantNotes: Yup.array().of(Yup.string().min(1, "Note cannot be empty")).min(1, "At least one important note is required").required("Important notes are required"),
-  variants: Yup.array().of(
-    Yup.object().shape({
-      id: Yup.string().required("Variant ID is required"),
-      name: Yup.string().min(1, "Variant name is required").max(255, "Variant name must be less than 255 characters").required("Variant name is required"),
-      price: Yup.number().positive("Price must be positive").required("Price is required"),
-      originalPrice: Yup.number().positive("Original price must be positive").required("Original price is required"),
-      stock: Yup.number().min(0, "Stock cannot be negative").when('isInfiniteStock', {
-        is: false,
-        then: (schema) => schema.required("Stock is required when not infinite"),
-        otherwise: (schema) => schema.notRequired()
-      }),
-      isInfiniteStock: Yup.boolean().default(false),
-    })
-  ).min(1, "At least one variant is required").required("Variants are required")
-    .test('variants-not-empty', 'Please fill in all variant details before submitting', function(variants) {
-      if (!variants || variants.length === 0) return false;
-      
-      return variants.every(variant => 
-        variant && 
-        variant.name && 
-        variant.name.trim() !== '' &&
-        variant.price > 0 &&
-        variant.originalPrice > 0
-      );
-    }),
+  categoryId: Yup.string()
+    .min(1, "Category is required")
+    .required("Category is required"),
+  keyFeatures: Yup.array()
+    .of(Yup.string().min(1, "Key feature cannot be empty"))
+    .min(1, "At least one key feature is required")
+    .required("Key features are required"),
+  deliveryInfo: Yup.string()
+    .min(5, "Delivery info must be at least 5 characters")
+    .required("Delivery info is required"),
+  deliverySteps: Yup.array()
+    .of(Yup.string().min(1, "Delivery step cannot be empty"))
+    .min(1, "At least one delivery step is required")
+    .required("Delivery steps are required"),
+  terms: Yup.string()
+    .min(10, "Terms must be at least 10 characters")
+    .required("Terms are required"),
+  importantNotes: Yup.array()
+    .of(Yup.string().min(1, "Note cannot be empty"))
+    .min(1, "At least one important note is required")
+    .required("Important notes are required"),
+  variants: Yup.array()
+    .of(
+      Yup.object().shape({
+        id: Yup.string().required("Variant ID is required"),
+        name: Yup.string()
+          .min(1, "Variant name is required")
+          .max(255, "Variant name must be less than 255 characters")
+          .required("Variant name is required"),
+        price: Yup.number()
+          .positive("Price must be positive")
+          .required("Price is required"),
+        originalPrice: Yup.number()
+          .positive("Original price must be positive")
+          .required("Original price is required"),
+        stock: Yup.number()
+          .min(0, "Stock cannot be negative")
+          .when("isInfiniteStock", {
+            is: false,
+            then: (schema) =>
+              schema.required("Stock is required when not infinite"),
+            otherwise: (schema) => schema.notRequired(),
+          }),
+        isInfiniteStock: Yup.boolean().default(false),
+      })
+    )
+    .min(1, "At least one variant is required")
+    .required("Variants are required")
+    .test(
+      "variants-not-empty",
+      "Please fill in all variant details before submitting",
+      function (variants) {
+        if (!variants || variants.length === 0) return false;
+
+        return variants.every(
+          (variant) =>
+            variant &&
+            variant.name &&
+            variant.name.trim() !== "" &&
+            variant.price > 0 &&
+            variant.originalPrice > 0
+        );
+      }
+    ),
 });
 
 interface ProductCreateFormProps {
@@ -150,7 +191,7 @@ interface ProductFormValues {
   platformIcon: string | null;
   region: Region;
   isActive: boolean;
-  categoryId: string;
+  categoryId?: string;
   keyFeatures: string[];
   deliveryInfo: string;
   deliverySteps: string[];
@@ -159,7 +200,10 @@ interface ProductFormValues {
   variants: ProductVariant[];
 }
 
-export default function ProductCreateForm({ onSubmit, isLoading = false }: ProductCreateFormProps) {
+export default function ProductCreateForm({
+  onSubmit,
+  isLoading = false,
+}: ProductCreateFormProps) {
   const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
 
   const formik = useFormik<ProductFormValues>({
@@ -184,41 +228,44 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
     validationSchema,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
-        console.log('Form values before submission:', values);
-        
+        console.log("Form values before submission:", values);
+
         // Transform the data to match TRPC schema expectations
         const transformedValues = {
           ...values,
           // Handle platform fields - if no platform selected, don't include them
-          ...(values.platformName ? {
-            platformName: values.platformName,
-            platformIcon: values.platformIcon || undefined
-          } : {}),
+          ...(values.platformName
+            ? {
+                platformName: values.platformName,
+                platformIcon: values.platformIcon || undefined,
+              }
+            : {}),
           // Map categoryId to category field expected by backend
           category: values.categoryId,
           // Ensure variants have the correct structure
-          variants: values.variants.map(variant => ({
+          variants: values.variants.map((variant) => ({
             id: variant.id,
             name: variant.name,
             price: variant.price,
             originalPrice: variant.originalPrice,
             region: values.region, // Use product region for variants
-          }))
+          })),
         };
-        
+
         // Remove categoryId since we're sending it as category
         delete transformedValues.categoryId;
-        
-        console.log('Transformed values for submission:', transformedValues);
+
+        console.log("Transformed values for submission:", transformedValues);
         await onSubmit(transformedValues);
       } catch (error) {
-        console.error('Form submission error:', error);
+        console.error("Form submission error:", error);
         setSubmitting(false);
       }
     },
   });
 
-  const { values, errors, touched, handleChange, handleBlur, setFieldValue } = formik;
+  const { values, errors, touched, handleChange, handleBlur, setFieldValue } =
+    formik;
 
   const {
     data: slugCheckData,
@@ -228,8 +275,15 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
     { slug: values.slug },
     {
       enabled: false,
-    },
+    }
   );
+
+  // Debug: Track and log form errors
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("Formik errors:", errors);
+    }
+  }, [errors]);
 
   useEffect(() => {
     if (slugCheckData !== undefined) {
@@ -310,9 +364,14 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                     value={values.platformName || ""}
                     onChange={(e) => {
                       const platformName = e.target.value as Platform;
-                      const selectedPlatform = platforms.find((p) => p.name === platformName);
+                      const selectedPlatform = platforms.find(
+                        (p) => p.name === platformName
+                      );
                       setFieldValue("platformName", platformName);
-                      setFieldValue("platformIcon", selectedPlatform?.icon || null);
+                      setFieldValue(
+                        "platformIcon",
+                        selectedPlatform?.icon || null
+                      );
                     }}
                     label="Platform"
                   >
@@ -342,7 +401,10 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <FormControl fullWidth error={touched.region && Boolean(errors.region)}>
+                <FormControl
+                  fullWidth
+                  error={touched.region && Boolean(errors.region)}
+                >
                   <InputLabel>Region</InputLabel>
                   <Select
                     name="region"
@@ -356,12 +418,17 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                       </MenuItem>
                     ))}
                   </Select>
-                  {touched.region && errors.region && <FormHelperText>{errors.region}</FormHelperText>}
+                  {touched.region && errors.region && (
+                    <FormHelperText>{errors.region}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>
-                <FormControl fullWidth error={touched.categoryId && Boolean(errors.categoryId)}>
+                <FormControl
+                  fullWidth
+                  error={touched.categoryId && Boolean(errors.categoryId)}
+                >
                   <InputLabel>Category</InputLabel>
                   <Select
                     name="categoryId"
@@ -375,7 +442,9 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                       </MenuItem>
                     ))}
                   </Select>
-                  {touched.categoryId && errors.categoryId && <FormHelperText>{errors.categoryId}</FormHelperText>}
+                  {touched.categoryId && errors.categoryId && (
+                    <FormHelperText>{errors.categoryId}</FormHelperText>
+                  )}
                 </FormControl>
               </Grid>
 
@@ -480,7 +549,9 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                         sx={{ mt: 2 }}
                         onClick={() =>
                           arrayHelpers.push({
-                            id: `variant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            id: `variant-${Date.now()}-${Math.random()
+                              .toString(36)
+                              .substr(2, 9)}`,
                             name: "",
                             price: 0,
                             originalPrice: 0,
@@ -492,11 +563,13 @@ export default function ProductCreateForm({ onSubmit, isLoading = false }: Produ
                       >
                         Add Variant
                       </Button>
-                      {touched.variants && errors.variants && typeof errors.variants === 'string' && (
-                        <FormHelperText error sx={{ mt: 1 }}>
-                          {errors.variants}
-                        </FormHelperText>
-                      )}
+                      {touched.variants &&
+                        errors.variants &&
+                        typeof errors.variants === "string" && (
+                          <FormHelperText error sx={{ mt: 1 }}>
+                            {errors.variants}
+                          </FormHelperText>
+                        )}
                     </div>
                   )}
                 />
