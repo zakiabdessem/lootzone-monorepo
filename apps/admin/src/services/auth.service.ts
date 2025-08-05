@@ -1,59 +1,55 @@
-
-<old_str>// Auth service now delegates directly to the shared tRPC client
-import { api, RouterInputs, RouterOutputs } from "@lootzone/trpc-shared";
+import { RouterInputs, RouterOutputs } from "@lootzone/trpc-shared";
 
 export type LoginInput = RouterInputs["auth"]["login"];
 export type LoginOutput = RouterOutputs["auth"]["login"];
 
 export class AuthService {
   async login(input: LoginInput): Promise<LoginOutput> {
-    // We call the mutation directly; the shared TRPC client is already
-    // configured with auth headers via TRPCProvider.
-    return api.auth.login.useMutation().mutateAsync(input);
-  }
-
-  /**
-   * Token verification still hits the REST endpoint until a tRPC procedure
-   * is implemented on the backend.
-   */
-  async verifyToken(token: string) {
-    const res = await fetch(`/api/auth/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+    // Use direct HTTP call to the tRPC endpoint
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trpc/auth.login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        json: input,
+      }),
     });
-    if (!res.ok) {
-      throw new Error("Token verification failed");
+
+    if (!response.ok) {
+      throw new Error('Login failed');
     }
-    return res.json();
-  }
-}
 
-export const authService = new AuthService();</old_str>
-<new_str>// Auth service now delegates directly to the shared tRPC client
-import { api, RouterInputs, RouterOutputs } from "@lootzone/trpc-shared";
-
-export type LoginInput = RouterInputs["auth"]["login"];
-export type LoginOutput = RouterOutputs["auth"]["login"];
-
-export class AuthService {
-  async login(input: LoginInput): Promise<LoginOutput> {
-    // We call the mutation directly; the shared TRPC client is already
-    // configured with auth headers via TRPCProvider.
-    return api.auth.login.useMutation().mutateAsync(input);
+    const result = await response.json();
+    return result.result.data;
   }
 
   /**
-   * Token verification now uses tRPC properly
+   * Token verification using direct API call instead of React hooks
    */
   async verifyToken(token: string) {
     try {
-      const result = await api.session.verifyToken.query({ token });
+      // Use a direct API call instead of React hooks
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!response.ok) {
+        return { valid: false, message: "Invalid token" };
+      }
+
+      const result = await response.json();
       return { valid: true, user: result.user };
     } catch (error) {
+      console.log({error});
       return { valid: false, message: "Invalid token" };
     }
   }
 }
 
-export const authService = new AuthService();</new_str>
+export const authService = new AuthService();

@@ -1,18 +1,15 @@
 "use client";
 
-import { createContext, ReactNode, useEffect, useReducer } from "react";
-
 import { ActionMap, AuthState, AuthUser, JWTContextType } from "@/types/auth";
 import { isValidToken, setSession } from "@/utils/jwt";
 import { api } from "@lootzone/trpc-shared";
-
-// Note: If you're trying to connect JWT to your own backend, don't forget
-// to remove the Axios mocks in the `/src/pages/_app.tsx` file.
+import { createContext, ReactNode, useEffect, useReducer } from "react";
 
 const INITIALIZE = "INITIALIZE";
 const SIGN_IN = "SIGN_IN";
 const SIGN_OUT = "SIGN_OUT";
 const SIGN_UP = "SIGN_UP";
+const ACCESS_TOKEN_KEY = "accessToken";
 
 type AuthActionTypes = {
   [INITIALIZE]: {
@@ -46,6 +43,7 @@ const JWTReducer = (
         user: action.payload.user,
       };
     case SIGN_IN:
+    case SIGN_UP:
       return {
         ...state,
         isAuthenticated: true,
@@ -57,14 +55,6 @@ const JWTReducer = (
         isAuthenticated: false,
         user: null,
       };
-
-    case SIGN_UP:
-      return {
-        ...state,
-        isAuthenticated: true,
-        user: action.payload.user,
-      };
-
     default:
       return state;
   }
@@ -72,82 +62,116 @@ const JWTReducer = (
 
 const AuthContext = createContext<JWTContextType | null>(null);
 
+const setToken = (token: string) => {
+  window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+
+  const cookieOptions = [
+    `path=/`,
+    `max-age=${7 * 24 * 60 * 60}`,
+    window.location.protocol === "https:" ? "secure" : "",
+    window.location.hostname.includes("localhost")
+      ? "samesite=lax"
+      : "samesite=strict"
+  ].filter(Boolean).join("; ");
+
+  document.cookie = `${ACCESS_TOKEN_KEY}=${token}; ${cookieOptions}`;
+};
+
+const removeToken = () => {
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  document.cookie = `${ACCESS_TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+};
+
 function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = api.auth.login.useMutation();
   const [state, dispatch] = useReducer(JWTReducer, initialState);
 
+  const verifySession = async (token: string) => {
+    try {
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!response.ok) throw new Error('Session verification failed');
+      return await response.json();
+    } catch (error) {
+      throw new Error('Session verification failed');
+    }
+  };
+
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Only run on client side to avoid hydration mismatches
-        if (typeof window === 'undefined') {
+        if (typeof window === "undefined") {
           dispatch({
             type: INITIALIZE,
-            payload: {
-              isAuthenticated: false,
-              user: null,
-            },
+            payload: { isAuthenticated: false, user: null },
           });
           return;
         }
 
-        // Check both localStorage and cookies for token
-        const accessToken = window.localStorage.getItem("accessToken") ||
-          document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1];
+        const accessToken =
+          window.localStorage.getItem(ACCESS_TOKEN_KEY) ||
+          document.cookie
+            .split("; ")
+            .find(row => row.startsWith(`${ACCESS_TOKEN_KEY}=`))
+            ?.split("=")[1] ||
+          null;
 
         if (accessToken && isValidToken(accessToken)) {
           setSession(accessToken);
 
           try {
-            // Verify token using tRPC
-            const response = await api.session.verifyToken.query({ token: accessToken });
-            
+            await verifySession(accessToken);
+            const decoded = JSON.parse(atob(accessToken.split('.')[1]));
+
             dispatch({
               type: INITIALIZE,
               payload: {
                 isAuthenticated: true,
                 user: {
-                  id: response.user.userId,
-                  email: response.user.email,
-                  name: response.user.name || null,
-                  role: response.user.role,
+                  id: decoded.userId,
+                  email: decoded.email,
+                  role: decoded.role,
                 },
               },
             });
-          } catch (error) {
-            // Token is invalid, remove it
-            window.localStorage.removeItem("accessToken");
-            document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+            const sessionCheckInterval = setInterval(async () => {
+              try {
+                await verifySession(accessToken);
+              } catch {
+                removeToken();
+                dispatch({ type: SIGN_OUT });
+                clearInterval(sessionCheckInterval);
+                window.location.href = "/auth/sign-in";
+              }
+            }, 30000);
+
+            return () => clearInterval(sessionCheckInterval);
+          } catch {
+            removeToken();
             dispatch({
               type: INITIALIZE,
-              payload: {
-                isAuthenticated: false,
-                user: null,
-              },
+              payload: { isAuthenticated: false, user: null },
             });
           }
         } else {
           dispatch({
             type: INITIALIZE,
-            payload: {
-              isAuthenticated: false,
-              user: null,
-            },
+            payload: { isAuthenticated: false, user: null },
           });
         }
       } catch (err) {
-        console.error(err);
-        // Remove invalid token
-        if (typeof window !== 'undefined') {
-          window.localStorage.removeItem("accessToken");
-          document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        }
+        removeToken();
         dispatch({
           type: INITIALIZE,
-          payload: {
-            isAuthenticated: false,
-            user: null,
-          },
+          payload: { isAuthenticated: false, user: null },
         });
       }
     };
@@ -156,71 +180,38 @@ function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const response = await loginMutation.mutateAsync({ email, password });
+    try {
+      const response = await loginMutation.mutateAsync({ email, password });
 
-    if (response.success) {
-      const { token, user } = response;
+      if (response.success) {
+        const { token, user } = response;
+        setToken(token);
 
-      // Store token in both localStorage and cookies for middleware compatibility
-      // Only do this on the client side to avoid hydration mismatches
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem("accessToken", token);
-        // In dev over HTTP, the Secure flag prevents the cookie from being set.
-        // We add it only when we're actually using HTTPS.
-        const baseCookie = [
-          `accessToken=${token}`,
-          "path=/",
-          `max-age=${7 * 24 * 60 * 60}`,
-          "samesite=strict",
-        ];
-        if (window.location.protocol === "https:") {
-          baseCookie.push("secure");
-        }
-        document.cookie = baseCookie.join("; ");
-        setSession(token);
-      }
-
-      dispatch({
-        type: SIGN_IN,
-        payload: {
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.firstName + " " + user.lastName || null,
-            role: user.role,
+        dispatch({
+          type: SIGN_IN,
+          payload: {
+            user: {
+              id: user.id,
+              email: user.email,
+              name: `${user.firstName} ${user.lastName}`,
+              role: user.role,
+            },
           },
-        },
-      });
-    } else {
-      throw new Error("Login failed");
+        });
+      }
+    } catch (error) {
+      throw error;
     }
   };
 
   const signOut = async () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem("accessToken");
-      // Remove token from cookies as well
-      document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      setSession(null);
-    }
+    removeToken();
+    setSession(null);
     dispatch({ type: SIGN_OUT });
   };
 
-  // Admin dashboard doesn't need signup functionality
-  const signUp = async (
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string
-  ) => {
-    throw new Error("Registration is not available for admin dashboard");
-  };
-
   const resetPassword = (email: string) => {
-    // This would typically redirect to a password reset page
-    // or call a password reset API endpoint
     console.log("Password reset requested for:", email);
-    // You can implement this later if needed
   };
 
   return (
@@ -230,7 +221,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
         method: "jwt",
         signIn,
         signOut,
-        signUp,
         resetPassword,
       }}
     >
