@@ -153,6 +153,97 @@ export const productRouter = createTRPCRouter({
   }),
 
   // Admin-only procedures
+  adminList: adminProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(20),
+        offset: z.number().min(0).default(0),
+        search: z.string().optional(),
+        category: z.string().optional(),
+        isActive: z.boolean().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const where: any = {};
+      
+      if (input.search) {
+        where.OR = [
+          { title: { contains: input.search, mode: 'insensitive' } },
+          { description: { contains: input.search, mode: 'insensitive' } },
+        ];
+      }
+      
+      if (input.category) {
+        where.categoryId = input.category;
+      }
+      
+      if (input.isActive !== undefined) {
+        where.isActive = input.isActive;
+      }
+      
+      const [products, totalCount] = await Promise.all([
+        ctx.db.product.findMany({
+          where,
+          take: input.limit,
+          skip: input.offset,
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            variants: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                originalPrice: true,
+                isActive: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+        ctx.db.product.count({ where }),
+      ]);
+      
+      return {
+        products,
+        totalCount,
+      };
+    }),
+
+  toggleActive: adminProcedure
+    .input(z.object({ id: z.string(), isActive: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const product = await ctx.db.product.update({
+        where: { id: input.id },
+        data: { isActive: input.isActive },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+              isActive: true,
+            },
+          },
+        },
+      });
+      
+      return product;
+    }),
+
   create: adminProcedure
     .input(createProductSchema)
     .mutation(async ({ input, ctx }) => {
