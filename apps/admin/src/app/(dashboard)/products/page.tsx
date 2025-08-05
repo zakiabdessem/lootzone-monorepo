@@ -2,14 +2,14 @@
 
 import styled from "@emotion/styled";
 import NextLink from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 import {
     Add as AddIcon,
     Archive as ArchiveIcon,
     FilterList as FilterListIcon,
     RemoveRedEye as RemoveRedEyeIcon,
-    Star as StarIcon,
+    Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import {
     Box,
@@ -32,14 +32,17 @@ import {
     Toolbar,
     Tooltip,
     Typography,
+    Switch,
+    Chip,
+    CircularProgress,
+    Alert,
 } from "@mui/material";
-import { orange } from "@mui/material/colors";
 import { spacing } from "@mui/system";
+import { api } from "@lootzone/trpc-shared";
+import ProductVariantsModal from "../../components/products/ProductVariantsModal";
 
 const Divider = styled(MuiDivider)(spacing);
-
 const Breadcrumbs = styled(MuiBreadcrumbs)(spacing);
-
 const Paper = styled(MuiPaper)(spacing);
 
 const Spacer = styled.div`
@@ -50,227 +53,48 @@ const ToolbarTitle = styled.div`
   min-width: 150px;
 `;
 
-const Customer = styled.div`
+const ProductInfo = styled.div`
   display: flex;
   align-items: center;
 `;
 
 const ImageWrapper = styled.div`
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   padding: ${(props) => props.theme.spacing(1)};
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
 `;
 
 const Image = styled.img`
   max-width: 100%;
   max-height: 100%;
+  object-fit: cover;
 `;
 
-const Rating = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${(props) => props.theme.spacing(1)};
-`;
-
-const RatingIcon = styled(StarIcon)`
-  color: ${() => orange[400]};
-`;
-
-function createData(
-  id: string,
-  name: string,
-  variant: string,
-  price: string,
-  stock: number,
-  category: string,
-  rating: string,
-  reviews: number,
-  image: string
-) {
-  return { id, name, variant, price, stock, category, rating, reviews, image };
-}
-
-type RowType = {
-  [key: string]: string | number;
+type ProductType = {
   id: string;
-  name: string;
-  variant: string;
-  price: string;
-  stock: number;
-  category: string;
-  rating: string;
-  reviews: number;
+  title: string;
+  description: string;
   image: string;
+  region: string;
+  platformName: string | null;
+  isActive: boolean;
+  category: {
+    id: string;
+    name: string;
+  };
+  variants: Array<{
+    id: string;
+    name: string;
+    price: number;
+    originalPrice: number;
+    isActive: boolean;
+  }>;
 };
-const rows: Array<RowType> = [
-  createData(
-    "1",
-    "Apple iPad Pro",
-    "Silver",
-    "$ 1,399.00",
-    48,
-    "Tablets",
-    "4.6",
-    55,
-    "/static/img/products/product-9.png"
-  ),
-  createData(
-    "2",
-    "Apple iPad Pro",
-    "Space Gray",
-    "$ 1,399.00",
-    48,
-    "Tablets",
-    "4.3",
-    25,
-    "/static/img/products/product-8.png"
-  ),
-  createData(
-    "3",
-    "Apple iPhone 15 Pro Max",
-    "Blue Titanium",
-    "$ 1499.00",
-    38,
-    "Smartphones",
-    "4.6",
-    40,
-    "/static/img/products/product-4.png"
-  ),
-  createData(
-    "4",
-    "Apple iPhone 15 Pro Max",
-    "Natural Titanium",
-    "$ 1499.00",
-    30,
-    "Smartphones",
-    "4.8",
-    50,
-    "/static/img/products/product-3.png"
-  ),
-  createData(
-    "5",
-    "Apple iPhone 15 Pro Max",
-    "White Titanium",
-    "$ 1499.00",
-    45,
-    "Smartphones",
-    "4.9",
-    60,
-    "/static/img/products/product-5.png"
-  ),
-  createData(
-    "6",
-    'Apple MacBook Pro 16"',
-    "Silver",
-    "$ 2,399.00",
-    55,
-    "Notebooks",
-    "4.7",
-    45,
-    "/static/img/products/product-7.png"
-  ),
-  createData(
-    "7",
-    'Apple MacBook Pro 16"',
-    "Space Black",
-    "$ 2,399.00",
-    50,
-    "Notebooks",
-    "4.4",
-    30,
-    "/static/img/products/product-6.png"
-  ),
-  createData(
-    "8",
-    "Apple Watch SE",
-    "Midnight",
-    "$ 299.00",
-    49,
-    "Smartwatches",
-    "4.7",
-    40,
-    "/static/img/products/product-11.png"
-  ),
-  createData(
-    "9",
-    "Apple Watch SE",
-    "Silver",
-    "$ 299.00",
-    30,
-    "Smartwatches",
-    "4.7",
-    40,
-    "/static/img/products/product-12.png"
-  ),
-  createData(
-    "10",
-    "Apple Watch SE",
-    "Starlight",
-    "$ 299.00",
-    54,
-    "Smartwatches",
-    "4.5",
-    35,
-    "/static/img/products/product-10.png"
-  ),
-  createData(
-    "11",
-    "Apple Watch Series 9",
-    "Midnight",
-    "$ 349.00",
-    42,
-    "Smartwatches",
-    "4.2",
-    20,
-    "/static/img/products/product-1.png"
-  ),
-  createData(
-    "12",
-    "Apple Watch Series 9",
-    "Starlight",
-    "$ 349.00",
-    54,
-    "Smartwatches",
-    "4.5",
-    35,
-    "/static/img/products/product-2.png"
-  ),
-];
-
-function descendingComparator(a: RowType, b: RowType, orderBy: string) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
-function getComparator(order: "desc" | "asc", orderBy: string) {
-  return order === "desc"
-    ? (a: RowType, b: RowType) => descendingComparator(a, b, orderBy)
-    : (a: RowType, b: RowType) => -descendingComparator(a, b, orderBy);
-}
-
-function stableSort(
-  array: Array<RowType>,
-  comparator: (a: RowType, b: RowType) => number
-) {
-  const stabilizedThis = array.map((el: RowType, index: number) => ({
-    el,
-    index,
-  }));
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a.el, b.el);
-    if (order !== 0) return order;
-    return a.index - b.index;
-  });
-  return stabilizedThis.map((element) => element.el);
-}
 
 type HeadCell = {
   id: string;
@@ -278,12 +102,13 @@ type HeadCell = {
   label: string;
   disablePadding?: boolean;
 };
+
 const headCells: Array<HeadCell> = [
-  { id: "name", alignment: "left", label: "Item Name" },
-  { id: "price", alignment: "right", label: "Price" },
-  { id: "stock", alignment: "right", label: "Stock" },
+  { id: "product", alignment: "left", label: "Product" },
   { id: "category", alignment: "left", label: "Category" },
-  { id: "rating", alignment: "left", label: "Rating" },
+  { id: "region", alignment: "left", label: "Region" },
+  { id: "variants", alignment: "center", label: "Variants" },
+  { id: "status", alignment: "center", label: "Status" },
   { id: "actions", alignment: "right", label: "Actions" },
 ];
 
@@ -295,6 +120,7 @@ type EnhancedTableHeadProps = {
   onSelectAllClick: (e: any) => void;
   onRequestSort: (e: any, property: string) => void;
 };
+
 const EnhancedTableHead: React.FC<EnhancedTableHeadProps> = (props) => {
   const {
     onSelectAllClick,
@@ -378,11 +204,38 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
 };
 
 function EnhancedTable() {
-  const [order, setOrder] = React.useState<"desc" | "asc">("asc");
-  const [orderBy, setOrderBy] = React.useState("customer");
+  const [order, setOrder] = React.useState<"desc" | "asc">("desc");
+  const [orderBy, setOrderBy] = React.useState("createdAt");
   const [selected, setSelected] = React.useState<Array<string>>([]);
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(6);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [variantsModal, setVariantsModal] = useState<{
+    open: boolean;
+    variants: any[];
+    productTitle: string;
+  }>({
+    open: false,
+    variants: [],
+    productTitle: "",
+  });
+
+  // Fetch products data
+  const {
+    data: productsData,
+    isLoading,
+    error,
+    refetch,
+  } = api.product.adminList.useQuery({
+    limit: rowsPerPage,
+    offset: page * rowsPerPage,
+  });
+
+  // Toggle product active status
+  const toggleActiveMutation = api.product.toggleActive.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
 
   const handleRequestSort = (event: any, property: string) => {
     const isAsc = orderBy === property && order === "asc";
@@ -391,8 +244,8 @@ function EnhancedTable() {
   };
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      const newSelecteds: Array<string> = rows.map((n: RowType) => n.id);
+    if (event.target.checked && productsData?.products) {
+      const newSelecteds: Array<string> = productsData.products.map((n: ProductType) => n.id);
       setSelected(newSelecteds);
       return;
     }
@@ -432,14 +285,45 @@ function EnhancedTable() {
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setRowsPerPage(parseInt(event.target.value, 6));
+    setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleToggleActive = (productId: string, currentStatus: boolean) => {
+    toggleActiveMutation.mutate({
+      id: productId,
+      isActive: !currentStatus,
+    });
+  };
+
+  const handleViewVariants = (variants: any[], productTitle: string) => {
+    setVariantsModal({
+      open: true,
+      variants,
+      productTitle,
+    });
   };
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
-  const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mt: 2 }}>
+        Error loading products: {error.message}
+      </Alert>
+    );
+  }
+
+  const products = productsData?.products || [];
+  const totalCount = productsData?.totalCount || 0;
 
   return (
     <div>
@@ -457,85 +341,133 @@ function EnhancedTable() {
               orderBy={orderBy}
               onSelectAllClick={handleSelectAllClick}
               onRequestSort={handleRequestSort}
-              rowCount={rows.length}
+              rowCount={products.length}
             />
             <TableBody>
-              {stableSort(rows, getComparator(order, orderBy))
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row: RowType, index: number) => {
-                  const isItemSelected = isSelected(row.id);
-                  const labelId = `enhanced-table-checkbox-${index}`;
+              {products.map((product: ProductType, index: number) => {
+                const isItemSelected = isSelected(product.id);
+                const labelId = `enhanced-table-checkbox-${index}`;
 
-                  return (
-                    <TableRow
-                      hover
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      key={`${row.id}-${index}`}
-                      selected={isItemSelected}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          checked={isItemSelected}
-                          inputProps={{ "aria-labelledby": labelId }}
-                          onClick={(event) => handleClick(event, row.id)}
-                        />
-                      </TableCell>
-                      <TableCell component="th" id={labelId} scope="row">
-                        <Customer>
-                          <ImageWrapper>
-                            <Image src={row.image} alt={row.name} />
-                          </ImageWrapper>
-                          <Box ml={3}>
-                            <Typography variant="body1">{row.name}</Typography>
-                            <Typography variant="body1" color="textSecondary">
-                              {row.variant}
-                            </Typography>
-                          </Box>
-                        </Customer>
-                      </TableCell>
-                      <TableCell align="right">{row.price}</TableCell>
-                      <TableCell align="right">{row.stock}</TableCell>
-                      <TableCell align="left">{row.category}</TableCell>
-                      <TableCell>
-                        <Rating>
-                          <RatingIcon />
-                          <Typography variant="body1">{row.rating} </Typography>
-                          <Typography variant="body1" color="textSecondary">
-                            of {row.reviews} Reviews
+                return (
+                  <TableRow
+                    hover
+                    role="checkbox"
+                    aria-checked={isItemSelected}
+                    tabIndex={-1}
+                    key={product.id}
+                    selected={isItemSelected}
+                  >
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={isItemSelected}
+                        inputProps={{ "aria-labelledby": labelId }}
+                        onClick={(event) => handleClick(event, product.id)}
+                      />
+                    </TableCell>
+                    <TableCell component="th" id={labelId} scope="row">
+                      <ProductInfo>
+                        <ImageWrapper>
+                          <Image src={product.image} alt={product.title} />
+                        </ImageWrapper>
+                        <Box ml={2}>
+                          <Typography variant="body1" fontWeight="medium">
+                            {product.title}
                           </Typography>
-                        </Rating>
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton aria-label="delete" size="large">
-                          <ArchiveIcon />
+                          <Typography
+                            variant="body2"
+                            color="textSecondary"
+                            sx={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: '300px',
+                            }}
+                          >
+                            {product.description}
+                          </Typography>
+                          {product.platformName && (
+                            <Chip
+                              label={product.platformName}
+                              size="small"
+                              variant="outlined"
+                              sx={{ mt: 0.5 }}
+                            />
+                          )}
+                        </Box>
+                      </ProductInfo>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={product.category.name}
+                        color="primary"
+                        variant="outlined"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={product.region}
+                        color="secondary"
+                        variant="outlined"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                        <Typography variant="body2" fontWeight="medium">
+                          {product.variants.length}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleViewVariants(product.variants, product.title)}
+                          disabled={product.variants.length === 0}
+                        >
+                          <VisibilityIcon fontSize="small" />
                         </IconButton>
-                        <IconButton aria-label="details" size="large">
-                          <RemoveRedEyeIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={7} />
-                </TableRow>
-              )}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Switch
+                        checked={product.isActive}
+                        onChange={() => handleToggleActive(product.id, product.isActive)}
+                        disabled={toggleActiveMutation.isLoading}
+                        color="primary"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton aria-label="delete" size="large">
+                        <ArchiveIcon />
+                      </IconButton>
+                      <IconButton aria-label="details" size="large">
+                        <RemoveRedEyeIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[6, 12, 18]}
+          rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={rows.length}
+          count={totalCount}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+
+      <ProductVariantsModal
+        open={variantsModal.open}
+        onClose={() => setVariantsModal({ ...variantsModal, open: false })}
+        variants={variantsModal.variants}
+        productTitle={variantsModal.productTitle}
+      />
     </div>
   );
 }
