@@ -1,9 +1,6 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
-import Image from "next/image";
-import { useState } from "react";
-
 interface ProductImagesProps {
   image: string;
   gallery?: string[];
@@ -16,7 +13,7 @@ const ProductImages: React.FC<ProductImagesProps> = ({ image, gallery = [] }) =>
   const images = [image, ...gallery.filter(img => img !== image)];
 
   return (
-    <div className='space-y-4'>
+    <div className='space-y-4 flex flex-col items-center'>
       {/* Main image - Standard size 400x400 */}
       <div className='relative w-full max-w-[400px] aspect-square bg-white border-2 border-gray-200 rounded-lg overflow-hidden shadow-lg mx-auto'>
         {/* Blurred background */}

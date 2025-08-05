@@ -73,6 +73,8 @@ export const authRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      console.log("🔍 [AUTH_ROUTER] Login attempt for email:", input.email);
+
       // Find user by email
       const user = await ctx.db.user.findUnique({
         where: { email: input.email },
@@ -88,20 +90,26 @@ export const authRouter = createTRPCRouter({
       });
 
       if (!user || !user.password) {
+        console.log("❌ [AUTH_ROUTER] User not found or no password for email:", input.email);
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Invalid credentials",
         });
       }
 
+      console.log("🔍 [AUTH_ROUTER] User found, verifying password...");
+
       // Verify password
       const isValid = await verifyPassword(input.password, user.password);
       if (!isValid) {
+        console.log("❌ [AUTH_ROUTER] Invalid password for user:", input.email);
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Invalid credentials",
         });
       }
+
+      console.log("🔍 [AUTH_ROUTER] Password verified, generating JWT token...");
 
       // Generate JWT token
       const token = jwt.sign(
@@ -114,9 +122,13 @@ export const authRouter = createTRPCRouter({
         { expiresIn: "7d" }
       );
 
+      console.log("🔍 [AUTH_ROUTER] JWT token generated:", token ? `${token.substring(0, 20)}...` : "undefined");
+
       // Create database session for tracking
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+      console.log("🔍 [AUTH_ROUTER] Creating database session...");
 
       await ctx.db.session.create({
         data: {
@@ -126,7 +138,9 @@ export const authRouter = createTRPCRouter({
         },
       });
 
-      return {
+      console.log("🔍 [AUTH_ROUTER] Database session created successfully");
+
+      const response = {
         success: true,
         token,
         user: {
@@ -138,6 +152,9 @@ export const authRouter = createTRPCRouter({
           role: user.role,
         },
       };
+
+      console.log("🔍 [AUTH_ROUTER] Login successful, returning response");
+      return response;
     }),
 
   // Check if user exists by email
