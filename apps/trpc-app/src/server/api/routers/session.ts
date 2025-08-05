@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
-import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
 import { env } from "~/env";
+import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
 
 export const sessionRouter = createTRPCRouter({
@@ -18,6 +18,8 @@ export const sessionRouter = createTRPCRouter({
           role: string;
         };
 
+        console.log("🔍 [SESSION_ROUTER] JWT verification successful, decoded:", decoded);
+
         // Check if the session still exists in the database
         const session = await ctx.db.session.findFirst({
           where: {
@@ -29,18 +31,23 @@ export const sessionRouter = createTRPCRouter({
           },
         });
 
+        console.log("🔍 [SESSION_ROUTER] Database session lookup result:", session ? "found" : "not found");
+
         if (!session) {
+          console.log("❌ [SESSION_ROUTER] Session not found in database");
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Session has been revoked",
           });
         }
 
+        console.log("🔍 [SESSION_ROUTER] Token verification successful");
         return {
           valid: true,
           user: decoded,
         };
       } catch (error) {
+        console.error("❌ [SESSION_ROUTER] Token verification failed:", error);
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Invalid or expired token",
