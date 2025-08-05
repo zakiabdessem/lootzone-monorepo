@@ -59,11 +59,14 @@ function SignIn() {
         password: Yup.string().max(255).required("Password is required"),
       })}
       onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+        console.log("🔍 [SIGN_IN] Form submitted with email:", values.email);
         try {
+          console.log("🔍 [SIGN_IN] Calling signIn function...");
           await signIn(values.email, values.password);
-
+          console.log("🔍 [SIGN_IN] Sign in successful, redirecting to dashboard...");
           router.push("/dashboard/analytics");
         } catch (error: any) {
+          console.error("❌ [SIGN_IN] Sign in error:", error);
           const message = error.message || "Something went wrong";
 
           setStatus({ success: false });

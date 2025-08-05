@@ -7,13 +7,13 @@ import {
   Button,
   Card,
   CardContent,
-  Divider as MuiDivider,
   FormControl,
   FormControlLabel,
   FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
+  Divider as MuiDivider,
   Select,
   Switch,
   TextField,
@@ -26,10 +26,10 @@ import { useEffect, useState } from "react";
 import * as Yup from "yup";
 import { Platform, Region } from "../../../../trpc-app/src/constants/enums";
 import BasicInformationSection from "./form-sections/BasicInformationSection";
-import MediaSection from "./form-sections/MediaSection";
-import KeyFeaturesManager from "./form-sections/KeyFeaturesManager";
-import ImportantNotesManager from "./form-sections/ImportantNotesManager";
 import DeliveryStepsManager from "./form-sections/DeliveryStepsManager";
+import ImportantNotesManager from "./form-sections/ImportantNotesManager";
+import KeyFeaturesManager from "./form-sections/KeyFeaturesManager";
+import MediaSection from "./form-sections/MediaSection";
 import VariantCard from "./form-sections/VariantCard";
 
 const Divider = styled(MuiDivider)(spacing);
@@ -58,7 +58,7 @@ export const PlatformIcons = {
 const platforms = Object.values(Platform).map((platform) => ({
   name: platform,
   icon: PlatformIcons[platform]
-    ? `${process.env.NEXT_PUBLIC_APP_URL}${PlatformIcons[platform]}`
+    ? `${process.env.NEXT_PUBLIC_API_URL}${PlatformIcons[platform]}`
     : null,
 }));
 

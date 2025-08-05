@@ -5,14 +5,22 @@ import { NextResponse } from "next/server";
 const publicRoutes = ["/auth", "/auth/sign-in", "/auth/reset-password"];
 
 // Define protected routes that require authentication
-const protectedRoutes = ["/dashboard", "/dashboard/analytics"];
+const protectedRoutes = ["/dashboard", "/dashboard/analytics", "/products"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const timestamp = new Date().toISOString();
+
+
+  // Log all cookies for debugging
+  const allCookies = request.cookies.getAll();
 
   // Check for token in cookies first, then headers
-  let token = request.cookies.get("accessToken")?.value ||
-    request.headers.get("authorization")?.replace("Bearer ", "");
+  const cookieToken = request.cookies.get("accessToken")?.value;
+  const headerToken = request.headers.get("authorization")?.replace("Bearer ", "");
+  let token = cookieToken || headerToken;
+
+
 
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some((route) =>
@@ -23,6 +31,7 @@ export function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(
     (route) => pathname.startsWith(route) || pathname === "/"
   );
+
 
   // If user is not authenticated and trying to access protected routes
   if (!token && isProtectedRoute && !isPublicRoute) {
