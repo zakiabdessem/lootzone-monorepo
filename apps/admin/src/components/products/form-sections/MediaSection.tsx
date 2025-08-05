@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Grid, TextField, Typography, Box, Button, Chip } from "@mui/material";
@@ -67,7 +66,7 @@ export default function MediaSection({
           </Typography>
           <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
             <TextField
-              label="Image URL"
+              label="Gallery Image URL (Recommended: 400x400px)"
               value={galleryInput}
               onChange={(e) => setGalleryInput(e.target.value)}
               size="small"
