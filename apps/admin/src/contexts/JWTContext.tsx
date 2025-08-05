@@ -98,27 +98,23 @@ function AuthProvider({ children }: { children: ReactNode }) {
         if (accessToken && isValidToken(accessToken)) {
           setSession(accessToken);
 
-          // Verify token with LootZone API
-          const response = await fetch(`/api/auth/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: accessToken }),
-          }).then(res => res.json());
-
-          if (response.valid) {
+          try {
+            // Verify token using tRPC
+            const response = await api.session.verifyToken.query({ token: accessToken });
+            
             dispatch({
               type: INITIALIZE,
               payload: {
                 isAuthenticated: true,
                 user: {
-                  id: response.user.id,
+                  id: response.user.userId,
                   email: response.user.email,
                   name: response.user.name || null,
                   role: response.user.role,
                 },
               },
             });
-          } else {
+          } catch (error) {
             // Token is invalid, remove it
             window.localStorage.removeItem("accessToken");
             document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";

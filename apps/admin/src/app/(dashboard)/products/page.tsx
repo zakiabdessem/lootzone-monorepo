@@ -39,7 +39,7 @@ import {
 } from "@mui/material";
 import { spacing } from "@mui/system";
 import { api } from "@lootzone/trpc-shared";
-import ProductVariantsModal from "../../components/products/ProductVariantsModal";
+import ProductVariantsModal from "@/components/products/ProductVariantsModal";
 
 const Divider = styled(MuiDivider)(spacing);
 const Breadcrumbs = styled(MuiBreadcrumbs)(spacing);
@@ -245,7 +245,7 @@ function EnhancedTable() {
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked && productsData?.products) {
-      const newSelecteds: Array<string> = productsData.products.map((n: ProductType) => n.id);
+      const newSelecteds: Array<string> = products.map((n: ProductType) => n.id);
       setSelected(newSelecteds);
       return;
     }
@@ -322,7 +322,19 @@ function EnhancedTable() {
     );
   }
 
-  const products = productsData?.products || [];
+  // Convert Decimal fields to number for compatibility with ProductType
+  const products: ProductType[] = (productsData?.products || []).map((product) => ({
+    ...product,
+    variants: product.variants.map((variant) => ({
+      ...variant,
+      price: typeof variant.price === "object" && "toNumber" in variant.price
+        ? variant.price.toNumber()
+        : Number(variant.price),
+      originalPrice: typeof variant.originalPrice === "object" && "toNumber" in variant.originalPrice
+        ? variant.originalPrice.toNumber()
+        : Number(variant.originalPrice),
+    })),
+  }));
   const totalCount = productsData?.totalCount || 0;
 
   return (
@@ -432,7 +444,7 @@ function EnhancedTable() {
                       <Switch
                         checked={product.isActive}
                         onChange={() => handleToggleActive(product.id, product.isActive)}
-                        disabled={toggleActiveMutation.isLoading}
+                        disabled={toggleActiveMutation.isPending}
                         color="primary"
                         size="small"
                       />
