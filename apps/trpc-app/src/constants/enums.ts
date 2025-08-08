@@ -19,6 +19,17 @@ export enum OrderStatus {
 }
 
 /**
+ * Payment status enum
+ */
+export enum PaymentStatus {
+  UNPAID = "unpaid",
+  PENDING = "pending",
+  PAID = "paid",
+  REFUNDED = "refunded",
+  FAILED = "failed",
+}
+
+/**
  * Payment method enum
  */
 export enum PaymentMethod {
@@ -26,6 +37,7 @@ export enum PaymentMethod {
   PAYPAL = "paypal",
   CRYPTO = "crypto",
   BARIDI = "baridi",
+  CASH = "cash",
 }
 
 /**
