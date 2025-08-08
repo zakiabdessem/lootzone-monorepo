@@ -27,21 +27,7 @@ export default function CartPage() {
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-semibold">Your Cart</h1>
-      {cart && cart.items.length === 0 && (
-        <div className="space-y-2">
-          <div>Your cart is empty.</div>
-          <button
-            className="px-4 py-2 border rounded"
-            onClick={async () => {
-              await fetch("/api/trpc/cart.addItem", {
-                method: "POST",
-              });
-            }}
-          >
-            Add a sample item (demo)
-          </button>
-        </div>
-      )}
+      {cart && cart.items.length === 0 && <div>Your cart is empty.</div>}
       {cart && cart.items.length > 0 && (
         <div className="space-y-4">
           {cart.items.map((item) => (

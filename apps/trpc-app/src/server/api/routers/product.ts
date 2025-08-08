@@ -180,9 +180,10 @@ export const productRouter = createTRPCRouter({
       };
     }),
 
-  // Protected procedures - requires authentication
-  getFavorites: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
+  // Favorites: public-safe (returns [] for guests)
+  getFavorites: publicProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session?.user?.id;
+    if (!userId) return [] as string[];
     const favorites = await ctx.db.userFavorite.findMany({
       where: { userId },
       select: { productId: true },
