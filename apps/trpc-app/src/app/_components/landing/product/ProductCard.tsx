@@ -9,6 +9,7 @@ import { getDiscountPercent } from "@/lib/utils";
 import type { IProductCard } from "@/types/product";
 import { upperFirst } from "lodash";
 import { Button } from "../ui/button";
+import { useCart } from "@/hooks/useCart";
 
 /**
  * Product card expects the minimal product data + a couple of UI flags.
@@ -27,6 +28,7 @@ export const ProductCard: React.FC<IProductCard> = ({
   liked = false,
 }) => {
   const { isLiked, toggle } = useWishlist();
+  const { add } = useCart();
 
   // Get price/originalPrice from first variant
   const firstVariant = variants[0];
@@ -128,6 +130,7 @@ export const ProductCard: React.FC<IProductCard> = ({
           <Button
             style={{ fontFamily: '"Metropolis", Arial, Helvetica, sans-serif' }}
             className="w-full cursor-pointer bg-[#fad318] hover:bg-primary-600 text-black h-[35px] text-[0.75rem] font-extrabold"
+            onClick={() => firstVariant && add(id, firstVariant.id, 1)}
           >
             Add to cart
           </Button>

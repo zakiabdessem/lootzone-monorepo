@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import type { IProductCard } from "~/types/product";
 import { Button } from "../ui/button";
+import { useCart } from "@/hooks/useCart";
 
 /**
  * Horizontal version of ProductCard tailored for list views.
@@ -23,6 +24,7 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
   liked,
 }) => {
   const { isLiked, toggle } = useWishlist();
+  const { add } = useCart();
   const likedComputed = useMemo(() => liked || isLiked(id), [liked, id, isLiked]);
   const handleHeartClick = () => void toggle(id);
 
@@ -93,6 +95,7 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
           <Button
             style={{ fontFamily: '"Metropolis", Arial, Helvetica, sans-serif' }}
             className="w-full cursor-pointer bg-[#fad318] hover:bg-[#e9c410] text-black h-[35px] text-[0.75rem] font-extrabold max-w-[120px]"
+            onClick={() => firstVariant && add(id, firstVariant.id, 1)}
           >
             Add to cart
           </Button>
