@@ -2,11 +2,12 @@
 
 import { useSmartCategories } from "@/lib/smart-categories";
 
+import { useWishlist } from "@/hooks/useWishlist";
 import { useAnnouncement, useCurrency } from "@/lib/utils";
 import { Heart, Menu, Search, ShoppingCart, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
@@ -26,6 +27,13 @@ export function Navbar() {
   const currency = useCurrency();
   const announcement = useAnnouncement();
   const smartCategories = useSmartCategories();
+  const { ids, mergeGuestToServer, isAuthenticated } = useWishlist();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void mergeGuestToServer();
+    }
+  }, [isAuthenticated, mergeGuestToServer]);
   return (
     <nav
       className="w-full bg-white text-gray-900"
@@ -93,13 +101,21 @@ export function Navbar() {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
               {/* Wishlist */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-gray-700 hover:bg-gray-100 cursor-pointer"
-              >
-                <Heart className="h-5 w-5" />
-              </Button>
+              <Link href="/wishlist" className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  aria-label="Wishlist"
+                >
+                  <Heart className="h-5 w-5" />
+                </Button>
+                {ids.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#4618AC] text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none">
+                    {ids.length}
+                  </span>
+                )}
+              </Link>
 
               {/* Mobile search icon */}
               <div className="md:hidden">

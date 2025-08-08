@@ -85,8 +85,7 @@ export default function ProductCategories() {
               className="UCOPAE rounded-none cursor-pointer hover:bg-primary/10 hover:text-primary"
             >
               <span className="text-white text-lg font-semibold mb-2">
-                {/* For now, show 0 count - this can be enhanced later with product counts */}
-                0
+                {category._count?.products ?? 0}
               </span>
               <div className="flex-1 flex items-center justify-center mb-2">
                 <Image

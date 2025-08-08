@@ -1,6 +1,9 @@
 {
   "name": "lootzone-monorepo",
   "private": true,
+  "scripts": {
+    "dev": "cd apps/trpc-app && npm run dev"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"

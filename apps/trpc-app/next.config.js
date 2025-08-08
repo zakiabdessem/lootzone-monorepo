@@ -12,6 +12,10 @@ const config = {
         protocol: "https",
         hostname: "img.icons8.com",
       },
+      {
+        protocol: "https",
+        hostname: "example.com",
+      },
     ],
   },
   async headers() {

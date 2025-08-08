@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { Platform, ProductCategory, Region } from "~/constants/enums";
 import {
-  adminProcedure,
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
+    adminProcedure,
+    createTRPCRouter,
+    protectedProcedure,
+    publicProcedure,
 } from "../trpc";
 
 // Zod schemas for input validation
@@ -65,6 +65,40 @@ export const productRouter = createTRPCRouter({
     }),
 
   // Public procedures - anyone can access
+  getByIds: publicProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
+    .query(async ({ ctx, input }) => {
+      const products = await ctx.db.product.findMany({
+        where: { id: { in: input.ids } },
+        include: {
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+            },
+          },
+        },
+      });
+
+      return products.map((p) => ({
+        id: p.id,
+        slug: p.slug,
+        image: p.image,
+        platformShow: !!p.platformIcon,
+        platformIcon: p.platformIcon,
+        platformName: p.platformName,
+        title: p.title,
+        region: p.region as unknown as Region,
+        variants: p.variants.map((v) => ({
+          id: v.id,
+          name: v.name,
+          price: Number(v.price),
+          originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+        })),
+      }));
+    }),
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input, ctx }) => {
@@ -148,9 +182,84 @@ export const productRouter = createTRPCRouter({
 
   // Protected procedures - requires authentication
   getFavorites: protectedProcedure.query(async ({ ctx }) => {
-    // TODO: Get user's favorite products
-    return [];
+    const userId = ctx.session.user.id;
+    const favorites = await ctx.db.userFavorite.findMany({
+      where: { userId },
+      select: { productId: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return favorites.map((f) => f.productId);
   }),
+
+  getFavoritesDetailed: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+    const favorites = await ctx.db.userFavorite.findMany({
+      where: { userId },
+      include: {
+        product: {
+          include: {
+            variants: {
+              select: { id: true, name: true, price: true, originalPrice: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return favorites.map((f) => {
+      const p = f.product;
+      return {
+        id: p.id,
+        slug: p.slug,
+        image: p.image,
+        platformShow: !!p.platformIcon,
+        platformIcon: p.platformIcon,
+        platformName: p.platformName,
+        title: p.title,
+        region: p.region as unknown as Region,
+        variants: p.variants.map((v) => ({
+          id: v.id,
+          name: v.name,
+          price: Number(v.price),
+          originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+        })),
+      };
+    });
+  }),
+
+  addFavorite: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      await ctx.db.userFavorite.upsert({
+        where: { userId_productId: { userId, productId: input.productId } },
+        create: { userId, productId: input.productId },
+        update: {},
+      });
+      return { success: true };
+    }),
+
+  removeFavorite: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      await ctx.db.userFavorite.deleteMany({
+        where: { userId, productId: input.productId },
+      });
+      return { success: true };
+    }),
+
+  mergeGuestWishlist: protectedProcedure
+    .input(z.object({ productIds: z.array(z.string()).min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      await ctx.db.userFavorite.createMany({
+        data: input.productIds.map((productId) => ({ userId, productId })),
+        skipDuplicates: true,
+      });
+      return { success: true };
+    }),
 
   // Admin-only procedures
   adminList: adminProcedure
@@ -165,22 +274,22 @@ export const productRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       const where: any = {};
-      
+
       if (input.search) {
         where.OR = [
           { title: { contains: input.search, mode: 'insensitive' } },
           { description: { contains: input.search, mode: 'insensitive' } },
         ];
       }
-      
+
       if (input.category) {
         where.categoryId = input.category;
       }
-      
+
       if (input.isActive !== undefined) {
         where.isActive = input.isActive;
       }
-      
+
       const [products, totalCount] = await Promise.all([
         ctx.db.product.findMany({
           where,
@@ -209,7 +318,7 @@ export const productRouter = createTRPCRouter({
         }),
         ctx.db.product.count({ where }),
       ]);
-      
+
       return {
         products,
         totalCount,
@@ -240,7 +349,7 @@ export const productRouter = createTRPCRouter({
           },
         },
       });
-      
+
       return product;
     }),
 
@@ -248,16 +357,16 @@ export const productRouter = createTRPCRouter({
     .input(createProductSchema)
     .mutation(async ({ input, ctx }) => {
       console.log('Creating product with input:', input);
-      
+
       // Validate that the category exists
       const categoryExists = await ctx.db.category.findUnique({
         where: { id: input.category },
       });
-      
+
       if (!categoryExists) {
         throw new Error("Category not found");
       }
-      
+
       // Create the product
       const product = await ctx.db.product.create({
         data: {
@@ -292,7 +401,7 @@ export const productRouter = createTRPCRouter({
           category: true,
         }
       });
-      
+
       return product;
     }),
 
