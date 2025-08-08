@@ -62,7 +62,7 @@ export default function ProductView({ product }: { product: ViewProduct }) {
             />
 
             {/* CTAs */}
-            <ActionButtons />
+            <ActionButtons productId={product.id} variantId={selectedVariant.id} />
           </div>
         </div>
 

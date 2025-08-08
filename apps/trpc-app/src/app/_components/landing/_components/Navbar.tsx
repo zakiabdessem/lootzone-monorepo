@@ -12,6 +12,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import CategoriesSidebar from "./CategoriesSidebar";
+import { useCart } from "@/hooks/useCart";
 
 const categories = [
   { id: "categories", label: "Categories" },
@@ -28,6 +29,7 @@ export function Navbar() {
   const announcement = useAnnouncement();
   const smartCategories = useSmartCategories();
   const { ids, mergeGuestToServer, isAuthenticated } = useWishlist();
+  const { itemCount, subtotalFormatted } = useCart();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -140,11 +142,13 @@ export function Navbar() {
               </Button>
 
               {/* Cart */}
-              <Button variant="secondary" className="space-x-1 cursor-pointer">
-                <ShoppingCart className="h-5 w-5" />
-                <span>0</span>
-                <span>{currency}</span>
-              </Button>
+              <Link href="/cart">
+                <Button variant="secondary" className="space-x-1 cursor-pointer">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span>{itemCount}</span>
+                  <span>{subtotalFormatted}</span>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
