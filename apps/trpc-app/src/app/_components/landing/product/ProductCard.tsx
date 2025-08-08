@@ -2,18 +2,20 @@
 import { formatDA } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo } from "react";
 
-import type { IProductCard } from "@/types/product";
+import { useWishlist } from "@/hooks/useWishlist";
 import { getDiscountPercent } from "@/lib/utils";
-import { Button } from "../ui/button";
+import type { IProductCard } from "@/types/product";
 import { upperFirst } from "lodash";
+import { Button } from "../ui/button";
 
 /**
  * Product card expects the minimal product data + a couple of UI flags.
  * We extend IProductCard to customise defaults (e.g. platformShow).
  */
 export const ProductCard: React.FC<IProductCard> = ({
+  id,
   slug,
   image,
   platformShow = false,
@@ -24,7 +26,7 @@ export const ProductCard: React.FC<IProductCard> = ({
   region = "GLOBAL",
   liked = false,
 }) => {
-  const [isHeartActive, setIsHeartActive] = useState(false);
+  const { isLiked, toggle } = useWishlist();
 
   // Get price/originalPrice from first variant
   const firstVariant = variants[0];
@@ -34,9 +36,8 @@ export const ProductCard: React.FC<IProductCard> = ({
     firstVariant?.price
   );
 
-  const handleHeartClick = () => {
-    setIsHeartActive(!isHeartActive);
-  };
+  const likedComputed = useMemo(() => liked || isLiked(id), [liked, id, isLiked]);
+  const handleHeartClick = () => void toggle(id);
 
   return (
     <div className="group relative flex flex-col bg-[#4618AC] border border-[#63e3c2] overflow-hidden hover:shadow-lg transition-shadow duration-200 w-[200px] h-[395.2px]">
@@ -107,7 +108,7 @@ export const ProductCard: React.FC<IProductCard> = ({
               className="product-slider__fav js-fav cursor-pointer rotate-90 h-4 w-4 mr-2"
               onClick={handleHeartClick}
             >
-              <span className={`heart ${liked ? "is-active" : ""}`}></span>{" "}
+              <span className={`heart ${likedComputed ? "is-active" : ""}`}></span>{" "}
             </button>
 
             {/* <span className="heart"></span> */}
@@ -115,7 +116,7 @@ export const ProductCard: React.FC<IProductCard> = ({
               className="text-gray-200 mb-[6px]"
               onClick={handleHeartClick}
             >
-              {liked ? "ADDED TO WISHLIST" : "ADD TO WISHLIST"}
+              {likedComputed ? "ADDED TO WISHLIST" : "ADD TO WISHLIST"}
             </button>
           </div>
         </div>

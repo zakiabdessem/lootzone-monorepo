@@ -121,6 +121,11 @@ export const categoryRouter = createTRPCRouter({
         where,
         include: {
           parent: true,
+          _count: {
+            select: {
+              products: true,
+            },
+          },
         },
         orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
       });

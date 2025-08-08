@@ -1,8 +1,10 @@
 "use client";
 
+import { useWishlist } from "@/hooks/useWishlist";
 import { formatDA, getDiscountPercent } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 import type { IProductCard } from "~/types/product";
 import { Button } from "../ui/button";
 
@@ -12,6 +14,7 @@ import { Button } from "../ui/button";
  * arranges image and details side-by-side.
  */
 export const ProductCardHorizontal: React.FC<IProductCard> = ({
+  id,
   slug,
   image,
   title,
@@ -19,7 +22,9 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
   variants,
   liked,
 }) => {
-  const handleHeartClick = () => {};
+  const { isLiked, toggle } = useWishlist();
+  const likedComputed = useMemo(() => liked || isLiked(id), [liked, id, isLiked]);
+  const handleHeartClick = () => void toggle(id);
 
   const firstVariant = variants[0];
   const discount = getDiscountPercent(
@@ -80,7 +85,7 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
               className="product-slider__fav js-fav cursor-pointer rotate-90 h-4 w-4 ml-2"
               onClick={() => handleHeartClick()}
             >
-              <span className={`heart ${liked ? "is-active" : ""}`}></span>{" "}
+              <span className={`heart ${likedComputed ? "is-active" : ""}`}></span>{" "}
             </button>
           </div>
 
