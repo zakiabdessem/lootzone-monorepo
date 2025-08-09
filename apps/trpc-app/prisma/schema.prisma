@@ -56,6 +56,7 @@ model User {
     sessions      Session[]
     orders        Order[]
     favorites     UserFavorite[]
+    guestSessions GuestSession[]
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
 }
@@ -107,6 +108,8 @@ model Product {
     favorites         UserFavorite[]
     slides            Slide[]          // Slides featuring this product
     heroSlides        HeroSlide[]      // Hero carousel slides
+    cartItems         CartItem[]
+    guestFavorites    GuestFavorite[]
     createdAt         DateTime         @default(now())
     updatedAt         DateTime         @updatedAt
 
@@ -128,6 +131,7 @@ model ProductVariant {
     stock           Int?        @default(0)
     isInfiniteStock Boolean     @default(false)
     orderItems      OrderItem[]
+    cartItems       CartItem[]
     createdAt       DateTime    @default(now())
     updatedAt       DateTime    @updatedAt
 
@@ -242,4 +246,51 @@ model HeroSlide {
 
     @@index([isActive])
     @@index([displayOrder])
+}
+
+// NEW: Guest session for anonymous carts and wishlists
+model GuestSession {
+    id            String         @id @default(cuid())
+    token         String         @unique
+    userId        String?
+    user          User?          @relation(fields: [userId], references: [id])
+    cartItems     CartItem[]
+    guestFavorites GuestFavorite[]
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+}
+
+// NEW: Cart items associated with a guest session (or linked user via GuestSession.userId)
+model CartItem {
+    id          String         @id @default(cuid())
+    sessionId   String
+    session     GuestSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+    productId   String
+    product     Product        @relation(fields: [productId], references: [id])
+    variantId   String
+    variant     ProductVariant @relation(fields: [variantId], references: [id])
+    quantity    Int            @default(1)
+    unitPrice   Decimal        @db.Decimal(10, 2)
+    totalPrice  Decimal        @db.Decimal(10, 2)
+    createdAt   DateTime       @default(now())
+    updatedAt   DateTime       @updatedAt
+
+    @@unique([sessionId, variantId])
+    @@index([sessionId])
+    @@index([productId])
+    @@index([variantId])
+}
+
+// NEW: Guest wishlist items stored server-side
+model GuestFavorite {
+    id         String        @id @default(cuid())
+    sessionId  String
+    session    GuestSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+    productId  String
+    product    Product       @relation(fields: [productId], references: [id])
+    createdAt  DateTime      @default(now())
+
+    @@unique([sessionId, productId])
+    @@index([sessionId])
+    @@index([productId])
 }

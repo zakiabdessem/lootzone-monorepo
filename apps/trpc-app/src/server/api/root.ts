@@ -7,6 +7,7 @@ import { authRouter } from "~/server/api/routers/auth";
 import { sessionRouter } from "~/server/api/routers/session";
 import { siteSettingsRouter } from "~/server/api/routers/site-settings";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { cartRouter } from "~/server/api/routers/cart";
 
 /**
  * This is the primary router for your server.
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   session: sessionRouter,
   heroSlide: heroSlideRouter,
   siteSettings: siteSettingsRouter,
+  cart: cartRouter,
 });
 
 // export type definition of API
