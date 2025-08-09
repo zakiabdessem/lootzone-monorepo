@@ -6,6 +6,36 @@ import {
     protectedProcedure,
     publicProcedure,
 } from "../trpc";
+import { cookies } from "next/headers";
+import { randomUUID } from "node:crypto";
+
+const GUEST_COOKIE = "lz_guest_session";
+
+async function getOrCreateGuestSession(ctx: any) {
+  const jar = await cookies();
+  let token = jar.get(GUEST_COOKIE)?.value;
+  let session = token
+    ? await ctx.db.guestSession.findUnique({ where: { token } })
+    : null;
+  if (!session) {
+    token = randomUUID();
+    session = await ctx.db.guestSession.create({ data: { token } });
+    jar.set(GUEST_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
+  // Link to user when authenticated
+  if (ctx.session?.user && !session.userId) {
+    session = await ctx.db.guestSession.update({
+      where: { id: session.id },
+      data: { userId: ctx.session.user.id },
+    });
+  }
+  return session;
+}
 
 // Zod schemas for input validation
 const createProductSchema = z.object({
@@ -133,6 +163,39 @@ export const productRouter = createTRPCRouter({
       };
     }),
 
+  // Guest wishlist (server-side via cookie session)
+  getGuestFavorites: publicProcedure.query(async ({ ctx }) => {
+    const session = await getOrCreateGuestSession(ctx);
+    const favs = await ctx.db.guestFavorite.findMany({
+      where: { sessionId: session.id },
+      select: { productId: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return favs.map((f) => f.productId);
+  }),
+
+  addGuestFavorite: publicProcedure
+    .input(z.object({ productId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const session = await getOrCreateGuestSession(ctx);
+      await ctx.db.guestFavorite.upsert({
+        where: { sessionId_productId: { sessionId: session.id, productId: input.productId } },
+        create: { sessionId: session.id, productId: input.productId },
+        update: {},
+      });
+      return { success: true };
+    }),
+
+  removeGuestFavorite: publicProcedure
+    .input(z.object({ productId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const session = await getOrCreateGuestSession(ctx);
+      await ctx.db.guestFavorite.deleteMany({
+        where: { sessionId: session.id, productId: input.productId },
+      });
+      return { success: true };
+    }),
+
   list: publicProcedure
     .input(
       z.object({
@@ -258,6 +321,11 @@ export const productRouter = createTRPCRouter({
         data: input.productIds.map((productId) => ({ userId, productId })),
         skipDuplicates: true,
       });
+      // Optionally clear guest favorites for current linked session
+      try {
+        const session = await getOrCreateGuestSession(ctx);
+        await ctx.db.guestFavorite.deleteMany({ where: { sessionId: session.id } });
+      } catch {}
       return { success: true };
     }),
 
