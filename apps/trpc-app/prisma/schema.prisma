@@ -243,3 +243,20 @@ model HeroSlide {
     @@index([isActive])
     @@index([displayOrder])
 }
+
+// Guest session for unauthenticated users
+model GuestSession {
+    id            String   @id @default(cuid())
+    sessionToken  String   @unique // Cookie value
+    wishlistItems String[] // Array of product IDs
+    cartItems     Json?    // JSON object for cart data { productId, variantId, quantity }[]
+    ipAddress     String?  // Optional IP tracking
+    userAgent     String?  // Optional user agent tracking
+    expiresAt     DateTime // Auto-cleanup expired sessions
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    @@index([sessionToken])
+    @@index([expiresAt])
+    @@index([ipAddress])
+}

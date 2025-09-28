@@ -1,11 +1,7 @@
-import { z } from "zod";
-import { Platform, ProductCategory, Region } from "~/constants/enums";
-import {
-    adminProcedure,
-    createTRPCRouter,
-    protectedProcedure,
-    publicProcedure,
-} from "../trpc";
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { Platform, Region } from '~/constants/enums';
+import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
 
 // Zod schemas for input validation
 const createProductSchema = z.object({
@@ -17,8 +13,16 @@ const createProductSchema = z.object({
     .regex(/^[a-z0-9-]+$/),
   image: z.string().url(),
   gallery: z.array(z.string().url()).optional().default([]),
-  platformIcon: z.string().url().optional(),
-  platformName: z.nativeEnum(Platform).optional(),
+  platformIcon: z
+    .string()
+    .url()
+    .optional()
+    .nullable()
+    .transform(val => val || null),
+  platformName: z.preprocess(
+    val => (val === '' ? null : val),
+    z.nativeEnum(Platform).optional().nullable()
+  ),
   region: z.nativeEnum(Region).default(Region.GLOBAL),
   category: z.string(), // Accept categoryId as string instead of enum
   isActive: z.boolean().default(true),
@@ -45,24 +49,22 @@ const updateProductSchema = createProductSchema.partial().extend({
 });
 
 export const productRouter = createTRPCRouter({
-  checkSlug: publicProcedure
-    .input(z.object({ slug: z.string() }))
-    .query(async ({ input, ctx }) => {
-      if (!input.slug) {
-        return null;
-      }
+  checkSlug: publicProcedure.input(z.object({ slug: z.string() })).query(async ({ input, ctx }) => {
+    if (!input.slug) {
+      return null;
+    }
 
-      const product = await ctx.db.product.findUnique({
-        where: {
-          slug: input.slug,
-        },
-        select: {
-          id: true,
-        },
-      });
+    const product = await ctx.db.product.findUnique({
+      where: {
+        slug: input.slug,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-      return product === null;
-    }),
+    return product === null;
+  }),
 
   // Public procedures - anyone can access
   getByIds: publicProcedure
@@ -82,7 +84,7 @@ export const productRouter = createTRPCRouter({
         },
       });
 
-      return products.map((p) => ({
+      return products.map(p => ({
         id: p.id,
         slug: p.slug,
         image: p.image,
@@ -91,7 +93,7 @@ export const productRouter = createTRPCRouter({
         platformName: p.platformName,
         title: p.title,
         region: p.region as unknown as Region,
-        variants: p.variants.map((v) => ({
+        variants: p.variants.map(v => ({
           id: v.id,
           name: v.name,
           price: Number(v.price),
@@ -99,44 +101,68 @@ export const productRouter = createTRPCRouter({
         })),
       }));
     }),
-  getBySlug: publicProcedure
-    .input(z.object({ slug: z.string() }))
-    .query(async ({ input, ctx }) => {
-      // TODO: Replace with actual Prisma query
-      return {
-        id: "1",
-        slug: input.slug,
-        title: "Sample Product",
-        description: "Sample description",
-        image: "https://example.com/image.jpg",
-        gallery: ["https://example.com/gallery1.jpg"],
-        platformIcon: "steam-icon",
-        platformName: Platform.STEAM,
-        region: Region.GLOBAL,
-        category: ProductCategory.PRODUCT,
-        variants: [
-          {
-            id: "variant-1",
-            name: "Standard Edition",
-            price: 29.99,
-            originalPrice: 39.99,
-            region: Region.GLOBAL,
+  getBySlug: publicProcedure.input(z.object({ slug: z.string() })).query(async ({ input, ctx }) => {
+    const product = await ctx.db.product.findUnique({
+      where: { slug: input.slug, isActive: true },
+      include: {
+        variants: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            originalPrice: true,
           },
-        ],
-        keyFeatures: ["Feature 1", "Feature 2"],
-        deliveryInfo: "Instant delivery",
-        deliverySteps: ["Step 1", "Step 2"],
-        terms: "Terms and conditions",
-        importantNotes: ["Note 1", "Note 2"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-    }),
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Product not found',
+      });
+    }
+
+    return {
+      id: product.id,
+      slug: product.slug,
+      title: product.title,
+      description: product.description,
+      image: product.image,
+      gallery: product.gallery,
+      platformIcon: product.platformIcon,
+      platformName: product.platformName as Platform,
+      region: product.region as Region,
+      category: product.category,
+      variants: product.variants.map(v => ({
+        id: v.id,
+        name: v.name,
+        price: Number(v.price),
+        originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+        region: product.region as Region,
+      })),
+      keyFeatures: product.keyFeatures,
+      deliveryInfo: product.deliveryInfo,
+      deliverySteps: product.deliverySteps,
+      terms: product.terms,
+      importantNotes: product.importantNotes,
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    };
+  }),
 
   list: publicProcedure
     .input(
       z.object({
-        category: z.nativeEnum(ProductCategory).optional(),
+        categoryId: z.string().optional(),
         platform: z.nativeEnum(Platform).optional(),
         region: z.nativeEnum(Region).optional(),
         limit: z.number().min(1).max(100).default(20),
@@ -144,39 +170,74 @@ export const productRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      // TODO: Replace with actual Prisma query with pagination
-      return {
-        items: [
-          {
-            id: "1",
-            slug: "sample-product-1",
-            title: "Sample Product 1",
-            description: "Sample description 1",
-            image: "https://example.com/image1.jpg",
-            gallery: ["https://example.com/gallery1.jpg"],
-            platformIcon: "steam-icon",
-            platformName: Platform.STEAM,
-            region: Region.GLOBAL,
-            category: ProductCategory.PRODUCT,
-            variants: [
-              {
-                id: "variant-1",
-                name: "Standard Edition",
-                price: 29.99,
-                originalPrice: 39.99,
-                region: Region.GLOBAL,
-              },
-            ],
-            keyFeatures: ["Feature 1", "Feature 2"],
-            deliveryInfo: "Instant delivery",
-            deliverySteps: ["Step 1", "Step 2"],
-            terms: "Terms and conditions",
-            importantNotes: ["Note 1", "Note 2"],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+      const where: any = {
+        isActive: true,
+      };
+
+      if (input.categoryId) {
+        where.categoryId = input.categoryId;
+      }
+
+      if (input.platform) {
+        where.platformName = input.platform;
+      }
+
+      if (input.region) {
+        where.region = input.region;
+      }
+
+      const products = await ctx.db.product.findMany({
+        where,
+        take: input.limit + 1, // Take one extra to know if there's a next page
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        include: {
+          variants: {
+            where: { isActive: true },
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+            },
+            orderBy: { price: 'asc' },
           },
-        ],
-        nextCursor: undefined,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      let nextCursor: string | undefined = undefined;
+      if (products.length > input.limit) {
+        const nextItem = products.pop();
+        nextCursor = nextItem!.id;
+      }
+
+      return {
+        items: products.map(p => ({
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          description: p.description,
+          image: p.image,
+          gallery: p.gallery,
+          platformIcon: p.platformIcon,
+          platformName: p.platformName as Platform,
+          region: p.region as Region,
+          variants: p.variants.map(v => ({
+            id: v.id,
+            name: v.name,
+            price: Number(v.price),
+            originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+            region: p.region as Region,
+          })),
+          keyFeatures: p.keyFeatures,
+          deliveryInfo: p.deliveryInfo,
+          deliverySteps: p.deliverySteps,
+          terms: p.terms,
+          importantNotes: p.importantNotes,
+          createdAt: p.createdAt.toISOString(),
+          updatedAt: p.updatedAt.toISOString(),
+        })),
+        nextCursor,
       };
     }),
 
@@ -186,9 +247,9 @@ export const productRouter = createTRPCRouter({
     const favorites = await ctx.db.userFavorite.findMany({
       where: { userId },
       select: { productId: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
-    return favorites.map((f) => f.productId);
+    return favorites.map(f => f.productId);
   }),
 
   getFavoritesDetailed: protectedProcedure.query(async ({ ctx }) => {
@@ -204,10 +265,10 @@ export const productRouter = createTRPCRouter({
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return favorites.map((f) => {
+    return favorites.map(f => {
       const p = f.product;
       return {
         id: p.id,
@@ -218,7 +279,7 @@ export const productRouter = createTRPCRouter({
         platformName: p.platformName,
         title: p.title,
         region: p.region as unknown as Region,
-        variants: p.variants.map((v) => ({
+        variants: p.variants.map(v => ({
           id: v.id,
           name: v.name,
           price: Number(v.price),
@@ -255,13 +316,54 @@ export const productRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
       await ctx.db.userFavorite.createMany({
-        data: input.productIds.map((productId) => ({ userId, productId })),
+        data: input.productIds.map(productId => ({ userId, productId })),
         skipDuplicates: true,
       });
       return { success: true };
     }),
 
   // Admin-only procedures
+  adminGetById: adminProcedure.input(z.object({ id: z.string() })).query(async ({ input, ctx }) => {
+    const product = await ctx.db.product.findUnique({
+      where: { id: input.id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        variants: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            originalPrice: true,
+            isActive: true,
+            stock: true,
+            isInfiniteStock: true,
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Product not found',
+      });
+    }
+
+    return {
+      ...product,
+      variants: product.variants.map(v => ({
+        ...v,
+        price: Number(v.price),
+        originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+      })),
+    };
+  }),
+
   adminList: adminProcedure
     .input(
       z.object({
@@ -353,72 +455,152 @@ export const productRouter = createTRPCRouter({
       return product;
     }),
 
-  create: adminProcedure
-    .input(createProductSchema)
-    .mutation(async ({ input, ctx }) => {
-      console.log('Creating product with input:', input);
+  create: adminProcedure.input(createProductSchema).mutation(async ({ input, ctx }) => {
+    console.log('Creating product with input:', input);
 
-      // Validate that the category exists
+    // Validate that the category exists
+    const categoryExists = await ctx.db.category.findUnique({
+      where: { id: input.category },
+    });
+
+    if (!categoryExists) {
+      throw new Error('Category not found');
+    }
+
+    // Create the product
+    const product = await ctx.db.product.create({
+      data: {
+        title: input.title,
+        description: input.description,
+        slug: input.slug,
+        image: input.image,
+        gallery: input.gallery || [],
+        platformIcon: input.platformIcon || null,
+        platformName: input.platformName || null,
+        region: input.region,
+        categoryId: input.category,
+        keyFeatures: input.keyFeatures,
+        deliveryInfo: input.deliveryInfo,
+        deliverySteps: input.deliverySteps,
+        terms: input.terms,
+        importantNotes: input.importantNotes,
+        isActive: input.isActive,
+        variants: {
+          create: input.variants.map(variant => ({
+            name: variant.name,
+            price: variant.price,
+            originalPrice: variant.originalPrice,
+            isActive: true,
+            stock: 0,
+            isInfiniteStock: true,
+          })),
+        },
+      },
+      include: {
+        variants: true,
+        category: true,
+      },
+    });
+
+    return product;
+  }),
+
+  update: adminProcedure.input(updateProductSchema).mutation(async ({ input, ctx }) => {
+    const { id, variants, category, ...updateData } = input;
+
+    // Validate that the category exists if provided
+    if (category) {
       const categoryExists = await ctx.db.category.findUnique({
-        where: { id: input.category },
+        where: { id: category },
       });
 
       if (!categoryExists) {
-        throw new Error("Category not found");
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Category not found',
+        });
       }
+    }
 
-      // Create the product
-      const product = await ctx.db.product.create({
-        data: {
-          title: input.title,
-          description: input.description,
-          slug: input.slug,
-          image: input.image,
-          gallery: input.gallery || [],
-          platformIcon: input.platformIcon || null,
-          platformName: input.platformName || null,
-          region: input.region,
-          categoryId: input.category,
-          keyFeatures: input.keyFeatures,
-          deliveryInfo: input.deliveryInfo,
-          deliverySteps: input.deliverySteps,
-          terms: input.terms,
-          importantNotes: input.importantNotes,
-          isActive: input.isActive,
-          variants: {
-            create: input.variants.map(variant => ({
-              name: variant.name,
-              price: variant.price,
-              originalPrice: variant.originalPrice,
-              isActive: true,
-              stock: 0,
-              isInfiniteStock: true,
-            }))
-          }
+    // Update the product
+    const updatedProduct = await ctx.db.product.update({
+      where: { id },
+      data: {
+        ...updateData,
+        ...(category && { categoryId: category }),
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
-        include: {
-          variants: true,
-          category: true,
-        }
+        variants: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            originalPrice: true,
+            isActive: true,
+            stock: true,
+            isInfiniteStock: true,
+          },
+        },
+      },
+    });
+
+    // Handle variants update if provided
+    if (variants && variants.length > 0) {
+      // Delete existing variants and create new ones
+      await ctx.db.productVariant.deleteMany({
+        where: { productId: id },
       });
 
-      return product;
-    }),
+      await ctx.db.productVariant.createMany({
+        data: variants.map(variant => ({
+          productId: id,
+          name: variant.name,
+          price: variant.price,
+          originalPrice: variant.originalPrice,
+          isActive: true,
+          stock: 0,
+          isInfiniteStock: true,
+        })),
+      });
 
-  update: adminProcedure
-    .input(updateProductSchema)
-    .mutation(async ({ input, ctx }) => {
-      // TODO: Update product in database
-      return {
-        ...input,
-        updatedAt: new Date().toISOString(),
-      };
-    }),
+      // Fetch updated product with new variants
+      const productWithNewVariants = await ctx.db.product.findUnique({
+        where: { id },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+              isActive: true,
+              stock: true,
+              isInfiniteStock: true,
+            },
+          },
+        },
+      });
 
-  delete: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      // TODO: Delete product from database
-      return { success: true };
-    }),
+      return productWithNewVariants;
+    }
+
+    return updatedProduct;
+  }),
+
+  delete: adminProcedure.input(z.object({ id: z.string() })).mutation(async ({ input, ctx }) => {
+    // TODO: Delete product from database
+    return { success: true };
+  }),
 });

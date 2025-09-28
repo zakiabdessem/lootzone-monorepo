@@ -134,7 +134,7 @@ const validationSchema = Yup.object().shape({
   variants: Yup.array()
     .of(
       Yup.object().shape({
-        id: Yup.string().required("Variant ID is required"),
+        id: Yup.string(),
         name: Yup.string()
           .min(1, "Variant name is required")
           .max(255, "Variant name must be less than 255 characters")
@@ -148,7 +148,7 @@ const validationSchema = Yup.object().shape({
         stock: Yup.number()
           .min(0, "Stock cannot be negative")
           .when("isInfiniteStock", {
-            is: false,
+            is: (value: boolean) => value === false,
             then: (schema) =>
               schema.required("Stock is required when not infinite"),
             otherwise: (schema) => schema.notRequired(),
@@ -156,29 +156,14 @@ const validationSchema = Yup.object().shape({
         isInfiniteStock: Yup.boolean().default(false),
       })
     )
-    .min(1, "At least one variant is required")
-    .required("Variants are required")
-    .test(
-      "variants-not-empty",
-      "Please fill in all variant details before submitting",
-      function (variants) {
-        if (!variants || variants.length === 0) return false;
-
-        return variants.every(
-          (variant) =>
-            variant &&
-            variant.name &&
-            variant.name.trim() !== "" &&
-            variant.price > 0 &&
-            variant.originalPrice > 0
-        );
-      }
-    ),
+    .min(1, "At least one variant is required"),
 });
 
 interface ProductCreateFormProps {
   onSubmit: (values: any) => void;
   isLoading?: boolean;
+  initialValues?: Partial<ProductFormValues>;
+  isEditMode?: boolean;
 }
 
 interface ProductFormValues {
@@ -203,43 +188,47 @@ interface ProductFormValues {
 export default function ProductCreateForm({
   onSubmit,
   isLoading = false,
+  initialValues,
+  isEditMode = false,
 }: ProductCreateFormProps) {
   const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
 
   const formik = useFormik<ProductFormValues>({
     initialValues: {
-      title: "",
-      slug: "",
-      description: "",
-      image: "",
-      gallery: [] as string[],
-      platformName: null as Platform | null,
-      platformIcon: null as string | null,
-      region: Region.GLOBAL,
-      isActive: true,
-      categoryId: "",
-      keyFeatures: [],
-      deliveryInfo: "",
-      deliverySteps: [],
-      terms: "",
-      importantNotes: [],
-      variants: [] as ProductVariant[],
+      title: initialValues?.title || "",
+      slug: initialValues?.slug || "",
+      description: initialValues?.description || "",
+      image: initialValues?.image || "",
+      gallery: initialValues?.gallery || ([] as string[]),
+      platformName: initialValues?.platformName || (null as Platform | null),
+      platformIcon: initialValues?.platformIcon || (null as string | null),
+      region: initialValues?.region || Region.GLOBAL,
+      isActive:
+        initialValues?.isActive !== undefined ? initialValues.isActive : true,
+      categoryId: initialValues?.category || "",
+      keyFeatures: initialValues?.keyFeatures || [],
+      deliveryInfo: initialValues?.deliveryInfo || "",
+      deliverySteps: initialValues?.deliverySteps || [],
+      terms: initialValues?.terms || "",
+      importantNotes: initialValues?.importantNotes || [],
+      variants: initialValues?.variants || ([] as ProductVariant[]),
     },
     validationSchema,
+    validateOnChange: false,
+    validateOnBlur: true,
+    enableReinitialize: true, // This will reinitialize the form when initialValues change
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
+        console.log("Form submission started");
         console.log("Form values before submission:", values);
+        console.log("Form validation errors:", formik.errors);
 
         // Transform the data to match TRPC schema expectations
         const transformedValues = {
           ...values,
-          // Handle platform fields - if no platform selected, don't include them
-          ...(values.platformName
-            ? {
-                platformName: values.platformName,
-                platformIcon: values.platformIcon || undefined,
-              }
-            : {}),
+          // Handle platform fields - always include them, but set to null if not selected
+          platformName: values.platformName || null,
+          platformIcon: values.platformIcon || null,
           // Map categoryId to category field expected by backend
           category: values.categoryId,
           // Ensure variants have the correct structure
@@ -292,13 +281,27 @@ export default function ProductCreateForm({
   }, [slugCheckData]);
 
   useEffect(() => {
-    setFieldValue("slug", slugify(values.title));
+    // Auto-generate slug when title changes
+    if (values.title) {
+      setFieldValue("slug", slugify(values.title));
+    }
   }, [values.title, setFieldValue]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       if (values.slug) {
-        checkSlug();
+        if (isEditMode) {
+          // In edit mode, if the slug hasn't changed from the initial slug, consider it available
+          if (values.slug === initialValues?.slug) {
+            setIsSlugAvailable(true);
+          } else {
+            // If slug has changed, check availability
+            checkSlug();
+          }
+        } else {
+          // In create mode, always check slug availability
+          checkSlug();
+        }
       } else {
         setIsSlugAvailable(null);
       }
@@ -307,13 +310,18 @@ export default function ProductCreateForm({
     return () => {
       clearTimeout(handler);
     };
-  }, [values.slug, checkSlug]);
+  }, [values.slug, checkSlug, isEditMode, initialValues?.slug]);
 
   const { data: categories } = api.category.getProduct.useQuery();
 
   return (
     <FormikProvider value={formik}>
-      <form onSubmit={formik.handleSubmit}>
+      <form
+        onSubmit={(e) => {
+          console.log("Form submit event triggered", e);
+          formik.handleSubmit(e);
+        }}
+      >
         <Card>
           <CardContent>
             <Grid container spacing={3}>
@@ -578,7 +586,7 @@ export default function ProductCreateForm({
           </CardContent>
         </Card>
 
-        <Box mt={3}>
+        <Box mt={3} display="flex" gap={2}>
           <Button
             type="submit"
             variant="contained"
@@ -586,7 +594,30 @@ export default function ProductCreateForm({
             disabled={isLoading}
             size="large"
           >
-            {isLoading ? "Creating..." : "Create Product"}
+            {isLoading
+              ? isEditMode
+                ? "Updating..."
+                : "Creating..."
+              : isEditMode
+              ? "Update Product"
+              : "Create Product"}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outlined"
+            size="large"
+            onClick={() => {
+              console.log("=== FORM DEBUG INFO ===");
+              console.log("Form Values:", formik.values);
+              console.log("Form Errors:", formik.errors);
+              console.log("Form Touched:", formik.touched);
+              console.log("Form isValid:", formik.isValid);
+              console.log("Form isSubmitting:", formik.isSubmitting);
+              console.log("Form dirty:", formik.dirty);
+            }}
+          >
+            Debug Form
           </Button>
         </Box>
       </form>

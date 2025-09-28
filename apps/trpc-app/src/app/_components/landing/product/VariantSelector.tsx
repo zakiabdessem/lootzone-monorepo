@@ -1,4 +1,4 @@
-import { useCurrency } from '@/lib/utils';
+// import { useCurrency } from '~/contexts/SiteSettingsContext';
 import { useMemo } from 'react';
 import type { ProductVariant } from '~/types/product';
 import { ScrollArea } from '../ui/scroll-area';
@@ -14,7 +14,8 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   selectedVariant,
   onSelect,
 }) => {
-  const currency = useCurrency();
+  // const currency = useCurrency();
+  const currency = 'DZD'; // Default currency
   const containerHeightClass = useMemo(
     () => (variants.length > 5 ? 'h-[340px]' : undefined),
     [variants]

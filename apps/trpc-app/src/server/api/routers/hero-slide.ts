@@ -1,6 +1,5 @@
-
-import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { z } from 'zod';
+import { adminProcedure, createTRPCRouter, publicProcedure } from '~/server/api/trpc';
 
 export const heroSlideRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -21,7 +20,7 @@ export const heroSlideRouter = createTRPCRouter({
     });
   }),
 
-  getAllForAdmin: protectedProcedure.query(async ({ ctx }) => {
+  getAllForAdmin: adminProcedure.query(async ({ ctx }) => {
     return await ctx.db.heroSlide.findMany({
       orderBy: { displayOrder: 'asc' },
       include: {
@@ -38,12 +37,14 @@ export const heroSlideRouter = createTRPCRouter({
     });
   }),
 
-  create: protectedProcedure
-    .input(z.object({
-      label: z.string().min(1),
-      productId: z.string(),
-      displayOrder: z.number().int().min(0),
-    }))
+  create: adminProcedure
+    .input(
+      z.object({
+        label: z.string().min(1),
+        productId: z.string(),
+        displayOrder: z.number().int().min(0),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.heroSlide.create({
         data: input,
@@ -61,14 +62,16 @@ export const heroSlideRouter = createTRPCRouter({
       });
     }),
 
-  update: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      label: z.string().min(1),
-      productId: z.string(),
-      isActive: z.boolean(),
-      displayOrder: z.number().int().min(0),
-    }))
+  update: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        label: z.string().min(1),
+        productId: z.string(),
+        isActive: z.boolean(),
+        displayOrder: z.number().int().min(0),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       return await ctx.db.heroSlide.update({
@@ -88,11 +91,9 @@ export const heroSlideRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.heroSlide.delete({
-        where: { id: input.id },
-      });
-    }),
+  delete: adminProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    return await ctx.db.heroSlide.delete({
+      where: { id: input.id },
+    });
+  }),
 });

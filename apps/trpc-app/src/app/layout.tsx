@@ -7,6 +7,8 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Navbar } from "./_components/landing/_components/Navbar";
 import Footer from "./_components/landing/_components/Footer";
+import { SiteSettingsProvider } from "~/contexts/SiteSettingsContext";
+import { getServerSiteSettings } from "~/lib/server-site-settings";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -19,9 +21,12 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Fetch initial site settings on the server for better SEO and performance
+  const initialSettings = await getServerSiteSettings();
+
   return (
     <html lang="en" className={`${geist.variable}`}>
       <head>
@@ -42,10 +47,12 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen flex flex-col")}>
         <TRPCReactProvider>
-          <Navbar />
-          <main className="flex-grow">{children}</main>
-          {/* <Toaster /> */}
-          <Footer />
+          <SiteSettingsProvider initialSettings={initialSettings}>
+            <Navbar />
+            <main className="flex-grow">{children}</main>
+            {/* <Toaster /> */}
+            <Footer />
+          </SiteSettingsProvider>
         </TRPCReactProvider>
       </body>
     </html>

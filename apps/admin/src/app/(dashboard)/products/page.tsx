@@ -4,42 +4,42 @@ import styled from "@emotion/styled";
 import NextLink from "next/link";
 import React, { useState } from "react";
 
+import ProductVariantsModal from "@/components/products/ProductVariantsModal";
+import { api } from "@lootzone/trpc-shared";
 import {
-    Add as AddIcon,
-    Archive as ArchiveIcon,
-    FilterList as FilterListIcon,
-    RemoveRedEye as RemoveRedEyeIcon,
-    Visibility as VisibilityIcon,
+  Add as AddIcon,
+  Archive as ArchiveIcon,
+  FilterList as FilterListIcon,
+  RemoveRedEye as RemoveRedEyeIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import {
-    Box,
-    Button,
-    Checkbox,
-    Grid,
-    IconButton,
-    Link,
-    Breadcrumbs as MuiBreadcrumbs,
-    Divider as MuiDivider,
-    Paper as MuiPaper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    Toolbar,
-    Tooltip,
-    Typography,
-    Switch,
-    Chip,
-    CircularProgress,
-    Alert,
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  Grid,
+  IconButton,
+  Link,
+  Breadcrumbs as MuiBreadcrumbs,
+  Divider as MuiDivider,
+  Paper as MuiPaper,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  Toolbar,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import { spacing } from "@mui/system";
-import { api } from "@lootzone/trpc-shared";
-import ProductVariantsModal from "@/components/products/ProductVariantsModal";
 
 const Divider = styled(MuiDivider)(spacing);
 const Breadcrumbs = styled(MuiBreadcrumbs)(spacing);
@@ -245,7 +245,9 @@ function EnhancedTable() {
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked && productsData?.products) {
-      const newSelecteds: Array<string> = products.map((n: ProductType) => n.id);
+      const newSelecteds: Array<string> = products.map(
+        (n: ProductType) => n.id
+      );
       setSelected(newSelecteds);
       return;
     }
@@ -308,7 +310,12 @@ function EnhancedTable() {
 
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -323,18 +330,23 @@ function EnhancedTable() {
   }
 
   // Convert Decimal fields to number for compatibility with ProductType
-  const products: ProductType[] = (productsData?.products || []).map((product) => ({
-    ...product,
-    variants: product.variants.map((variant) => ({
-      ...variant,
-      price: typeof variant.price === "object" && "toNumber" in variant.price
-        ? variant.price.toNumber()
-        : Number(variant.price),
-      originalPrice: typeof variant.originalPrice === "object" && "toNumber" in variant.originalPrice
-        ? variant.originalPrice.toNumber()
-        : Number(variant.originalPrice),
-    })),
-  }));
+  const products: ProductType[] = (productsData?.products || []).map(
+    (product) => ({
+      ...product,
+      variants: product.variants.map((variant) => ({
+        ...variant,
+        price:
+          typeof variant.price === "object" && "toNumber" in variant.price
+            ? variant.price.toNumber()
+            : Number(variant.price),
+        originalPrice:
+          typeof variant.originalPrice === "object" &&
+          "toNumber" in variant.originalPrice
+            ? variant.originalPrice.toNumber()
+            : Number(variant.originalPrice),
+      })),
+    })
+  );
   const totalCount = productsData?.totalCount || 0;
 
   return (
@@ -389,12 +401,12 @@ function EnhancedTable() {
                             variant="body2"
                             color="textSecondary"
                             sx={{
-                              display: '-webkit-box',
+                              display: "-webkit-box",
                               WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              maxWidth: '300px',
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "300px",
                             }}
                           >
                             {product.description}
@@ -427,13 +439,20 @@ function EnhancedTable() {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        gap={1}
+                      >
                         <Typography variant="body2" fontWeight="medium">
                           {product.variants.length}
                         </Typography>
                         <IconButton
                           size="small"
-                          onClick={() => handleViewVariants(product.variants, product.title)}
+                          onClick={() =>
+                            handleViewVariants(product.variants, product.title)
+                          }
                           disabled={product.variants.length === 0}
                         >
                           <VisibilityIcon fontSize="small" />
@@ -443,7 +462,9 @@ function EnhancedTable() {
                     <TableCell align="center">
                       <Switch
                         checked={product.isActive}
-                        onChange={() => handleToggleActive(product.id, product.isActive)}
+                        onChange={() =>
+                          handleToggleActive(product.id, product.isActive)
+                        }
                         disabled={toggleActiveMutation.isPending}
                         color="primary"
                         size="small"
@@ -453,7 +474,12 @@ function EnhancedTable() {
                       <IconButton aria-label="delete" size="large">
                         <ArchiveIcon />
                       </IconButton>
-                      <IconButton aria-label="details" size="large">
+                      <IconButton
+                        aria-label="edit"
+                        size="large"
+                        component={NextLink}
+                        href={`/products/edit/${product.id}`}
+                      >
                         <RemoveRedEyeIcon />
                       </IconButton>
                     </TableCell>

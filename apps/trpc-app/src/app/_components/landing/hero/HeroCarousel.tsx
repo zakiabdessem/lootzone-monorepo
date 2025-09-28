@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import type { Slide } from "@/types/product";
-import { gsap } from "gsap";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Platform, Region } from "~/constants/enums";
-import { api } from "~/trpc/react";
-import MembershipBadge from "../_components/MembershipBadge";
-import { ProductCard } from "../product/ProductCard";
-import HeroTextAnimated from "./HeroTextAnimated";
+import type { Slide } from '@/types/product';
+import { gsap } from 'gsap';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Platform, Region } from '~/constants/enums';
+import { api } from '~/trpc/react';
+import MembershipBadge from '../_components/MembershipBadge';
+import { ProductCard } from '../product/ProductCard';
+import HeroTextAnimated from './HeroTextAnimated';
 
 export default function HeroCarousel() {
   const { data: heroSlides, isLoading } = api.heroSlide.getAll.useQuery();
@@ -16,27 +16,28 @@ export default function HeroCarousel() {
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Transform database slides to component format
-  const slides: Slide[] = heroSlides?.map((slide) => ({
-    label: slide.label,
-    product: {
-      id: slide.product.id,
-      slug: slide.product.slug,
-      image: slide.product.image,
-      platformShow: !!slide.product.platformIcon,
-      platformIcon: slide.product.platformIcon,
-      platformName: slide.product.platformName as Platform,
-      title: slide.product.title,
-      region: slide.product.region as Region,
-      liked: false, // This would need to be determined by user preferences
-      variants: slide.product.variants.map((variant) => ({
-        id: variant.id,
-        name: variant.name,
-        price: Number(variant.price),
-        originalPrice: variant.originalPrice ? Number(variant.originalPrice) : undefined,
+  const slides: Slide[] =
+    heroSlides?.map(slide => ({
+      label: slide.label,
+      product: {
+        id: slide.product.id,
+        slug: slide.product.slug,
+        image: slide.product.image,
+        platformShow: !!slide.product.platformIcon,
+        platformIcon: slide.product.platformIcon,
+        platformName: slide.product.platformName as Platform,
+        title: slide.product.title,
         region: slide.product.region as Region,
-      })),
-    },
-  })) || [];
+        liked: false, // This would need to be determined by user preferences
+        variants: slide.product.variants.map(variant => ({
+          id: variant.id,
+          name: variant.name,
+          price: Number(variant.price),
+          originalPrice: variant.originalPrice ? Number(variant.originalPrice) : undefined,
+          region: slide.product.region as Region,
+        })),
+      },
+    })) || [];
 
   /* -----------------------------
    * Auto-cycle every 7 seconds (uses fresh index)
@@ -96,7 +97,7 @@ export default function HeroCarousel() {
     gsap.fromTo(
       cardRef.current,
       { opacity: 0, y: 40 }, // keep initial scale from CSS
-      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
+      { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
     );
   }, [index]);
 
@@ -127,16 +128,16 @@ export default function HeroCarousel() {
   // Show loading or empty state
   if (isLoading || slides.length === 0) {
     return (
-      <section className="section grid-overlay overflow-x-hidden">
-        <div className="flex flex-col justify-center items-center relative bottom-12 w-full">
-          <div className="flex justify-center py-6 relative bottom-8 w-full">
+      <section className='section grid-overlay overflow-x-hidden'>
+        <div className='flex flex-col justify-center items-center relative bottom-12 w-full'>
+          <div className='flex justify-center py-6 relative bottom-8 w-full'>
             <MembershipBadge />
           </div>
-          <div className="flex justify-center items-center h-96">
+          <div className='flex justify-center items-center h-96'>
             {isLoading ? (
-              <div className="text-center">Loading...</div>
+              <div className='text-center'>Loading...</div>
             ) : (
-              <div className="text-center">No hero slides configured</div>
+              <div className='text-center'>No hero slides configured</div>
             )}
           </div>
         </div>
@@ -150,52 +151,49 @@ export default function HeroCarousel() {
   }
 
   return (
-    <section className="section grid-overlay overflow-x-hidden">
-      <div className="flex flex-col justify-center items-center relative bottom-12 w-full">
+    <section className='section grid-overlay overflow-x-hidden'>
+      <div className='flex flex-col justify-center items-center relative bottom-12 w-full'>
         {/* Membership badge */}
-        <div className="flex justify-center py-6 relative bottom-8 w-full">
+        <div className='flex justify-center py-6 relative bottom-8 w-full'>
           <MembershipBadge />
         </div>
 
         <div
-          className="flex justify-between items-center gap-8 relative max-[1113px]:flex-col max-[1113px]:gap-6 w-full max-w-[1400px] mx-auto"
+          className='flex justify-between items-center gap-8 relative max-[1113px]:flex-col max-[1113px]:gap-6 w-full max-w-[1400px] mx-auto'
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
         >
           {/* Content */}
-          <div className="flex-1 min-w-0 w-full max-[1113px]:order-2 max-[1113px]:px-4">
-            <HeroTextAnimated
-              label={currentSlide?.label}
-              currentSlide={currentSlide}
-            />
+          <div className='flex-1 min-w-0 w-full max-[1113px]:order-2 max-[1113px]:px-4'>
+            <HeroTextAnimated label={currentSlide?.label} currentSlide={currentSlide} />
           </div>
           <div
             ref={cardRef}
-            className="shrink-0 relative scale-110 md:scale-125 max-[1113px]:scale-100 max-[1113px]:order-1"
+            className='shrink-0 relative scale-110 md:scale-125 max-[1113px]:scale-100 max-[1113px]:order-1'
           >
-            {currentSlide?.product && <ProductCard {...currentSlide.product} />}
+            {currentSlide?.product && <ProductCard {...currentSlide.product} platformShow={true} />}
           </div>
 
           {/* Vertical progress indicator */}
-          <div className="absolute left-0 sm:-left-12 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50">
+          <div className='absolute left-0 sm:-left-12 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50'>
             {slides.map((_, i) => (
               <div
                 key={i}
-                className="relative h-20 w-3 cursor-pointer"
+                className='relative h-20 w-3 cursor-pointer'
                 onClick={() => goToSlide(i)}
               >
                 {/* Background bar */}
                 <div
                   className={`absolute inset-0 rounded-full ${
-                    i < index ? "bg-[#4618AC]" : "bg-[#4618AC]/30"
+                    i < index ? 'bg-[#4618AC]' : 'bg-[#4618AC]/30'
                   } shadow-md border border-[#4618AC]/40`}
                 ></div>
 
                 {/* Current slide progress */}
                 {i === index && (
                   <div
-                    className="absolute left-0 top-0 w-3 rounded-full bg-[#4618AC] transition-all duration-100 shadow-lg border border-[#4618AC]"
+                    className='absolute left-0 top-0 w-3 rounded-full bg-[#4618AC] transition-all duration-100 shadow-lg border border-[#4618AC]'
                     style={{ height: `${progress}%` }}
                   ></div>
                 )}

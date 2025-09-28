@@ -1,15 +1,14 @@
-import { type ClassValue, clsx } from "clsx";
-import { useMemo } from "react";
-import { twMerge } from "tailwind-merge";
-import { productCategories, simpleCategories } from "./category";
-import siteSettings from "./site-settings.json";
+import { type ClassValue, clsx } from 'clsx';
+import { useMemo } from 'react';
+import { twMerge } from 'tailwind-merge';
+import { productCategories, simpleCategories } from './category';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function formatDA(value: number) {
-  return value.toLocaleString("fr-FR") + " DA";
+  return value.toLocaleString('fr-FR') + ' DA';
 }
 
 /**
@@ -22,26 +21,9 @@ export function getDiscountPercent(original: number, price?: number): number {
   return Math.round(((original - price) / original) * 100);
 }
 
-/**
- * React hook to get the current site currency from settings.
- */
-export function useCurrency() {
-  // In a real app, this could be dynamic (e.g., from context or user settings)
-  return useMemo(() => siteSettings.currency, []);
-}
-
-/**
- * useAnnouncement - returns the current announcement (static for now, dynamic in future)
- */
-export function useAnnouncement() {
-  // In the future, fetch from API/DB
-  return useMemo(
-    () => ({
-      html: siteSettings.siteAnnouncementHtml,
-    }),
-    []
-  );
-}
+// Site settings hooks have been moved to ~/contexts/SiteSettingsContext
+// This provides better caching, SSR support, and prevents API undefined errors
+// Import from there: useCurrency, useAnnouncement, useSiteSubAnnouncement, useWhatsAppLink, useTelegramLink
 
 export function useProductCategories() {
   return useMemo(() => productCategories, []);

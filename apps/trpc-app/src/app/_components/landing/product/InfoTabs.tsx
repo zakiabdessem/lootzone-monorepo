@@ -3,8 +3,6 @@ import type { Product } from '~/types/product';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 export interface InfoTabsProps {
-  description: Product['description'];
-  keyFeatures?: Product['keyFeatures'];
   deliveryInfo?: Product['deliveryInfo'];
   deliverySteps?: Product['deliverySteps'];
   terms?: Product['terms'];
@@ -19,8 +17,6 @@ const StepNumber = ({ n }: { n: number }) => (
 );
 
 const InfoTabs: React.FC<InfoTabsProps> = ({
-  description,
-  keyFeatures = siteSettings.defaultProduct.keyFeatures,
   deliveryInfo = siteSettings.defaultProduct.deliveryInfo,
   deliverySteps = siteSettings.defaultProduct.deliverySteps,
   terms = siteSettings.defaultProduct.terms,
@@ -28,14 +24,8 @@ const InfoTabs: React.FC<InfoTabsProps> = ({
 }) => {
   return (
     <div className='bg-white'>
-      <Tabs defaultValue='description' className='w-full p-6 pt-2 px-2'>
+      <Tabs defaultValue='delivery' className='w-full p-6 pt-2 px-2'>
         <TabsList className='w-full flex'>
-          <TabsTrigger
-            value='description'
-            className='px-8 py-3 text-sm shadow-none font-medium text-gray-500 -mb-[2px] rounded-none border-transparent data-[state=active]:border-[#4618AC] data-[state=active]:text-[#4618AC] transition-colors'
-          >
-            Description
-          </TabsTrigger>
           <TabsTrigger
             value='delivery'
             className='px-8 py-3 text-sm font-medium text-gray-500 -mb-[2px] rounded-none border-transparent data-[state=active]:border-[#4618AC] data-[state=active]:text-[#4618AC] transition-colors'
@@ -49,26 +39,6 @@ const InfoTabs: React.FC<InfoTabsProps> = ({
             Terms
           </TabsTrigger>
         </TabsList>
-
-        {/* Description */}
-        <TabsContent value='description' className='p-6'>
-          <div className='space-y-4'>
-            <p className='text-gray-600 leading-relaxed'>{description}</p>
-            {keyFeatures.length > 0 && (
-              <div className='space-y-2'>
-                <h4 className='font-medium text-[#212121]'>Key Features</h4>
-                <ul className='grid gap-2 text-sm text-gray-600'>
-                  {keyFeatures.map((feature, idx) => (
-                    <li key={idx} className='flex items-center gap-2'>
-                      <ListDot />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </TabsContent>
 
         {/* Delivery */}
         <TabsContent value='delivery' className='p-6'>
