@@ -16,8 +16,8 @@ export interface ProductVariant {
   name: string;
   /** Selling price for this variant */
   price: number;
-  /** Striked-through price before discount (required) */
-  originalPrice: number;
+  /** Striked-through price before discount (optional) */
+  originalPrice?: number;
   /** Region code using enum */
   region?: Region;
 }

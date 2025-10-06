@@ -76,7 +76,7 @@ export default function RecentlyViewed() {
       image: '/product-placeholder2.jpg',
       platformShow: true,
       platformIcon: '/drms/rockstar.svg',
-      platformName: Platform.PC,
+      platformName: Platform.EPIC_GAMES,
       title: 'Steam Gift Card 20 EUR',
       region: Region.EU,
       variants: [

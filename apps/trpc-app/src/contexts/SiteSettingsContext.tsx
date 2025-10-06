@@ -47,7 +47,7 @@ export function SiteSettingsProvider({
     {
       enabled: typeof window !== 'undefined', // Only run on client
       staleTime: 1000 * 60 * 5, // 5 minutes
-      cacheTime: 1000 * 60 * 10, // 10 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes (renamed from cacheTime in React Query v5)
       refetchOnWindowFocus: false,
       retry: 1,
     }

@@ -99,9 +99,9 @@ export default function CheckoutPage() {
   const isStep2Valid = selectedPaymentMethod !== null;
   
   const isStep3Valid = selectedPaymentMethod === 'flexy' 
-    ? receiptImage && paymentHour && paymentMinute && 
+    ? !!(receiptImage && paymentHour && paymentMinute && 
       parseInt(paymentHour) >= 0 && parseInt(paymentHour) <= 23 &&
-      parseInt(paymentMinute) >= 0 && parseInt(paymentMinute) <= 59
+      parseInt(paymentMinute) >= 0 && parseInt(paymentMinute) <= 59)
     : true;
 
   // Debug validation
@@ -284,6 +284,7 @@ export default function CheckoutPage() {
                       <Input
                         type='text'
                         value={fullName}
+                        name='fullName'
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder='John Doe'
                         className='w-full h-10'
