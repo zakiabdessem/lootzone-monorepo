@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '~/hooks/useCart';
 import { formatDA } from '@/lib/utils';
@@ -37,6 +37,35 @@ export default function CheckoutPage() {
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [showExampleModal, setShowExampleModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Scroll indicator state
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Check if content is scrollable and update indicator visibility
+  useEffect(() => {
+    const checkScroll = () => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const isScrollable = container.scrollHeight > container.clientHeight;
+      const isAtBottom = Math.abs(container.scrollHeight - container.clientHeight - container.scrollTop) < 5;
+      
+      setShowScrollIndicator(isScrollable && !isAtBottom);
+    };
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      checkScroll();
+      container.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+      
+      return () => {
+        container.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
+    }
+  }, [currentStep, selectedPaymentMethod, receiptPreview]);
 
   // Calculate Flexy total with 20% fee
   const flexyTotal = subtotal * 1.2;
@@ -378,8 +407,11 @@ export default function CheckoutPage() {
 
               {/* Step 3: Payment Details (Conditional based on method) */}
               <Step>
-                <div className='space-y-3 py-3 px-4 sm:px-6 max-h-[calc(100vh-280px)] overflow-y-auto'>
-                  {selectedPaymentMethod === 'flexy' ? (
+                <div className='relative'>
+                <div 
+                  ref={scrollContainerRef}
+                  className='space-y-3 py-3 px-4 sm:px-6 max-h-[calc(100vh-280px)] overflow-y-auto'
+                >                  {selectedPaymentMethod === 'flexy' ? (
                     <>
                       {/* <div>
                         <h2 className='text-xl font-bold text-[#212121] mb-1'>Flexy Payment</h2>
@@ -567,6 +599,11 @@ export default function CheckoutPage() {
                         <p className='text-3xl font-bold text-[#4618AC]'>{formatDA(subtotal)}</p>
                       </div>
                     </div>
+                  )}
+                  </div>
+                  {/* Scroll indicator shadow - only visible when there's content below */}
+                  {showScrollIndicator && (
+                    <div className='pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white via-white/80 to-transparent' />
                   )}
                 </div>
               </Step>
