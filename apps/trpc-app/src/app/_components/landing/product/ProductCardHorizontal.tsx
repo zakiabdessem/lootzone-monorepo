@@ -1,10 +1,11 @@
 "use client";
 
 import { useWishlist } from "@/hooks/useWishlist";
+import { useCart } from "@/hooks/useCart";
 import { formatDA, getDiscountPercent } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { upperFirst } from "lodash";
 import type { IProductCard } from "~/types/product";
 import { Button } from "../ui/button";
@@ -26,6 +27,9 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
   liked,
 }) => {
   const { isLiked, toggle } = useWishlist();
+  const { addToCart, isInCart, isUpdating } = useCart();
+  const [showSuccess, setShowSuccess] = useState(false);
+  
   const likedComputed = useMemo(() => liked || isLiked(id), [liked, id, isLiked]);
   const handleHeartClick = () => void toggle(id);
 
@@ -34,6 +38,20 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
     firstVariant?.originalPrice ?? 0,
     firstVariant?.price
   );
+
+  const inCart = firstVariant ? isInCart(id, firstVariant.id) : false;
+
+  const handleAddToCart = async () => {
+    if (!firstVariant || isUpdating) return;
+
+    try {
+      await addToCart(id, firstVariant.id, 1);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+    }
+  };
 
   return (
     <div className="group relative flex bg-[#4618AC] border border-[#63e3c2] overflow-hidden hover:shadow-lg transition-shadow duration-200 w-full max-w-[640px]">
@@ -110,10 +128,15 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
 
           {/* Add to cart */}
           <Button
-            style={{ fontFamily: '"Metropolis", Arial, Helvetica, sans-serif' }}
-            className="w-full cursor-pointer bg-[#fad318] hover:bg-[#e9c410] text-black h-[35px] text-[0.75rem] font-extrabold max-w-[120px]"
+            onClick={handleAddToCart}
+            disabled={isUpdating}
+            style={{ 
+              fontFamily: '"Metropolis", Arial, Helvetica, sans-serif',
+              backgroundColor: showSuccess ? '#10b981' : inCart ? '#9ca3af' : '#fad318'
+            }}
+            className="w-full cursor-pointer hover:opacity-90 text-black h-[35px] text-[0.75rem] font-extrabold max-w-[120px] transition-colors"
           >
-            Add to cart
+            {isUpdating ? 'ADDING...' : showSuccess ? '✓ ADDED!' : inCart ? 'IN CART' : 'Add to cart'}
           </Button>
         </div>
       </div>

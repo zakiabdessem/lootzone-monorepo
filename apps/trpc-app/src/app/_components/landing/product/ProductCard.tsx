@@ -2,9 +2,10 @@
 import { formatDA } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useWishlist } from '@/hooks/useWishlist';
+import { useCart } from '@/hooks/useCart';
 import { getDiscountPercent } from '@/lib/utils';
 import type { IProductCard } from '@/types/product';
 import { upperFirst } from 'lodash';
@@ -27,6 +28,8 @@ export const ProductCard: React.FC<IProductCard> = ({
   liked = false,
 }) => {
   const { isLiked, toggle, isUpdating } = useWishlist();
+  const { addToCart, isInCart, isUpdating: isCartUpdating } = useCart();
+  const [showCartSuccess, setShowCartSuccess] = useState(false);
 
   // Get price/originalPrice from first variant
   const firstVariant = variants[0];
@@ -42,6 +45,23 @@ export const ProductCard: React.FC<IProductCard> = ({
       await toggle(id);
     }
   };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!firstVariant || isCartUpdating) return;
+
+    try {
+      await addToCart(id, firstVariant.id, 1);
+      setShowCartSuccess(true);
+      setTimeout(() => setShowCartSuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+    }
+  };
+
+  const inCart = firstVariant ? isInCart(id, firstVariant.id) : false;
 
   return (
     <div className='group relative flex flex-col bg-[#4618AC] border border-[#63e3c2] overflow-hidden hover:shadow-lg transition-shadow duration-200 w-[200px] h-[405.2px]'>
@@ -134,9 +154,23 @@ export const ProductCard: React.FC<IProductCard> = ({
         <div className='bg-primary-900 p-3 flex flex-col gap-2'>
           <Button
             style={{ fontFamily: '"Metropolis", Arial, Helvetica, sans-serif' }}
-            className='w-full cursor-pointer bg-[#fad318] hover:bg-primary-600 text-black h-[35px] text-[0.75rem] font-extrabold'
+            className={`w-full cursor-pointer h-[35px] text-[0.75rem] font-extrabold transition-colors ${
+              showCartSuccess
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : inCart
+                ? 'bg-gray-400 hover:bg-gray-500 text-white'
+                : 'bg-[#fad318] hover:bg-primary-600 text-black'
+            } ${isCartUpdating ? 'opacity-50 pointer-events-none' : ''}`}
+            onClick={handleAddToCart}
+            disabled={isCartUpdating}
           >
-            Add to cart
+            {isCartUpdating
+              ? 'ADDING...'
+              : showCartSuccess
+              ? '✓ ADDED!'
+              : inCart
+              ? 'IN CART'
+              : 'Add to cart'}
           </Button>
           <Link
             href={`/product/${slug}`}

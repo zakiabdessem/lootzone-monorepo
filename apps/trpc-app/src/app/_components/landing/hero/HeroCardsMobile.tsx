@@ -5,6 +5,7 @@ import type { IProductCard } from '~/types/product';
 import CategoryBar from '../_components/CategoryBar';
 import MembershipBadge from '../_components/MembershipBadge';
 import { ProductCard } from '../product/ProductCard';
+import RippleGrid from './RippleGrid';
 
 export default function HeroCardsMobile() {
   const products: IProductCard[] = [
@@ -87,8 +88,20 @@ export default function HeroCardsMobile() {
   ];
 
   return (
-    <section className='section grid-overlay sm:hidden no-scrollbar max-md:top-6'>
-      <div className='section-inner px-4'>
+    <section className='section sm:hidden no-scrollbar max-md:top-6 relative'>
+      <RippleGrid
+        enableRainbow={false}
+        gridColor="#4618AC"
+        rippleIntensity={0.05}
+        gridSize={10}
+        gridThickness={15}
+        mouseInteraction={true}
+        mouseInteractionRadius={1.2}
+        opacity={0.15}
+        vignetteStrength={2.5}
+        glowIntensity={0.15}
+      />
+      <div className='section-inner px-4 relative z-10'>
         {/* Membership badge */}
         <div className='flex justify-center my-4 relative bottom-8'>
           <MembershipBadge />

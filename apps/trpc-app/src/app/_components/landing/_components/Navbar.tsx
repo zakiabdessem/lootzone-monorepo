@@ -1,8 +1,10 @@
 'use client';
 
 import { useSmartCategories } from '@/lib/smart-categories';
+import { formatDA } from '@/lib/utils';
 
 import { useWishlist } from '@/hooks/useWishlist';
+import { useCart } from '@/hooks/useCart';
 import { useAnnouncement } from '~/contexts/SiteSettingsContext';
 // import { useCurrency } from "~/contexts/SiteSettingsContext";
 import { Heart, Search, ShoppingCart, User, X, Home, Store, Sparkles } from 'lucide-react';
@@ -18,7 +20,7 @@ import Dock from './Dock';
 
 const categories = [
   { id: 'categories', label: 'Categories' },
-  { id: 'shop', label: 'Shop' },
+  { id: 'products', label: 'Shop' },
   { id: 'cheap-games', label: 'Cheap Games' },
   { id: 'trending', label: 'Trending Now' },
   { id: 'deals', label: 'Deals' },
@@ -34,6 +36,7 @@ export function Navbar() {
   const announcement = useAnnouncement();
   const smartCategories = useSmartCategories();
   const { ids, mergeGuestToServer, isAuthenticated } = useWishlist();
+  const { itemCount, subtotal } = useCart();
   const router = useRouter();
 
   useEffect(() => {
@@ -74,19 +77,29 @@ export function Navbar() {
 
     // Add main categories and their children
     for (const category of smartCategories) {
+      // For parent categories, create link with all children slugs
+      const childrenSlugs = category.children?.map(child => {
+        // Convert category name to slug format (lowercase, replace spaces with hyphens)
+        const categoryName = child.category ?? child.name;
+        return categoryName.toLowerCase().replace(/\s+/g, '-');
+      }) || [];
+      
+      const catsParam = childrenSlugs.length > 0 ? `&cats=${childrenSlugs.join('%2C')}` : '';
+      
       items.push({
         label: category.name,
         ariaLabel: `View ${category.name} products`,
-        link: `/products?category=${category.id}`,
+        link: `/products?category=${category.id}${catsParam}`,
       });
 
       // Add children
       if (category.children && category.children.length > 0) {
         for (const child of category.children) {
+          const childSlug = (child.category ?? child.name).toLowerCase().replace(/\s+/g, '-');
           items.push({
             label: child.name,
             ariaLabel: `View ${child.name} products`,
-            link: `/products?category=${child.category ?? child.id}`,
+            link: `/products?cats=${childSlug}`,
           });
         }
       }
@@ -117,9 +130,9 @@ export function Navbar() {
       icon: <ShoppingCart size={22} strokeWidth={2} />,
       label: 'Cart',
       onClick: () => router.push('/cart'),
-      badge: 0, // Replace with actual cart count
+      badge: itemCount,
     },
-  ], [router, ids.length]);
+  ], [router, ids.length, itemCount]);
 
   return (
     <nav
@@ -211,11 +224,17 @@ export function Navbar() {
               </Button>
 
               {/* Cart - hidden on mobile */}
-              <Button variant='secondary' className='hidden md:flex space-x-1 cursor-pointer'>
-                <ShoppingCart className='h-5 w-5' />
-                <span>0</span>
-                <span>{currency}</span>
-              </Button>
+              <Link href='/cart'>
+                <Button variant='secondary' className='hidden md:flex space-x-1 cursor-pointer relative'>
+                  <ShoppingCart className='h-5 w-5' />
+                  <span>{formatDA(subtotal)}</span>
+                  {/* {itemCount > 0 && (
+                    <span className='absolute -top-1 -right-1 bg-[#4618AC] text-white text-[10px] rounded-full px-1.5 py-0.5 leading-none'>
+                      {itemCount}
+                    </span>
+                  )} */}
+                </Button>
+              </Link>
 
               {/* Mobile Menu Button - moved to the right */}
               <div className='md:hidden'>
@@ -294,7 +313,7 @@ export function Navbar() {
 
       {/* Mobile Dock Navigation - Hide when menu is open or near footer */}
       {!isMenuOpen && showDock && (
-        <div className="md:hidden">
+        <div className="md:hidden cursor-pointer">
           <Dock 
             items={dockItems}
             panelHeight={68}

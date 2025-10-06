@@ -55,6 +55,9 @@ export default function ProductsClient() {
     updateCatsParam(selectedCats);
   }, [selectedCats]);
 
+  // Fetch categories to check loading state
+  const { isLoading: categoriesLoading } = api.category.getSmart.useQuery();
+  
   // Fetch products
   const { data, isLoading } = api.product.list.useQuery({
     region: region !== 'all' ? (region as Region) : undefined,
@@ -107,7 +110,7 @@ export default function ProductsClient() {
   );
 
   return (
-    <div className='min-h-screen bg-[#f8f7ff] text-[#212121] py-12 relative z-0'>
+    <div className='min-h-screen bg-[#f8f7ff] text-[#212121] py-12 relative z-0 max-sm:mt-18'>
       <div className='max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 px-4'>
         {/* Sidebar */}
         <aside className='space-y-6 bg-white border border-gray-200 shadow-sm p-6 lg:sticky lg:top-24 h-max rounded-sm  hidden lg:block'>
@@ -133,36 +136,40 @@ export default function ProductsClient() {
 
           {/* Region select */}
           <CollapsibleSection title='Region' defaultOpen>
-            <Select
-              value={region}
-              onValueChange={(val: any) => {
-                setRegion(val);
-                updateParam('region', val);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>All regions</SelectItem>
-                <SelectItem value={Region.GLOBAL}>Global</SelectItem>
-                <SelectItem value={Region.EU}>Europe</SelectItem>
-                <SelectItem value={Region.US}>United States</SelectItem>
-                <SelectItem value={Region.ASIA}>Asia</SelectItem>
-                <SelectItem value={Region.NA}>North America</SelectItem>
-              </SelectContent>
-            </Select>
+            {categoriesLoading ? (
+              <div className='h-10 bg-gray-200 rounded animate-pulse' />
+            ) : (
+              <Select
+                value={region}
+                onValueChange={(val: any) => {
+                  setRegion(val);
+                  updateParam('region', val);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>All regions</SelectItem>
+                  <SelectItem value={Region.GLOBAL}>Global</SelectItem>
+                  <SelectItem value={Region.EU}>Europe</SelectItem>
+                  <SelectItem value={Region.US}>United States</SelectItem>
+                  <SelectItem value={Region.ASIA}>Asia</SelectItem>
+                  <SelectItem value={Region.NA}>North America</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </CollapsibleSection>
 
           {/* Product type */}
-          <CollapsibleSection title='Product type' defaultOpen>
+          {/* <CollapsibleSection title='Product type' defaultOpen>
             {['DLC', 'Game points', 'Game', 'Gaming eCards'].map((type, idx) => (
               <label key={idx} className='flex items-center gap-2 cursor-pointer text-sm'>
                 <Checkbox />
                 {type}
               </label>
             ))}
-          </CollapsibleSection>
+          </CollapsibleSection> */}
 
           {/* Categories */}
           <CollapsibleSection title='Categories' defaultOpen>

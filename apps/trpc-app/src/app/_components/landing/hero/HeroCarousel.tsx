@@ -8,6 +8,7 @@ import { api } from '~/trpc/react';
 import MembershipBadge from '../_components/MembershipBadge';
 import { ProductCard } from '../product/ProductCard';
 import HeroTextAnimated from './HeroTextAnimated';
+import RippleGrid from './RippleGrid';
 
 export default function HeroCarousel() {
   const { data: heroSlides, isLoading } = api.heroSlide.getAll.useQuery();
@@ -128,8 +129,20 @@ export default function HeroCarousel() {
   // Show loading or empty state
   if (isLoading || slides.length === 0) {
     return (
-      <section className='section grid-overlay overflow-x-hidden'>
-        <div className='flex flex-col justify-center items-center relative bottom-12 w-full'>
+      <section className='section overflow-x-hidden relative'>
+        <RippleGrid
+          enableRainbow={false}
+          gridColor="#4618AC"
+          rippleIntensity={0.05}
+          gridSize={10}
+          gridThickness={15}
+          mouseInteraction={true}
+          mouseInteractionRadius={1.2}
+          opacity={0.15}
+          vignetteStrength={2.5}
+          glowIntensity={0.15}
+        />
+        <div className='flex flex-col justify-center items-center relative bottom-12 w-full z-10'>
           <div className='flex justify-center py-6 relative bottom-8 w-full'>
             <MembershipBadge />
           </div>
@@ -151,12 +164,24 @@ export default function HeroCarousel() {
   }
 
   return (
-    <section className='section grid-overlay overflow-x-hidden'>
-      <div className='flex flex-col justify-center items-center relative bottom-12 w-full'>
+    <section className='section overflow-x-hidden relative'>
+      <RippleGrid
+        enableRainbow={true}
+        gridColor="#89d6b4"
+        rippleIntensity={0.01}
+        gridSize={18}
+        gridThickness={50}
+        mouseInteraction={false}
+        mouseInteractionRadius={1.2}
+        opacity={0.25}
+        vignetteStrength={2}
+        glowIntensity={0.2}
+      />
+      <div className='flex flex-col justify-center items-center relative bottom-12 w-full z-10'>
         {/* Membership badge */}
-        <div className='flex justify-center py-6 relative bottom-8 w-full'>
+        {/* <div className='flex justify-center py-6 relative bottom-8 w-full'>
           <MembershipBadge />
-        </div>
+        </div> */}
 
         <div
           className='flex justify-between items-center gap-8 relative max-[1113px]:flex-col max-[1113px]:gap-6 w-full max-w-[1400px] mx-auto'
