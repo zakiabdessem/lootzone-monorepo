@@ -123,7 +123,12 @@ export default function ProductView({ product }: { product: ViewProduct }) {
             />
 
             {/* CTAs */}
-            <ActionButtons />
+            <ActionButtons
+              productId={product.id}
+              productTitle={product.title}
+              productImage={product.image}
+              selectedVariant={selectedVariant}
+            />
           </div>
         </div>
 

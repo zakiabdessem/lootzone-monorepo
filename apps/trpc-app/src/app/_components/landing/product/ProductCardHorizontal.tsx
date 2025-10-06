@@ -85,10 +85,19 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
         )}
       </Link>
 
-      {/* Details */}
-      <div className="flex flex-1 flex-col justify-between p-3 gap-2">
+      {/* Details - Clickable on mobile */}
+      <Link 
+        href={`/product/${slug}`}
+        className="flex flex-1 flex-col justify-between p-3 gap-2 md:pointer-events-none"
+        onClick={(e) => {
+          // Prevent navigation on desktop
+          if (window.innerWidth >= 768) {
+            e.preventDefault();
+          }
+        }}
+      >
         {/* Title & region */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 pointer-events-none">
           <h3 className="text-sm sm:text-base font-medium text-white line-clamp-2">
             {title}
           </h3>
@@ -98,7 +107,7 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
         </div>
 
         {/* Pricing */}
-        <div>
+        <div className="pointer-events-none">
           <div className="text-xs text-gray-300 space-x-1">
             {discount > 0 && (
               <>
@@ -117,10 +126,14 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
         </div>
 
         <div className="flex items-center gap-2 justify-between">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center pointer-events-auto">
             <button
               className="product-slider__fav js-fav cursor-pointer rotate-90 h-4 w-4 ml-2"
-              onClick={() => handleHeartClick()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleHeartClick();
+              }}
             >
               <span className={`heart ${likedComputed ? "is-active" : ""}`}></span>{" "}
             </button>
@@ -128,18 +141,22 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
 
           {/* Add to cart */}
           <Button
-            onClick={handleAddToCart}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddToCart();
+            }}
             disabled={isUpdating}
             style={{ 
               fontFamily: '"Metropolis", Arial, Helvetica, sans-serif',
               backgroundColor: showSuccess ? '#10b981' : inCart ? '#9ca3af' : '#fad318'
             }}
-            className="w-full cursor-pointer hover:opacity-90 text-black h-[35px] text-[0.75rem] font-extrabold max-w-[120px] transition-colors"
+            className="w-full cursor-pointer hover:opacity-90 text-black h-[35px] text-[0.75rem] font-extrabold max-w-[120px] transition-colors pointer-events-auto"
           >
             {isUpdating ? 'ADDING...' : showSuccess ? '✓ ADDED!' : inCart ? 'IN CART' : 'Add to cart'}
           </Button>
         </div>
-      </div>
+      </Link>
     </div>
   );
 };

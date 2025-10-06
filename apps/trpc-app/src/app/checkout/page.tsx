@@ -378,7 +378,7 @@ export default function CheckoutPage() {
 
               {/* Step 3: Payment Details (Conditional based on method) */}
               <Step>
-                <div className='space-y-3 py-3 px-4 sm:px-6'>
+                <div className='space-y-3 py-3 px-4 sm:px-6 max-h-[calc(100vh-280px)] overflow-y-auto'>
                   {selectedPaymentMethod === 'flexy' ? (
                     <>
                       {/* <div>
@@ -573,10 +573,16 @@ export default function CheckoutPage() {
             </Stepper>
           </div>
 
-          {/* Order Summary Sidebar - Hidden on mobile, visible on desktop */}
-          <div className='hidden lg:block lg:col-span-1'>
-              <div className='bg-white rounded-none shadow-lg p-5 sticky top-28'>
-              <h3 className='text-lg font-bold text-[#212121] mb-3'>Order Summary</h3>
+          {/* Order Summary Sidebar - Visible on all devices for steps 1-2, hidden on step 3 mobile only */}
+          <div className={`lg:col-span-1 ${currentStep === 3 ? 'hidden lg:block' : 'block'}`}>
+              <div 
+                onClick={() => router.push('/cart')}
+                className='bg-white rounded-none shadow-lg p-5 sticky top-28 cursor-pointer hover:shadow-xl transition-shadow'
+              >
+              <h3 className='text-lg font-bold text-[#212121] mb-3 flex items-center justify-between'>
+                Order Summary
+                <span className='text-xs text-[#4618AC] font-normal'>View Cart →</span>
+              </h3>
 
               <div className='space-y-2.5 mb-5'>
                 {cartDetails.slice(0, 3).map((item) => (
