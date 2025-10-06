@@ -1,8 +1,7 @@
 'use client';
 
-import { CheckCircle, Quote, Star } from 'lucide-react';
+import { CheckCircle, Star } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
 
 const testimonialsData = [
   {
@@ -13,104 +12,182 @@ const testimonialsData = [
   },
   {
     name: 'Nassim Lekhdari',
-    quote: '3andi déjà commandé 4 fois, jamais eu un souci. Recommande +++',
+    quote: "3andi déjà commandé 4 fois, jamais eu un souci. Recommande +++",
     avatarBg: 'bg-green-100',
     rating: 4.5,
   },
   {
     name: 'Lina Ait',
-    quote: 'J’ai acheté une carte Spotify, reçu en 2 minutes, top!',
+    quote: "J'ai acheté une carte Spotify, reçu en 2 minutes, top!",
     avatarBg: 'bg-red-100',
     rating: 4,
   },
   {
     name: 'Fares DZ',
-    quote: 'l’instant delivery nta3 Steam Card 🔥🔥',
+    quote: "L'instant delivery nta3 Steam Card 🔥🔥",
     avatarBg: 'bg-blue-100',
     rating: 5,
   },
+  {
+    name: 'Yanis K.',
+    quote: 'Service client super réactif, problème résolu en 10 min!',
+    avatarBg: 'bg-purple-100',
+    rating: 5,
+  },
+  {
+    name: 'Amira B.',
+    quote: 'Les prix sont vraiment compétitifs comparé aux autres.',
+    avatarBg: 'bg-yellow-100',
+    rating: 4.5,
+  },
+  {
+    name: 'Mehdi Z.',
+    quote: 'Site fiable à 100%, je recommande les yeux fermés.',
+    avatarBg: 'bg-indigo-100',
+    rating: 5,
+  },
+  {
+    name: 'Rania S.',
+    quote: 'Parfait pour les cartes PSN, livraison instantanée!',
+    avatarBg: 'bg-teal-100',
+    rating: 4.5,
+  },
 ];
 
-const Testimonials = () => {
-  const [testimonials] = useState(testimonialsData);
+// Split testimonials into three rows
+const row1 = [...testimonialsData.slice(0, 3), ...testimonialsData.slice(0, 3), ...testimonialsData.slice(0, 3)];
+const row2 = [...testimonialsData.slice(3, 6), ...testimonialsData.slice(3, 6), ...testimonialsData.slice(3, 6)];
+const row3 = [...testimonialsData.slice(6, 8), ...testimonialsData.slice(6, 8), ...testimonialsData.slice(6, 8), ...testimonialsData.slice(6, 8)];
+
+interface TestimonialCardProps {
+  name: string;
+  quote: string;
+  avatarBg: string;
+  rating: number;
+}
+
+const TestimonialCard = ({ name, quote, avatarBg, rating }: TestimonialCardProps) => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 !== 0;
 
   return (
-    <section className='py-20 bg-gray-50 dot-background'>
-      <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-12'>
-          <h2 className='text-3xl font-extrabold text-[#212121] sm:text-4xl'>
-            What Our Customers Say
-          </h2>
-          <p className='mt-4 text-lg text-gray-600'>Honest reviews from our amazing users.</p>
+    <div className='flex-shrink-0 w-[320px] sm:w-[380px] min-h-[140px] bg-white rounded-2xl border border-gray-200/50 p-6 hover:bg-gray-50 hover:border-gray-300 hover:shadow-lg transition-all duration-300 cursor-pointer'>
+      <div className='flex flex-col gap-4 h-full'>
+        {/* Stars and Badge */}
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-1'>
+            {[...Array(5)].map((_, i) => {
+              if (i < fullStars) {
+                return <Star key={i} className='w-4 h-4 text-[#4618AC]' fill='#4618AC' />;
+              }
+              if (i === fullStars && hasHalfStar) {
+                return (
+                  <div key={i} className='relative w-4 h-4'>
+                    <Star className='w-4 h-4 text-gray-300 absolute' fill='currentColor' />
+                    <div className='absolute top-0 left-0 h-full w-1/2 overflow-hidden'>
+                      <Star className='w-4 h-4 text-[#4618AC]' fill='#4618AC' />
+                    </div>
+                  </div>
+                );
+              }
+              return <Star key={i} className='w-4 h-4 text-gray-300' fill='currentColor' />;
+            })}
+          </div>
+          <div className='flex items-center text-xs text-green-600 font-medium'>
+            <CheckCircle className='w-3.5 h-3.5 mr-1' />
+            <span className='hidden sm:inline'>Verified</span>
+          </div>
         </div>
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
-          {testimonials.map((testimonial, index) => {
-            const fullStars = Math.floor(testimonial.rating);
-            const hasHalfStar = testimonial.rating % 1 !== 0;
 
-            return (
-              <div
-                key={index}
-                className='bg-white rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 ease-in-out'
-              >
-                <div className='p-8 flex flex-col h-full justify-between'>
-                  <div>
-                    <div className='flex items-center justify-between mb-4'>
-                      <div className='flex items-center'>
-                        {[...Array(5)].map((_, i) => {
-                          if (i < fullStars) {
-                            return (
-                              <Star key={i} className='w-5 h-5 text-[#4618AC]' fill='#4618AC' />
-                            );
-                          }
-                          if (i === fullStars && hasHalfStar) {
-                            return (
-                              <div key={i} className='relative'>
-                                <Star className='w-5 h-5 text-gray-300' fill='currentColor' />
-                                <div className='absolute top-0 left-0 h-full w-1/2 overflow-hidden'>
-                                  <Star className='w-5 h-5 text-[#4618AC]' fill='#4618AC' />
-                                </div>
-                              </div>
-                            );
-                          }
-                          return (
-                            <Star key={i} className='w-5 h-5 text-gray-300' fill='currentColor' />
-                          );
-                        })}
-                      </div>
-                      <div className='flex items-center text-xs text-green-600 font-semibold'>
-                        <CheckCircle className='w-4 h-4 mr-1' />
-                        <span>Verified Purchase</span>
-                      </div>
-                    </div>
-                    <div className='relative'>
-                      <Quote className='absolute -left-3 -top-2 w-10 h-10 text-gray-100 transform rotate-180' />
-                      <p className='relative text-gray-600 text-lg italic'>{testimonial.quote}</p>
-                    </div>
-                  </div>
+        {/* Quote */}
+        <p className='text-gray-700 text-[15px] leading-relaxed flex-grow'>{quote}</p>
 
-                  <div className='mt-12 flex items-center'>
-                    <div
-                      className={`relative w-14 h-14 rounded-lg overflow-hidden ${testimonial.avatarBg}`}
-                    >
-                      <Image
-                        src='/icons/user-picture.png'
-                        alt={testimonial.name}
-                        fill
-                        sizes='56px'
-                        className='object-contain p-1'
-                      />
-                    </div>
-                    <div className='ml-4'>
-                      <p className='font-bold text-gray-800'>{testimonial.name}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        {/* Author */}
+        <div className='flex items-center gap-3'>
+          <div className={`w-10 h-10 rounded-full overflow-hidden ${avatarBg} flex items-center justify-center`}>
+            <Image
+              src='/icons/user-picture.png'
+              alt={name}
+              width={32}
+              height={32}
+              className='object-contain'
+            />
+          </div>
+          <span className='font-semibold text-gray-800 text-sm'>{name}</span>
         </div>
       </div>
+    </div>
+  );
+};
+
+interface MarqueeRowProps {
+  testimonials: typeof testimonialsData;
+  direction?: 'left' | 'right';
+  speed?: number;
+}
+
+const MarqueeRow = ({ testimonials, direction = 'left', speed = 40 }: MarqueeRowProps) => {
+  return (
+    <div className='relative w-full overflow-hidden mb-5'>
+      <div
+        className='flex gap-5 w-fit'
+        style={{
+          animation: `marquee-${direction} ${speed}s linear infinite`,
+        }}
+      >
+        {testimonials.map((testimonial, index) => (
+          <TestimonialCard key={index} {...testimonial} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const Testimonials = () => {
+  return (
+    <section className='w-full py-20 sm:py-28 bg-gradient-to-b from-white via-gray-50/50 to-white overflow-hidden'>
+      <div className='max-w-[1400px] mx-auto px-5'>
+        {/* Header */}
+        <div className='text-center mb-16 sm:mb-20'>
+          <h2 className='text-4xl sm:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#4618AC] via-[#6d3be8] to-[#8660fa] mb-3 tracking-tight'>
+            What Our Customers Say
+          </h2>
+          <p className='text-lg sm:text-xl text-gray-600 font-medium'>
+            Honest reviews from our amazing community
+          </p>
+        </div>
+
+        {/* Marquee Container */}
+        <div className='relative'>
+          {/* Gradient Overlays */}
+          <div className='absolute left-0 top-0 bottom-0 w-32 sm:w-48 bg-gradient-to-r from-white via-white/50 to-transparent z-10 pointer-events-none' />
+          <div className='absolute right-0 top-0 bottom-0 w-32 sm:w-48 bg-gradient-to-l from-white via-white/50 to-transparent z-10 pointer-events-none' />
+
+          {/* Marquee Rows */}
+          <MarqueeRow testimonials={row1} direction='left' speed={40} />
+          <MarqueeRow testimonials={row2} direction='right' speed={35} />
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes marquee-left {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-33.333%);
+          }
+        }
+
+        @keyframes marquee-right {
+          0% {
+            transform: translateX(-33.333%);
+          }
+          100% {
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </section>
   );
 };

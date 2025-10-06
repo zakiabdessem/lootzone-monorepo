@@ -4,6 +4,7 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { useMemo } from 'react';
 import { api } from '~/trpc/react';
 import { ProductCard } from '../_components/landing/product/ProductCard';
+import { Platform } from '~/constants/enums';
 
 export default function WishlistPage() {
   const { ids, isAuthenticated } = useWishlist();
@@ -26,7 +27,7 @@ export default function WishlistPage() {
   const isLoading = isAuthenticated ? loadingServer : loadingGuest;
 
   return (
-    <div className='min-h-screen bg-[#f8f7ff]'>
+    <div className='min-h-screen bg-[#f8f7ff] relative z-0'>
       <div className='max-w-[1440px] mx-auto px-4 py-10'>
         <h1 className='text-2xl font-bold mb-6 text-[#212121]'>Your Wishlist</h1>
         {isLoading ? (
@@ -36,7 +37,12 @@ export default function WishlistPage() {
         ) : (
           <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'>
             {items.map(p => (
-              <ProductCard key={p.id} {...p} platformShow={true} />
+              <ProductCard 
+                key={p.id} 
+                {...p} 
+                platformName={p.platformName as Platform | null | undefined}
+                platformShow={true}
+              />
             ))}
           </div>
         )}

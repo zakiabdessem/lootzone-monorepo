@@ -90,7 +90,7 @@ export const productRouter = createTRPCRouter({
         image: p.image,
         platformShow: !!p.platformIcon,
         platformIcon: p.platformIcon,
-        platformName: p.platformName,
+        platformName: p.platformName as Platform | null,
         title: p.title,
         region: p.region as unknown as Region,
         variants: p.variants.map(v => ({
@@ -201,6 +201,13 @@ export const productRouter = createTRPCRouter({
             },
             orderBy: { price: 'asc' },
           },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -222,6 +229,7 @@ export const productRouter = createTRPCRouter({
           platformIcon: p.platformIcon,
           platformName: p.platformName as Platform,
           region: p.region as Region,
+          category: p.category,
           variants: p.variants.map(v => ({
             id: v.id,
             name: v.name,
@@ -276,7 +284,7 @@ export const productRouter = createTRPCRouter({
         image: p.image,
         platformShow: !!p.platformIcon,
         platformIcon: p.platformIcon,
-        platformName: p.platformName,
+        platformName: p.platformName as Platform | null,
         title: p.title,
         region: p.region as unknown as Region,
         variants: p.variants.map(v => ({
@@ -599,8 +607,91 @@ export const productRouter = createTRPCRouter({
     return updatedProduct;
   }),
 
+  // Soft delete - sets isActive to false instead of removing from DB
   delete: adminProcedure.input(z.object({ id: z.string() })).mutation(async ({ input, ctx }) => {
-    // TODO: Delete product from database
-    return { success: true };
+    const product = await ctx.db.product.findUnique({
+      where: { id: input.id },
+      select: { id: true, isActive: true },
+    });
+
+    if (!product) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Product not found',
+      });
+    }
+
+    // Soft delete by setting isActive to false
+    await ctx.db.product.update({
+      where: { id: input.id },
+      data: { isActive: false },
+    });
+
+    return { success: true, id: input.id };
   }),
+
+  // Bulk soft delete - sets isActive to false for multiple products
+  bulkDelete: adminProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
+    .mutation(async ({ input, ctx }) => {
+      const { ids } = input;
+
+      // Check if all products exist
+      const products = await ctx.db.product.findMany({
+        where: { id: { in: ids } },
+        select: { id: true },
+      });
+
+      if (products.length !== ids.length) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Some products not found',
+        });
+      }
+
+      // Soft delete by setting isActive to false
+      const result = await ctx.db.product.updateMany({
+        where: { id: { in: ids } },
+        data: { isActive: false },
+      });
+
+      return { success: true, count: result.count, ids };
+    }),
+
+  // Restore soft-deleted product (sets isActive back to true)
+  restore: adminProcedure.input(z.object({ id: z.string() })).mutation(async ({ input, ctx }) => {
+    const product = await ctx.db.product.findUnique({
+      where: { id: input.id },
+      select: { id: true, isActive: true },
+    });
+
+    if (!product) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Product not found',
+      });
+    }
+
+    // Restore by setting isActive to true
+    await ctx.db.product.update({
+      where: { id: input.id },
+      data: { isActive: true },
+    });
+
+    return { success: true, id: input.id };
+  }),
+
+  // Bulk restore
+  bulkRestore: adminProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
+    .mutation(async ({ input, ctx }) => {
+      const { ids } = input;
+
+      const result = await ctx.db.product.updateMany({
+        where: { id: { in: ids } },
+        data: { isActive: true },
+      });
+
+      return { success: true, count: result.count, ids };
+    }),
 });

@@ -164,13 +164,15 @@ export default function HeroCarousel() {
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Content */}
-          <div className='flex-1 min-w-0 w-full max-[1113px]:order-2 max-[1113px]:px-4'>
+          {/* Hero Text - Hidden on Mobile */}
+          <div className='flex-1 min-w-0 w-full hidden min-[1114px]:block'>
             <HeroTextAnimated label={currentSlide?.label} currentSlide={currentSlide} />
           </div>
+          
+          {/* Product Card - Centered on Mobile, Right side on Desktop */}
           <div
             ref={cardRef}
-            className='shrink-0 relative scale-110 md:scale-125 max-[1113px]:scale-100 max-[1113px]:order-1'
+            className='shrink-0 relative scale-110 md:scale-125 max-[1113px]:scale-100 max-[1113px]:mx-auto'
           >
             {currentSlide?.product && <ProductCard {...currentSlide.product} platformShow={true} />}
           </div>

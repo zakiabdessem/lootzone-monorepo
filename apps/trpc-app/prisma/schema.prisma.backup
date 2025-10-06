@@ -131,7 +131,6 @@ model ProductVariant {
     createdAt       DateTime    @default(now())
     updatedAt       DateTime    @updatedAt
 
-    @@unique([productId, name])
     @@index([productId])
     @@index([isActive])
     @@index([isInfiniteStock])

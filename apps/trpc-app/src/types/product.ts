@@ -38,8 +38,8 @@ export interface IProductCard {
   /** Region using enum */
   region: Region;
   /** Platform info using enum */
-  platformIcon?: string | null;
-  platformName?: Platform | null;
+  platformIcon?: string | null | undefined;
+  platformName?: Platform | null | undefined;
   /** Array of purchasable variants */
   variants: ProductVariant[];
   /** Whether to show platform badge */

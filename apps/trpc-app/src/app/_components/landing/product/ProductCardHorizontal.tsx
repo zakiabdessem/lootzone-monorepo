@@ -5,6 +5,7 @@ import { formatDA, getDiscountPercent } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
+import { upperFirst } from "lodash";
 import type { IProductCard } from "~/types/product";
 import { Button } from "../ui/button";
 
@@ -17,6 +18,8 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
   id,
   slug,
   image,
+  platformIcon = null,
+  platformName = null,
   title,
   region = "GLOBAL",
   variants,
@@ -37,7 +40,7 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
       {/* Cover image */}
       <Link
         href={`/product/${slug}`}
-        className="relative shrink-0 w-[96px] sm:w-[128px] aspect-[4/5] p-4 ml-2 mt-2 mb-2"
+        className="relative shrink-0 w-[96px] sm:w-[128px] aspect-[4/5] p-4"
       >
         <Image
           src={image}
@@ -46,6 +49,22 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
           sizes="(max-width: 768px) 96px, 128px"
           className="object-cover"
         />
+
+        {/* Platform Icon */}
+        {platformIcon && platformName && (
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1.5 z-10">
+            <Image
+              src={platformIcon}
+              alt={platformName}
+              width={14}
+              height={14}
+              className="w-3.5 h-3.5"
+            />
+            <span className="text-white text-[10px] font-semibold uppercase">
+              {upperFirst(platformName)}
+            </span>
+          </div>
+        )}
       </Link>
 
       {/* Details */}

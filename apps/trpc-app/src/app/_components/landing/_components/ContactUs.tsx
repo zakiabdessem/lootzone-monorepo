@@ -1,3 +1,5 @@
+'use client';
+
 import { useTelegramLink, useWhatsAppLink } from '~/contexts/SiteSettingsContext';
 import Image from 'next/image';
 import Link from 'next/link';

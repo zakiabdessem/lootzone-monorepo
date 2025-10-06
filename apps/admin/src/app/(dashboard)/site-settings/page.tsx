@@ -504,20 +504,35 @@ function HeroSlideManagement() {
                       <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                           name="label"
-                          label="Hero Text (use \n for line breaks)"
-                          placeholder="MINTY\nLEGENDS"
+                          label="Hero Text"
+                          placeholder="PACK\nDESIGNER"
                           value={values.label}
                           onChange={handleChange}
                           onBlur={handleBlur}
                           error={touched.label && Boolean(errors.label)}
                           helperText={
                             (touched.label && errors.label) ||
-                            "Use \\n for line breaks (e.g., MINTY\\nLEGENDS)"
+                            "Type \\n (backslash-n) where you want line breaks. Example: PACK\\nDESIGNER will show on two lines."
                           }
                           fullWidth
                           multiline
                           rows={3}
                         />
+                        {values.label && (
+                          <Box mt={1} p={2} bgcolor="grey.100" borderRadius={1}>
+                            <Typography variant="caption" color="text.secondary" gutterBottom>
+                              Preview:
+                            </Typography>
+                            {values.label
+                              .replace(/\\n/g, '\n')
+                              .split('\n')
+                              .map((line, i) => (
+                                <Typography key={i} variant="h6" fontWeight="bold">
+                                  {line}
+                                </Typography>
+                              ))}
+                          </Box>
+                        )}
                       </Grid>
 
                       <Grid size={{ xs: 12, md: 6 }}>
@@ -630,9 +645,12 @@ function HeroSlideManagement() {
                     <TableCell>{slide.displayOrder}</TableCell>
                     <TableCell>
                       <Box>
-                        {slide.label.split("\n").map((line, i) => (
-                          <div key={i}>{line}</div>
-                        ))}
+                        {slide.label
+                          .replace(/\\n/g, '\n')
+                          .split('\n')
+                          .map((line, i) => (
+                            <div key={i}>{line}</div>
+                          ))}
                       </Box>
                     </TableCell>
                     <TableCell>{slide.product.title}</TableCell>

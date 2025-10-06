@@ -3,6 +3,31 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '~/server/api/trpc';
 
 const GUEST_SESSION_EXPIRY_DAYS = 30;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_SESSIONS = 5; // Max 5 sessions per minute per IP
+
+// Simple in-memory rate limiting (in production, use Redis)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(ipAddress?: string): boolean {
+  if (!ipAddress) return true; // Allow if no IP tracking
+  
+  const now = Date.now();
+  const key = ipAddress;
+  const limit = rateLimitMap.get(key);
+  
+  if (!limit || now > limit.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  
+  if (limit.count >= RATE_LIMIT_MAX_SESSIONS) {
+    return false;
+  }
+  
+  limit.count++;
+  return true;
+}
 
 export const guestSessionRouter = createTRPCRouter({
   // Create or retrieve guest session
@@ -15,6 +40,15 @@ export const guestSessionRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      console.log(`🔍 Guest session createOrGet called with token: ${input.sessionToken || 'undefined'}`);
+      
+      // Rate limiting check
+      if (!checkRateLimit(input.ipAddress)) {
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Too many guest session creation requests. Please try again later.',
+        });
+      }
       // Try to find existing session
       if (input.sessionToken) {
         const existingSession = await ctx.db.guestSession.findUnique({
@@ -25,12 +59,15 @@ export const guestSessionRouter = createTRPCRouter({
         });
 
         if (existingSession) {
+          console.log(`✅ Found existing guest session: ${input.sessionToken}`);
           return {
             sessionToken: existingSession.sessionToken,
             wishlistItems: existingSession.wishlistItems,
             cartItems: existingSession.cartItems,
             expiresAt: existingSession.expiresAt,
           };
+        } else {
+          console.log(`❌ Session not found or expired: ${input.sessionToken}`);
         }
       }
 
@@ -39,26 +76,35 @@ export const guestSessionRouter = createTRPCRouter({
       expiresAt.setDate(expiresAt.getDate() + GUEST_SESSION_EXPIRY_DAYS);
 
       // Generate unique session token using crypto for better randomness
-      const sessionToken =
-        input.sessionToken || `guest_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+      // Don't reuse the input token if it was invalid/expired
+      const sessionToken = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
 
-      const newSession = await ctx.db.guestSession.create({
-        data: {
-          sessionToken,
-          wishlistItems: [],
-          cartItems: [],
-          ipAddress: input.ipAddress,
-          userAgent: input.userAgent,
-          expiresAt,
-        },
-      });
+      try {
+        const newSession = await ctx.db.guestSession.create({
+          data: {
+            sessionToken,
+            wishlistItems: [],
+            cartItems: [],
+            ipAddress: input.ipAddress,
+            userAgent: input.userAgent,
+            expiresAt,
+          },
+        });
 
-      return {
-        sessionToken: newSession.sessionToken,
-        wishlistItems: newSession.wishlistItems,
-        cartItems: newSession.cartItems,
-        expiresAt: newSession.expiresAt,
-      };
+        console.log(`✅ Created new guest session: ${sessionToken}`);
+        return {
+          sessionToken: newSession.sessionToken,
+          wishlistItems: newSession.wishlistItems,
+          cartItems: newSession.cartItems,
+          expiresAt: newSession.expiresAt,
+        };
+      } catch (error) {
+        console.error(`❌ Failed to create guest session: ${sessionToken}`, error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create guest session',
+        });
+      }
     }),
 
   // Add product to guest wishlist

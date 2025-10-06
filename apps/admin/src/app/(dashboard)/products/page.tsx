@@ -9,8 +9,10 @@ import { api } from "@lootzone/trpc-shared";
 import {
   Add as AddIcon,
   Archive as ArchiveIcon,
+  Delete as DeleteIcon,
   FilterList as FilterListIcon,
   RemoveRedEye as RemoveRedEyeIcon,
+  Restore as RestoreIcon,
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import {
@@ -20,12 +22,18 @@ import {
   Checkbox,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Grid,
   IconButton,
   Link,
   Breadcrumbs as MuiBreadcrumbs,
   Divider as MuiDivider,
   Paper as MuiPaper,
+  Snackbar,
   Switch,
   Table,
   TableBody,
@@ -166,9 +174,13 @@ const EnhancedTableHead: React.FC<EnhancedTableHeadProps> = (props) => {
   );
 };
 
-type EnhancedTableToolbarProps = { numSelected: number };
+type EnhancedTableToolbarProps = { 
+  numSelected: number;
+  onBulkDelete: () => void;
+  isDeleting: boolean;
+};
 const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
-  const { numSelected } = props;
+  const { numSelected, onBulkDelete, isDeleting } = props;
 
   return (
     <Toolbar>
@@ -186,9 +198,14 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
       <Spacer />
       <div>
         {numSelected > 0 ? (
-          <Tooltip title="Delete">
-            <IconButton aria-label="Delete" size="large">
-              <ArchiveIcon />
+          <Tooltip title="Soft Delete Selected">
+            <IconButton 
+              aria-label="Delete" 
+              size="large"
+              onClick={onBulkDelete}
+              disabled={isDeleting}
+            >
+              <DeleteIcon />
             </IconButton>
           </Tooltip>
         ) : (
@@ -218,6 +235,25 @@ function EnhancedTable() {
     variants: [],
     productTitle: "",
   });
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    productId: string | null;
+    productTitle: string;
+  }>({
+    open: false,
+    productId: null,
+    productTitle: "",
+  });
+  const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   // Fetch products data
   const {
@@ -234,6 +270,47 @@ function EnhancedTable() {
   const toggleActiveMutation = api.product.toggleActive.useMutation({
     onSuccess: () => {
       refetch();
+    },
+  });
+
+  // Single delete mutation
+  const deleteMutation = api.product.delete.useMutation({
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: "Product soft deleted successfully",
+        severity: "success",
+      });
+      setDeleteDialog({ open: false, productId: null, productTitle: "" });
+      refetch();
+    },
+    onError: (error) => {
+      setSnackbar({
+        open: true,
+        message: `Failed to delete product: ${error.message}`,
+        severity: "error",
+      });
+    },
+  });
+
+  // Bulk delete mutation
+  const bulkDeleteMutation = api.product.bulkDelete.useMutation({
+    onSuccess: (data) => {
+      setSnackbar({
+        open: true,
+        message: `${data.count} product(s) soft deleted successfully`,
+        severity: "success",
+      });
+      setBulkDeleteDialog(false);
+      setSelected([]);
+      refetch();
+    },
+    onError: (error) => {
+      setSnackbar({
+        open: true,
+        message: `Failed to delete products: ${error.message}`,
+        severity: "error",
+      });
     },
   });
 
@@ -306,6 +383,30 @@ function EnhancedTable() {
     });
   };
 
+  const handleDeleteClick = (productId: string, productTitle: string) => {
+    setDeleteDialog({
+      open: true,
+      productId,
+      productTitle,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteDialog.productId) {
+      deleteMutation.mutate({ id: deleteDialog.productId });
+    }
+  };
+
+  const handleBulkDeleteClick = () => {
+    setBulkDeleteDialog(true);
+  };
+
+  const handleConfirmBulkDelete = () => {
+    if (selected.length > 0) {
+      bulkDeleteMutation.mutate({ ids: selected });
+    }
+  };
+
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
   if (isLoading) {
@@ -352,7 +453,11 @@ function EnhancedTable() {
   return (
     <div>
       <Paper>
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <EnhancedTableToolbar 
+          numSelected={selected.length} 
+          onBulkDelete={handleBulkDeleteClick}
+          isDeleting={bulkDeleteMutation.isPending}
+        />
         <TableContainer>
           <Table
             aria-labelledby="tableTitle"
@@ -471,17 +576,26 @@ function EnhancedTable() {
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton aria-label="delete" size="large">
-                        <ArchiveIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label="edit"
-                        size="large"
-                        component={NextLink}
-                        href={`/products/edit/${product.id}`}
-                      >
-                        <RemoveRedEyeIcon />
-                      </IconButton>
+                      <Tooltip title="Soft Delete">
+                        <IconButton 
+                          aria-label="delete" 
+                          size="large"
+                          onClick={() => handleDeleteClick(product.id, product.title)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit">
+                        <IconButton
+                          aria-label="edit"
+                          size="large"
+                          component={NextLink}
+                          href={`/products/edit/${product.id}`}
+                        >
+                          <RemoveRedEyeIcon />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 );
@@ -506,6 +620,88 @@ function EnhancedTable() {
         variants={variantsModal.variants}
         productTitle={variantsModal.productTitle}
       />
+
+      {/* Single Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, productId: null, productTitle: "" })}
+      >
+        <DialogTitle>Confirm Soft Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to soft delete <strong>{deleteDialog.productTitle}</strong>?
+            <br />
+            <br />
+            This will set the product to inactive and hide it from the storefront. 
+            You can restore it later if needed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setDeleteDialog({ open: false, productId: null, productTitle: "" })}
+            disabled={deleteMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete} 
+            color="error" 
+            variant="contained"
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog
+        open={bulkDeleteDialog}
+        onClose={() => setBulkDeleteDialog(false)}
+      >
+        <DialogTitle>Confirm Bulk Soft Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to soft delete <strong>{selected.length}</strong> selected product(s)?
+            <br />
+            <br />
+            This will set all selected products to inactive and hide them from the storefront. 
+            You can restore them later if needed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setBulkDeleteDialog(false)}
+            disabled={bulkDeleteMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmBulkDelete} 
+            color="error" 
+            variant="contained"
+            disabled={bulkDeleteMutation.isPending}
+          >
+            {bulkDeleteMutation.isPending ? "Deleting..." : `Delete ${selected.length} Product(s)`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

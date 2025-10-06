@@ -1,7 +1,6 @@
 // import { useCurrency } from '~/contexts/SiteSettingsContext';
-import { useMemo } from 'react';
 import type { ProductVariant } from '~/types/product';
-import { ScrollArea } from '../ui/scroll-area';
+import AnimatedList from './AnimatedList';
 
 interface VariantSelectorProps {
   variants: ProductVariant[];
@@ -16,55 +15,55 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
 }) => {
   // const currency = useCurrency();
   const currency = 'DZD'; // Default currency
-  const containerHeightClass = useMemo(
-    () => (variants.length > 5 ? 'h-[340px]' : undefined),
-    [variants]
-  );
+
+  const variantItems = variants.map((variant) => {
+    const parts = variant.name.split('|').map(p => p.trim());
+    const main = parts[0];
+    const sub = parts.slice(1).join(' | ');
+    const isSelected = selectedVariant.id === variant.id;
+
+    return (
+      <button
+        key={variant.id}
+        className={`w-full flex items-center justify-between p-4 rounded-lg ${
+          isSelected
+            ? 'bg-[#4618AC] text-white shadow-lg shadow-[#4618AC]/30'
+            : 'bg-black/5 hover:bg-black/10 text-[#212121]'
+        } transition-all duration-300`}
+      >
+        <div className='flex flex-col text-left'>
+          <span className='font-medium'>{main}</span>
+          {(sub || variant.region) && (
+            <span className='text-xs uppercase opacity-75'>
+              {sub}
+              {sub && variant.region ? ' | ' : ''}
+              {variant.region ?? ''}
+            </span>
+          )}
+        </div>
+        <div className='flex items-center gap-2'>
+          <span className='font-bold'>
+            {variant.price} {currency}
+          </span>
+          {isSelected && (
+            <div className='w-2 h-2 rounded-full bg-[#23c299] animate-pulse' />
+          )}
+        </div>
+      </button>
+    );
+  });
+
+  const initialSelectedIndex = variants.findIndex(v => v.id === selectedVariant.id);
 
   return (
-    <div className={containerHeightClass}>
-      <ScrollArea className='h-full'>
-        <div className='space-y-2'>
-          {variants.map(variant => (
-            <button
-              key={variant.id}
-              onClick={() => onSelect(variant)}
-              className={`w-full flex items-center justify-between p-4 ${
-                selectedVariant.id === variant.id
-                  ? 'bg-[#4618AC] text-white'
-                  : 'bg-black/5 hover:bg-black/10 text-[#212121]'
-              } transition-colors`}
-            >
-              {(() => {
-                const parts = variant.name.split('|').map(p => p.trim());
-                const main = parts[0];
-                const sub = parts.slice(1).join(' | ');
-                return (
-                  <div className='flex flex-col text-left'>
-                    <span>{main}</span>
-                    {(sub || variant.region) && (
-                      <span className='text-xs uppercase opacity-75'>
-                        {sub}
-                        {sub && variant.region ? ' | ' : ''}
-                        {variant.region ?? ''}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-              <div className='flex items-center gap-2'>
-                <span className='font-bold'>
-                  {variant.price} {currency}
-                </span>
-                {selectedVariant.id === variant.id && (
-                  <div className='w-2 h-2 rounded-full bg-[#23c299]' />
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-      </ScrollArea>
-    </div>
+    <AnimatedList
+      items={variantItems}
+      onItemSelect={(index) => onSelect(variants[index]!)}
+      showGradients={true}
+      enableArrowNavigation={true}
+      displayScrollbar={true}
+      initialSelectedIndex={initialSelectedIndex}
+    />
   );
 };
 

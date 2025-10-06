@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '~/trpc/react';
+import { guestSessionManager } from '~/lib/guest-session-manager';
 
 const GUEST_SESSION_COOKIE = 'guest_session_token';
 
@@ -31,33 +32,22 @@ export function useGuestSession() {
         return;
       }
 
-      // Check for existing session token in localStorage/cookie
-      let token = localStorage.getItem(GUEST_SESSION_COOKIE);
-
-      if (!token) {
-        // Create new session
-        try {
+      try {
+        const token = await guestSessionManager.getOrCreateSession(async (existingToken) => {
           const result = await createOrGetSession.mutateAsync({
-            sessionToken: undefined,
-            ipAddress: undefined, // Could be obtained from request in real implementation
+            sessionToken: existingToken,
+            ipAddress: undefined,
             userAgent: navigator.userAgent,
           });
-          token = result.sessionToken;
-          localStorage.setItem(GUEST_SESSION_COOKIE, token);
+          return result.sessionToken;
+        });
 
-          // Set cookie for server-side access
-          document.cookie = `${GUEST_SESSION_COOKIE}=${token}; path=/; max-age=${
-            30 * 24 * 60 * 60
-          }; SameSite=Lax`;
-        } catch (error) {
-          console.error('Failed to create guest session:', error);
-          setIsInitialized(true);
-          return;
-        }
+        setSessionToken(token);
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize guest session:', error);
+        setIsInitialized(true);
       }
-
-      setSessionToken(token);
-      setIsInitialized(true);
     };
 
     if (!isInitialized) {

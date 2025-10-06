@@ -6,10 +6,25 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { Box, Button, Card, CardContent, CircularProgress, Switch, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { DataGrid, GridActionsCellItem, GridColDef, GridRowEditStopReasons } from "@mui/x-data-grid";
+import { DataGrid, GridActionsCellItem, GridColDef, GridRowEditStopReasons, GridRowParams, MuiEvent } from "@mui/x-data-grid";
 import React, { useState } from "react";
 import CategoryIcon from "../../../components/ui/CategoryIcon";
 import CategoryCreateModal from "../../../components/categories/CategoryCreateModal";
+
+type Category = {
+  id: string;
+  name: string;
+  type: string;
+  displayOrder: number;
+  isActive: boolean;
+  icon?: string | null;
+};
+
+type CategoryRow = Category & {
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onToggleActive?: () => void;
+};
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   '& .saving-row': {
@@ -20,7 +35,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   },
 }));
 
-const columns: GridColDef[] = [
+const columns: GridColDef<CategoryRow>[] = [
   {
     field: "icon",
     headerName: "Icon",
@@ -126,20 +141,20 @@ const CategoryTablePage: React.FC = () => {
     refetch();
   };
 
-    const handleRowEditStop = async (params: any, event: any) => {
+  const handleRowEditStop = (params: GridRowParams, event: MuiEvent) => {
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
       event.defaultMuiPrevented = true;
     }
   };
 
-  const processRowUpdate = async (newRow: any, oldRow: any) => {
+  const processRowUpdate = async (newRow: CategoryRow, oldRow: CategoryRow) => {
     // Only update if there are actual changes
-    const changedFields: any = {};
+    const changedFields: Partial<Pick<Category, 'name' | 'type' | 'displayOrder'>> = {};
     let hasChanges = false;
 
-    ['name', 'type', 'displayOrder'].forEach(field => {
+    (['name', 'type', 'displayOrder'] as const).forEach(field => {
       if (newRow[field] !== oldRow[field]) {
-        changedFields[field] = newRow[field];
+        changedFields[field] = newRow[field] as any;
         hasChanges = true;
       }
     });

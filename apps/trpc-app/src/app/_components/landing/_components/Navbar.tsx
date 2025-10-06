@@ -5,14 +5,16 @@ import { useSmartCategories } from '@/lib/smart-categories';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAnnouncement } from '~/contexts/SiteSettingsContext';
 // import { useCurrency } from "~/contexts/SiteSettingsContext";
-import { Heart, Menu, Search, ShoppingCart, User, X } from 'lucide-react';
+import { Heart, Search, ShoppingCart, User, X, Home, Store, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import CategoriesSidebar from './CategoriesSidebar';
+// @ts-ignore - StaggeredMenu exists but TypeScript configuration issue
+import StaggeredMenu from './StaggeredMenu';
+import Dock from './Dock';
 
 const categories = [
   { id: 'categories', label: 'Categories' },
@@ -25,17 +27,100 @@ const categories = [
 export function Navbar() {
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDock, setShowDock] = useState(true);
   // const currency = useCurrency();
   const currency = 'DZD'; // Default currency
   const announcement = useAnnouncement();
   const smartCategories = useSmartCategories();
   const { ids, mergeGuestToServer, isAuthenticated } = useWishlist();
+  const router = useRouter();
 
   useEffect(() => {
     if (isAuthenticated) {
       void mergeGuestToServer();
     }
   }, [isAuthenticated, mergeGuestToServer]);
+
+  // Hide dock when near footer or scrolled to bottom
+  useEffect(() => {
+    const handleScroll = () => {
+      const footer = document.querySelector('footer');
+      if (!footer) {
+        setShowDock(true);
+        return;
+      }
+
+      const footerRect = footer.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      
+      // Hide dock if footer is visible in viewport (with 100px buffer)
+      const isFooterVisible = footerRect.top < windowHeight + 100;
+      
+      setShowDock(!isFooterVisible);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check on mount
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Prepare menu items from smart categories
+  const menuItems = useMemo(() => {
+    if (!smartCategories) return [];
+
+    const items = [];
+
+    // Add main categories and their children
+    for (const category of smartCategories) {
+      items.push({
+        label: category.name,
+        ariaLabel: `View ${category.name} products`,
+        link: `/products?category=${category.id}`,
+      });
+
+      // Add children
+      if (category.children && category.children.length > 0) {
+        for (const child of category.children) {
+          items.push({
+            label: child.name,
+            ariaLabel: `View ${child.name} products`,
+            link: `/products?category=${child.category ?? child.id}`,
+          });
+        }
+      }
+    }
+
+    return items;
+  }, [smartCategories]);
+
+  // Dock items for mobile
+  const dockItems = useMemo(() => [
+    {
+      icon: <Home size={22} strokeWidth={2} />,
+      label: 'Home',
+      onClick: () => router.push('/'),
+    },
+    {
+      icon: <Store size={22} strokeWidth={2} />,
+      label: 'Shop',
+      onClick: () => router.push('/products'),
+    },
+    {
+      icon: <Heart size={22} strokeWidth={2} />,
+      label: 'Wishlist',
+      onClick: () => router.push('/wishlist'),
+      badge: ids.length,
+    },
+    {
+      icon: <ShoppingCart size={22} strokeWidth={2} />,
+      label: 'Cart',
+      onClick: () => router.push('/cart'),
+      badge: 0, // Replace with actual cart count
+    },
+  ], [router, ids.length]);
+
   return (
     <nav
       className='w-full bg-white text-gray-900'
@@ -47,7 +132,7 @@ export function Navbar() {
       }}
     >
       {/* Fixed Wrapper containing announcement + main nav */}
-      <div className='fixed top-0 left-0 right-0 z-50 w-full'>
+      <div className='fixed top-0 left-0 right-0 z-[5] w-full'>
         {announcement && showAnnouncement && (
           <div className='w-full bg-gradient-to-r from-[#6d3be8] via-[#4618AC] to-[#2d0e5e] text-white text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-0 py-2 px-4 text-center relative'>
             <div dangerouslySetInnerHTML={{ __html: announcement.html }} />
@@ -69,13 +154,13 @@ export function Navbar() {
           <div className='flex items-center justify-between w-full max-md:px-6'>
             {/* Logo */}
             <Link href='/' className='flex items-center space-x-2'>
-              {/* Mobile logo (icon or stacked) */}
+              {/* Mobile logo - now using horizontal logo */}
               <Image
-                src='/logo.png'
+                src='/logo-horizontal.png'
                 alt='LOOT'
-                width={64}
-                height={64}
-                className='block sm:hidden'
+                width={120}
+                height={48}
+                className='block md:hidden'
               />
 
               {/* Desktop / tablet horizontal logo */}
@@ -84,7 +169,7 @@ export function Navbar() {
                 alt='LOOT'
                 width={180}
                 height={64}
-                className='hidden sm:block'
+                className='hidden md:block'
               />
             </Link>
 
@@ -102,8 +187,8 @@ export function Navbar() {
 
             {/* Right Side Actions */}
             <div className='flex items-center space-x-4'>
-              {/* Wishlist */}
-              <Link href='/wishlist' className='relative'>
+              {/* Wishlist - hidden on mobile */}
+              <Link href='/wishlist' className='relative hidden md:block'>
                 <Button
                   variant='ghost'
                   size='icon'
@@ -119,30 +204,37 @@ export function Navbar() {
                 )}
               </Link>
 
-              {/* Mobile search icon */}
-              <div className='md:hidden'>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='text-gray-700 hover:bg-gray-100 cursor-pointer'
-                  onClick={() => setMobileSearchOpen(prev => !prev)}
-                >
-                  {mobileSearchOpen ? <X className='h-5 w-5' /> : <Search className='h-5 w-5' />}
-                </Button>
-              </div>
-
+              {/* Login button - hidden on mobile */}
               <Button className='hidden md:flex space-x-1 hover:bg-gray-100 cursor-pointer'>
                 <User className='h-5 w-5' />
-
                 <span>Log in</span>
               </Button>
 
-              {/* Cart */}
-              <Button variant='secondary' className='space-x-1 cursor-pointer'>
+              {/* Cart - hidden on mobile */}
+              <Button variant='secondary' className='hidden md:flex space-x-1 cursor-pointer'>
                 <ShoppingCart className='h-5 w-5' />
                 <span>0</span>
                 <span>{currency}</span>
               </Button>
+
+              {/* Mobile Menu Button - moved to the right */}
+              <div className='md:hidden'>
+                <StaggeredMenu
+                  position="right"
+                  items={menuItems}
+                  socialItems={[]}
+                  displaySocials={false}
+                  displayItemNumbering={true}
+                  menuButtonColor="#4618AC"
+                  openMenuButtonColor="#000"
+                  changeMenuColorOnOpen={true}
+                  colors={['#B19EEF', '#4618AC', '#6b2fd9']}
+                  logoUrl="/logo.png"
+                  accentColor="#23c299"
+                  onMenuOpen={() => setIsMenuOpen(true)}
+                  onMenuClose={() => setIsMenuOpen(false)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -162,41 +254,56 @@ export function Navbar() {
         )}
       </div>
 
-      {/* Categories Bar (hidden on mobile) */}
+      {/* Categories Bar (Desktop) */}
       <div
         className='hidden md:block bg-gray-50/20 py-4'
         style={{ marginTop: showAnnouncement ? '112px' : '80px' }}
       >
         <div className='lg:mx-12 px-4'>
           <div className='flex items-center space-x-6 -my-4'>
-            {categories.map(category =>
-              category.id === 'categories' ? (
-                <Sheet key={category.id}>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      className='text-primary hover:bg-gray-100 h-auto px-2 text-sm py-4'
-                    >
-                      <Menu className='h-4 w-4 mr-2' />
-                      {category.label}
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side='left' className='w-80 p-0'>
-                    <CategoriesSidebar />
-                  </SheetContent>
-                </Sheet>
-              ) : (
+            <div>
+              <StaggeredMenu
+                position="left"
+                items={menuItems}
+                socialItems={[]}
+                displaySocials={false}
+                displayItemNumbering={true}
+                menuButtonColor="#4618AC"
+                openMenuButtonColor="#000"
+                changeMenuColorOnOpen={true}
+                colors={['#B19EEF', '#4618AC', '#6b2fd9']}
+                logoUrl="/logo-horizontal.png"
+                accentColor="#23c299"
+                onMenuOpen={() => setIsMenuOpen(true)}
+                onMenuClose={() => setIsMenuOpen(false)}
+              />
+            </div>
+            {categories.slice(1).map(category => (
+              <Link key={category.id} href={`/${category.id}`}>
                 <Button
-                  key={category.id}
-                  className='text-primary hover:bg-gray-100 h-auto px-2 text-sm py-4'
+                  variant='ghost'
+                  className='text-gray-900 hover:bg-gray-100 h-auto px-2 text-sm py-4 font-medium'
                 >
                   {category.label}
                 </Button>
-              )
-            )}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
+
+      {/* Mobile Dock Navigation - Hide when menu is open or near footer */}
+      {!isMenuOpen && showDock && (
+        <div className="md:hidden">
+          <Dock 
+            items={dockItems}
+            panelHeight={68}
+            baseItemSize={52}
+            magnification={65}
+            distance={140}
+          />
+        </div>
+      )}
     </nav>
   );
 }

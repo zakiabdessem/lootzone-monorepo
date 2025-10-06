@@ -58,7 +58,14 @@ export default function HeroTextAnimated({
     return () => ctx.revert();
   }, [label]);
 
-  const lines = label.split("\n");
+  // Handle both literal \n (from user input) and actual newline characters
+  // First replace literal backslash-n with actual newlines, then split
+  const normalizedLabel = label
+    .replace(/\\n/g, '\n')  // Replace \n typed by user
+    .replace(/\r\n/g, '\n') // Normalize Windows line endings
+    .trim();
+  
+  const lines = normalizedLabel.split('\n').filter(line => line.trim() !== '');
 
   return (
     <div className={styles.wrapper + " select-none max-w-fit"} ref={wrapperRef}>
@@ -66,9 +73,8 @@ export default function HeroTextAnimated({
         <div key={idx} className={styles.slice}>
           <div className={styles.text + " text-[#212121]"}>
             {lines.map((line, i) => (
-              <span key={i}>
-                {i > 0 && <br />}
-                {line}
+              <span key={`${idx}-${i}`} style={{ display: 'block' }}>
+                {line.trim()}
               </span>
             ))}
           </div>

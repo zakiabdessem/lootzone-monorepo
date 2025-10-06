@@ -13,8 +13,12 @@ interface SiteSettings {
   whatsappNumber: string;
   whatsappLink: string;
   telegramLink: string;
-  primaryColor: string;
-  accentColor: string;
+  primaryColor?: string;
+  accentColor?: string;
+  theme?: {
+    primaryColor: string;
+    accentColor: string;
+  };
 }
 
 interface SiteSettingsContextType {
@@ -110,10 +114,10 @@ export function useSupportEmail() {
 
 export function usePrimaryColor() {
   const { settings } = useSiteSettings();
-  return settings.primaryColor;
+  return settings.primaryColor || settings.theme?.primaryColor;
 }
 
 export function useAccentColor() {
   const { settings } = useSiteSettings();
-  return settings.accentColor;
+  return settings.accentColor || settings.theme?.accentColor;
 }

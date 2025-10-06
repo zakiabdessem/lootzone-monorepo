@@ -478,11 +478,25 @@ async function main() {
   for (const productData of sampleProducts) {
     const { variants, ...product } = productData;
 
+    // Ensure categoryId is defined
+    if (!product.categoryId) {
+      console.log(`  ⚠️  Skipping product "${product.title}" - no valid category found`);
+      continue;
+    }
+
     const createdProduct = await prisma.product.upsert({
       where: { slug: product.slug },
       update: {},
       create: {
-        ...product,
+        title: product.title,
+        slug: product.slug,
+        description: product.description,
+        image: product.image,
+        gallery: product.gallery,
+        platformIcon: product.platformIcon,
+        platformName: product.platformName,
+        region: product.region,
+        categoryId: product.categoryId,
         keyFeatures: ['High Quality', 'Digital Delivery', 'Instant Download'],
         deliveryInfo: 'Delivered instantly via email',
         deliverySteps: ['Purchase the product', 'Check your email', 'Follow the instructions'],
@@ -494,30 +508,54 @@ async function main() {
 
     // Create variants
     for (const variantData of variants) {
-      await prisma.productVariant.upsert({
+      // Check if variant already exists
+      const existingVariant = await prisma.productVariant.findFirst({
         where: {
-          productId_name: {
-            productId: createdProduct.id,
-            name: variantData.name,
-          },
-        },
-        update: {},
-        create: {
-          ...variantData,
           productId: createdProduct.id,
-          region: product.region,
-          isActive: true,
+          name: variantData.name,
         },
       });
+
+      if (!existingVariant) {
+        await prisma.productVariant.create({
+          data: {
+            ...variantData,
+            productId: createdProduct.id,
+            isActive: true,
+          },
+        });
+      }
     }
 
     console.log(`  ✅ Created product: ${product.title} (${product.platformName})`);
   }
 
+  // Create site settings
+  console.log('⚙️  Creating site settings...');
+  await prisma.siteSettings.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: {
+      id: 'default',
+      siteName: 'LootZone',
+      currency: 'DZD',
+      siteAnnouncementHtml: '<div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-lg"><h3 class="font-bold text-lg mb-2">🎉 Welcome to LootZone!</h3><p class="text-sm">Discover the best digital products and gaming content at unbeatable prices!</p></div>',
+      siteSubAnnouncement: 'Your trusted source for digital entertainment',
+      supportEmail: 'support@lootzone.com',
+      whatsappNumber: '+213556032355',
+      whatsappLink: 'https://wa.me/+213556032355',
+      telegramLink: 'https://t.me/lootzone',
+      primaryColor: '#4618AC',
+      accentColor: '#23c299',
+    },
+  });
+  console.log('  ✅ Created site settings');
+
   const totalCategories = await prisma.category.count();
   const totalProducts = await prisma.product.count();
+  const totalSiteSettings = await prisma.siteSettings.count();
   console.log(
-    `🎉 Seeding completed! Created ${totalCategories} categories and ${totalProducts} products.`
+    `🎉 Seeding completed! Created ${totalCategories} categories, ${totalProducts} products, and ${totalSiteSettings} site settings.`
   );
 
   // Display category hierarchy

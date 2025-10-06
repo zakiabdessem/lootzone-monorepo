@@ -62,9 +62,18 @@ export default function ProductsClient() {
   });
   const filteredProducts = (data?.items ?? []).filter(p => {
     let matches = true;
+    
+    // Filter by search query
     if (searchQuery) {
       matches = matches && p.title.toLowerCase().includes(searchQuery.toLowerCase());
     }
+    
+    // Filter by selected categories
+    if (selectedCats.size > 0) {
+      // Check if product's category slug is in the selected categories
+      matches = matches && p.category && selectedCats.has(p.category.slug);
+    }
+    
     return matches;
   });
 
@@ -98,7 +107,7 @@ export default function ProductsClient() {
   );
 
   return (
-    <div className='min-h-screen bg-[#f8f7ff] text-[#212121] py-12'>
+    <div className='min-h-screen bg-[#f8f7ff] text-[#212121] py-12 relative z-0'>
       <div className='max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 px-4'>
         {/* Sidebar */}
         <aside className='space-y-6 bg-white border border-gray-200 shadow-sm p-6 lg:sticky lg:top-24 h-max rounded-sm  hidden lg:block'>
