@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '~/hooks/useCart';
 import { formatDA } from '@/lib/utils';
 import Stepper, { Step } from '../_components/checkout/Stepper';
-import { CheckCircle, Upload, Clock, AlertCircle, Eye, X } from 'lucide-react';
-import Image from 'next/image';
+import { CheckCircle, Upload, Clock, AlertCircle, Eye, X, Loader2 } from 'lucide-react';
 import { Button } from '../_components/landing/ui/button';
 import { Input } from '../_components/landing/ui/input';
+import { api } from '~/trpc/react';
+import Image from 'next/image';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -37,10 +38,24 @@ export default function CheckoutPage() {
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [showExampleModal, setShowExampleModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Scroll indicator state
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Redirect to cart if empty, avoid navigation during render
+  useEffect(() => {
+    if (cartDetails.length === 0 && !orderSubmitted) {
+      router.replace('/cart');
+    }
+  }, [cartDetails.length, orderSubmitted, router]);
+
+  // tRPC mutations
+  const saveDraftMutation = api.checkout.saveDraft.useMutation();
+  const updatePaymentMethodMutation = api.checkout.updatePaymentMethod.useMutation();
+  const createPaymentMutation = api.checkout.createPayment.useMutation();
 
   // Check if content is scrollable and update indicator visibility
   useEffect(() => {
@@ -126,28 +141,126 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleFinalSubmit = async () => {
-    // TODO: Submit order to backend
-    console.log('Order submitted:', {
-      email,
-      phone,
-      fullName,
-      paymentMethod: selectedPaymentMethod,
-      items: cartDetails,
-      total: selectedPaymentMethod === 'flexy' ? flexyTotal : subtotal,
-      flexyDetails: selectedPaymentMethod === 'flexy' ? {
-        receiptImage,
-        paymentTime: `${paymentHour}:${paymentMinute}`,
-      } : null,
-    });
+  // Step 1: Save draft when user fills basic info
+  const handleStep1Complete = async () => {
+    try {
+      setIsProcessing(true);
+      
+      // Prepare cart snapshot
+      const cartSnapshot = {
+        items: cartDetails.map(item => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+          price: item.price,
+          title: item.product.title,
+        })),
+        subtotal: subtotal,
+        currency: 'DZD',
+      };
 
-    setOrderSubmitted(true);
-    // Clear cart after successful order
-    // await clearCart();
+      // Save draft
+      const result = await saveDraftMutation.mutateAsync({
+        email,
+        phone,
+        fullName,
+        cartSnapshot,
+      });
+
+      setDraftId(result.draftId);
+      console.log('[Checkout] Draft created:', result.draftId);
+      
+      setIsProcessing(false);
+      return true;
+    } catch (error) {
+      console.error('[Checkout] Error saving draft:', error);
+      alert('Failed to save checkout information. Please try again.');
+      setIsProcessing(false);
+      return false;
+    }
+  };
+
+  // Step 2: Update payment method selection
+  const handleStep2Complete = async () => {
+    if (!draftId || !selectedPaymentMethod) return false;
+    
+    try {
+      setIsProcessing(true);
+      
+      await updatePaymentMethodMutation.mutateAsync({
+        draftId,
+        paymentMethod: selectedPaymentMethod,
+      });
+
+      console.log('[Checkout] Payment method updated:', selectedPaymentMethod);
+      setIsProcessing(false);
+      return true;
+    } catch (error) {
+      console.error('[Checkout] Error updating payment method:', error);
+      alert('Failed to update payment method. Please try again.');
+      setIsProcessing(false);
+      return false;
+    }
+  };
+
+  // Step 3: Final submit - create payment
+  const handleFinalSubmit = async () => {
+    if (!draftId || !selectedPaymentMethod) {
+      alert('Missing checkout information. Please go back and complete all steps.');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+
+      if (selectedPaymentMethod === 'edahabia') {
+        // Chargily payment flow
+        console.log('[Checkout] Creating Chargily payment...');
+        
+        const result = await createPaymentMutation.mutateAsync({
+          draftId,
+        });
+
+        console.log('[Checkout] Chargily payment created, redirecting...');
+        
+        // Redirect to Chargily payment page
+        if (result.paymentUrl) {
+          window.location.href = result.paymentUrl;
+        } else {
+          throw new Error('No payment URL received from Chargily');
+        }
+      } else if (selectedPaymentMethod === 'flexy') {
+        // Flexy payment flow - upload receipt first
+        console.log('[Checkout] Processing Flexy payment...');
+        
+        // TODO: Upload receipt to your storage (Cloudinary, S3, etc.) and get URL
+        // For now, we'll use a placeholder
+        const receiptUrl = 'https://placeholder.com/receipt.jpg'; // Replace with actual upload
+        
+        await createPaymentMutation.mutateAsync({
+          draftId,
+          flexyData: {
+            receiptUrl,
+            paymentTime: `${paymentHour}:${paymentMinute}`,
+          },
+        });
+
+        console.log('[Checkout] Flexy payment submitted');
+        setOrderSubmitted(true);
+        setIsProcessing(false);
+      } else {
+        // Other payment methods (PayPal, RedotPay) - to be implemented
+        alert(`Payment method ${selectedPaymentMethod} is not yet implemented.`);
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('[Checkout] Error creating payment:', error);
+      alert('Failed to process payment. Please try again.');
+      setIsProcessing(false);
+    }
   };
 
   if (cartDetails.length === 0 && !orderSubmitted) {
-    router.push('/cart');
     return null;
   }
 
@@ -182,21 +295,50 @@ export default function CheckoutPage() {
 
   return (
     <div className='min-h-screen bg-[#f8f7ff] pt-28 pb-8 px-4'>
+      {/* Loading Overlay */}
+      {isProcessing && (
+        <div className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center'>
+          <div className='bg-white rounded-2xl p-8 text-center max-w-sm mx-4'>
+            <Loader2 className='w-16 h-16 text-[#4618AC] animate-spin mx-auto mb-4' />
+            <h3 className='text-xl font-bold text-[#212121] mb-2'>Processing...</h3>
+            <p className='text-gray-600 text-sm'>
+              {selectedPaymentMethod === 'edahabia' 
+                ? 'Preparing your secure payment page...' 
+                : 'Saving your checkout information...'}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className='max-w-7xl mx-auto'>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
           {/* Stepper Section */}
           <div className='lg:col-span-2'>
             <Stepper
               initialStep={1}
-              onStepChange={(step) => {
+              onStepChange={async (step) => {
                 console.log('Current step:', step);
                 setCurrentStep(step);
+                
+                // When moving from step 1 to step 2, save the draft
+                if (step === 2 && !draftId) {
+                  const success = await handleStep1Complete();
+                  if (!success) {
+                    // Stay on step 1 if draft creation failed
+                    setCurrentStep(1);
+                  }
+                }
+                
+                // When moving from step 2 to step 3, update payment method
+                if (step === 3 && draftId && selectedPaymentMethod) {
+                  await handleStep2Complete();
+                }
               }}
               onFinalStepCompleted={handleFinalSubmit}
               canContinue={(step) => {
-                if (step === 1) return isStep1Valid;
-                if (step === 2) return isStep2Valid;
-                if (step === 3) return isStep3Valid;
+                if (step === 1) return isStep1Valid && !isProcessing;
+                if (step === 2) return isStep2Valid && !isProcessing;
+                if (step === 3) return isStep3Valid && !isProcessing;
                 return true;
               }}
             >

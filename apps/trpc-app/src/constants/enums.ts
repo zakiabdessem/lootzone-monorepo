@@ -22,10 +22,22 @@ export enum OrderStatus {
  * Payment method enum
  */
 export enum PaymentMethod {
-  CREDIT_CARD = "credit_card",
+  FLEXY = "flexy",
+  EDAHABIA_CHARGILY = "edahabia",
   PAYPAL = "paypal",
-  CRYPTO = "crypto",
-  BARIDI = "baridi",
+  REDOTPAY = "redotpay",
+}
+
+/**
+ * Payment status enum
+ */
+export enum PaymentStatus {
+  DRAFT = "draft",           // User filled step 1, not paid yet
+  PENDING = "pending",       // Payment initiated, waiting for confirmation
+  PAID = "paid",             // Webhook confirmed payment
+  FAILED = "failed",         // Payment failed
+  EXPIRED = "expired",       // Draft/payment link expired
+  CANCELLED = "cancelled",   // User cancelled
 }
 
 /**

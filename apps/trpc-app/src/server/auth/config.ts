@@ -31,7 +31,7 @@ declare module "next-auth" {
  *
  * @see https://next-auth.js.org/configuration/options
  */
-export const authConfig = {
+export const authConfig: NextAuthConfig = {
   providers: [
     DiscordProvider,
     CredentialsProvider({
@@ -100,4 +100,4 @@ export const authConfig = {
       },
     }),
   },
-} satisfies NextAuthConfig;
+};

@@ -1,5 +1,6 @@
 import { authRouter } from '~/server/api/routers/auth';
 import { categoryRouter } from '~/server/api/routers/category';
+import { checkoutRouter } from '~/server/api/routers/checkout';
 import { guestSessionRouter } from '~/server/api/routers/guest-session';
 import { heroSlideRouter } from '~/server/api/routers/hero-slide';
 import { orderRouter } from '~/server/api/routers/order';
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
   guestSession: guestSessionRouter,
   heroSlide: heroSlideRouter,
   siteSettings: siteSettingsRouter,
+  checkout: checkoutRouter,
 });
 
 // export type definition of API

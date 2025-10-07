@@ -218,10 +218,10 @@ export function Navbar() {
               </Link>
 
               {/* Login button - hidden on mobile */}
-              <Button className='hidden md:flex space-x-1 hover:bg-gray-100 cursor-pointer'>
+              {/* <Button className='hidden md:flex space-x-1 hover:bg-gray-100 cursor-pointer'>
                 <User className='h-5 w-5' />
                 <span>Log in</span>
-              </Button>
+              </Button> */}
 
               {/* Cart - hidden on mobile */}
               <Link href='/cart'>
