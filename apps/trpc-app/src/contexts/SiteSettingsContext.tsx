@@ -88,12 +88,20 @@ export function useCurrency() {
 }
 
 export function useAnnouncement() {
-  const { settings } = useSiteSettings();
+  const { settings, isLoading, error } = useSiteSettings();
+  // Don't show announcement if loading or error
+  if (isLoading || error || !settings.siteAnnouncementHtml) {
+    return null;
+  }
   return { html: settings.siteAnnouncementHtml };
 }
 
 export function useSiteSubAnnouncement() {
-  const { settings } = useSiteSettings();
+  const { settings, isLoading, error } = useSiteSettings();
+  // Don't show sub-announcement if loading or error
+  if (isLoading || error || !settings.siteSubAnnouncement) {
+    return null;
+  }
   return settings.siteSubAnnouncement;
 }
 
