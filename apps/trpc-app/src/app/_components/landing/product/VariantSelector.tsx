@@ -59,7 +59,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
     <AnimatedList
       items={variantItems}
       onItemSelect={(index) => onSelect(variants[index]!)}
-      showGradients={true}
+      showGradients={variants.length > 2}
       enableArrowNavigation={true}
       displayScrollbar={true}
       initialSelectedIndex={initialSelectedIndex}

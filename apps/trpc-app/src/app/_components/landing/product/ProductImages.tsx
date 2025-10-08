@@ -11,55 +11,63 @@ const ProductImages: React.FC<ProductImagesProps> = ({ image, gallery = [] }) =>
 
   // Ensure main image is first and unique
   const images = [image, ...gallery.filter(img => img !== image)];
+  const remainingCount = images.length > 4 ? images.length - 3 : 0;
 
   return (
-    <div className='space-y-4 flex flex-col items-center justify-center relative z-0'>
-      {/* Main image - Standard size 400x400 */}
-      <div className='relative w-full max-w-[400px] aspect-square bg-white border-2 border-gray-200 rounded-lg overflow-hidden shadow-lg mx-auto z-0'>
-        {/* Blurred background */}
-        <Image
-          src={selected || '/product-placeholder.jpg'}
-          alt='Product image blur bg'
-          fill
-          className='object-cover blur-lg scale-110 absolute inset-0 z-0 pointer-events-none select-none opacity-30'
-          style={{ filter: 'blur(20px) brightness(0.8)' }}
-          aria-hidden='true'
-          unoptimized
-        />
-        {/* Main image */}
+    <div className='space-y-3'>
+      {/* Main image - Large, fills container */}
+      <div className='relative w-full aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg overflow-hidden shadow-md'>
         <Image
           src={selected || '/product-placeholder.jpg'}
           alt='Product image'
           fill
-          sizes='400px'
-          quality={85}
-          className='object-contain relative z-10 p-4'
-          style={{ imageRendering: 'auto' }}
+          sizes='(max-width: 768px) 100vw, 600px'
+          quality={90}
+          className='object-cover'
           unoptimized
         />
       </div>
 
-      {/* Thumbnails - Standard size 80x80 */}
+      {/* Thumbnails row */}
       {images.length > 1 && (
-        <div className='flex gap-3 overflow-x-auto pb-2 max-w-[400px] mx-auto'>
-          {images.map((img, idx) => (
+        <div className='grid grid-cols-4 gap-2'>
+          {images.slice(0, 4).map((img, idx) => (
             <div
               key={idx}
               onClick={() => setSelected(img)}
-              className={`w-20 h-20 relative bg-white border-2 rounded-md overflow-hidden flex-shrink-0 cursor-pointer transition-all duration-200 hover:border-blue-400 hover:shadow-md ${
-                selected === img ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : 'border-gray-200'
+              className={`relative aspect-video bg-gradient-to-br from-gray-100 to-gray-50 rounded-md overflow-hidden cursor-pointer transition-all duration-200 ${
+                selected === img 
+                  ? 'ring-2 ring-[#4618AC] ring-offset-2' 
+                  : 'hover:ring-2 hover:ring-gray-300'
               }`}
             >
-              <Image
-                src={img || '/product-placeholder.jpg'}
-                alt={`product-${idx + 1}`}
-                fill
-                sizes='80px'
-                quality={75}
-                className='object-contain p-1'
-                style={{ imageRendering: 'auto' }}
-                unoptimized
-              />
+              {/* Show "+X" overlay on last thumbnail if more images */}
+              {idx === 3 && remainingCount > 0 ? (
+                <>
+                  <Image
+                    src={img || '/product-placeholder.jpg'}
+                    alt={`product-${idx + 1}`}
+                    fill
+                    sizes='150px'
+                    quality={70}
+                    className='object-cover'
+                    unoptimized
+                  />
+                  <div className='absolute inset-0 bg-black/70 flex items-center justify-center'>
+                    <span className='text-white text-2xl font-bold'>+{remainingCount}</span>
+                  </div>
+                </>
+              ) : (
+                <Image
+                  src={img || '/product-placeholder.jpg'}
+                  alt={`product-${idx + 1}`}
+                  fill
+                  sizes='150px'
+                  quality={70}
+                  className='object-cover'
+                  unoptimized
+                />
+              )}
             </div>
           ))}
         </div>
