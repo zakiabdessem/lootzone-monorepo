@@ -7,6 +7,9 @@ module.exports = {
     // Ignore ESLint errors during builds
     ignoreDuringBuilds: true,
   },
+  // Disable static generation for error pages to avoid React context issues
+  trailingSlash: false,
+  skipTrailingSlashRedirect: true,
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
