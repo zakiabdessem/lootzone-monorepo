@@ -7,9 +7,20 @@ module.exports = {
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
   output: 'standalone',
-  // Disable static generation completely to avoid React context issues
+  // Force all pages to be dynamic to avoid React context issues
+  generateStaticParams: false,
   experimental: {
     forceSwcTransforms: true,
+    // Disable static optimization completely
+    staticGenerationRetryCount: 0,
+  },
+  // Disable styled-jsx completely to avoid React context issues
+  compiler: {
+    styledComponents: false,
+  },
+  // Force dynamic build ID to avoid static generation
+  generateBuildId: async () => {
+    return 'dynamic-build-' + Date.now();
   },
   transpilePackages: [
     "@fullcalendar/core",
