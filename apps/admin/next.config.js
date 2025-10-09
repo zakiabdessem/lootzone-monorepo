@@ -1,21 +1,24 @@
+/** @type {import('next').NextConfig} */
 module.exports = {
-  
   typescript: {
-    // Allow production builds to successfully complete even if there are type errors
     ignoreBuildErrors: true,
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
   eslint: {
-    // Ignore ESLint errors during builds
     ignoreDuringBuilds: true,
   },
-  // Disable static generation for error pages to avoid React context issues
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
-  // Force dynamic rendering for all pages to avoid React context issues
   output: 'standalone',
+
+  // ⚙️ Important: Disable static generation for error pages
+  experimental: {
+    dynamicIO: true, // Enables dynamic rendering globally
+  },
+
+  // Keep transpilePackages as is
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
@@ -30,14 +33,16 @@ module.exports = {
     "@mui/x-date-pickers",
     "@lootzone/trpc-shared",
   ],
+
   modularizeImports: {
     "@mui/material": {
-      transform: "@mui/material//{{member}}",
+      transform: "@mui/material/{{member}}",
     },
     "@mui/icons-material": {
-      transform: "@mui/icons-material//{{member}}",
+      transform: "@mui/icons-material/{{member}}",
     },
   },
+
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
@@ -46,12 +51,7 @@ module.exports = {
           loader: "@svgr/webpack",
           options: {
             svgoConfig: {
-              plugins: [
-                {
-                  name: "removeViewBox",
-                  active: false,
-                },
-              ],
+              plugins: [{ name: "removeViewBox", active: false }],
             },
           },
         },
