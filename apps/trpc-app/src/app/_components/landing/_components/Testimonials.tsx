@@ -169,7 +169,7 @@ const Testimonials = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes marquee-left {
           0% {
             transform: translateX(0);
