@@ -24,7 +24,7 @@ import { Add, Edit, Delete } from "@mui/icons-material";
 import { useState } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { api } from "~/utils/trpc";
+import { api } from "@lootzone/trpc-shared";
 
 const validationSchema = Yup.object({
   label: Yup.string().required("Label is required"),

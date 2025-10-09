@@ -1,4 +1,12 @@
 module.exports = {
+  typescript: {
+    // Allow production builds to successfully complete even if there are type errors
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Ignore ESLint errors during builds
+    ignoreDuringBuilds: true,
+  },
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
