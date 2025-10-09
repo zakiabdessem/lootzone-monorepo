@@ -10,12 +10,8 @@ module.exports = {
   // Disable static generation for error pages to avoid React context issues
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
-  experimental: {
-    // Disable static optimization for error pages
-    skipMiddlewareUrlNormalize: true,
-  },
-  // Force dynamic rendering for error pages
-  generateStaticParams: false,
+  // Force dynamic rendering for all pages to avoid React context issues
+  output: 'standalone',
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
