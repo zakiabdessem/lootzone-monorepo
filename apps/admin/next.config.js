@@ -7,6 +7,10 @@ module.exports = {
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
   output: 'standalone',
+  // Disable static generation completely to avoid React context issues
+  experimental: {
+    forceSwcTransforms: true,
+  },
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
