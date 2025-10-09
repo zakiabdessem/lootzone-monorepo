@@ -1,7 +1,11 @@
 module.exports = {
+  
   typescript: {
     // Allow production builds to successfully complete even if there are type errors
     ignoreBuildErrors: true,
+  },
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
   eslint: {
     // Ignore ESLint errors during builds
