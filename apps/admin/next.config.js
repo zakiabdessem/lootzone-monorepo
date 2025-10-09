@@ -1,24 +1,12 @@
+// next.config.js
 /** @type {import('next').NextConfig} */
 module.exports = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  typescript: { ignoreBuildErrors: true },
+  env: { NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL },
+  eslint: { ignoreDuringBuilds: true },
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
   output: 'standalone',
-
-  // ⚙️ Important: Disable static generation for error pages
-  experimental: {
-    dynamicIO: true, // Enables dynamic rendering globally
-  },
-
-  // Keep transpilePackages as is
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
@@ -33,31 +21,18 @@ module.exports = {
     "@mui/x-date-pickers",
     "@lootzone/trpc-shared",
   ],
-
   modularizeImports: {
-    "@mui/material": {
-      transform: "@mui/material/{{member}}",
-    },
-    "@mui/icons-material": {
-      transform: "@mui/icons-material/{{member}}",
-    },
+    "@mui/material": { transform: "@mui/material/{{member}}" },         // fix double slash
+    "@mui/icons-material": { transform: "@mui/icons-material/{{member}}" } // fix double slash
   },
-
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
-      use: [
-        {
-          loader: "@svgr/webpack",
-          options: {
-            svgoConfig: {
-              plugins: [{ name: "removeViewBox", active: false }],
-            },
-          },
-        },
-      ],
+      use: [{
+        loader: "@svgr/webpack",
+        options: { svgoConfig: { plugins: [{ name: "removeViewBox", active: false }] } }
+      }],
     });
-
     return config;
   },
 };
