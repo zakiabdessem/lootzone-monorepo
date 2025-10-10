@@ -1,26 +1,12 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 module.exports = {
-  typescript: { ignoreBuildErrors: true },
-  env: { NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL },
-  eslint: { ignoreDuringBuilds: true },
-  trailingSlash: false,
-  skipTrailingSlashRedirect: true,
-  output: 'standalone',
-  // Force all pages to be dynamic to avoid React context issues
-  generateStaticParams: false,
-  experimental: {
-    forceSwcTransforms: true,
-    // Disable static optimization completely
-    staticGenerationRetryCount: 0,
+  typescript: {
+    // Allow production builds to successfully complete even if there are type errors
+    ignoreBuildErrors: true,
   },
-  // Disable styled-jsx completely to avoid React context issues
-  compiler: {
-    styledComponents: false,
-  },
-  // Force dynamic build ID to avoid static generation
-  generateBuildId: async () => {
-    return 'dynamic-build-' + Date.now();
+  eslint: {
+    // Ignore ESLint errors during builds
+    ignoreDuringBuilds: true,
   },
   transpilePackages: [
     "@fullcalendar/core",
@@ -37,8 +23,8 @@ module.exports = {
     "@lootzone/trpc-shared",
   ],
   modularizeImports: {
-    "@mui/material": { transform: "@mui/material/{{member}}" },         // fix double slash
-    "@mui/icons-material": { transform: "@mui/icons-material/{{member}}" } // fix double slash
+    "@mui/material": { transform: "@mui/material/{{member}}" },
+    "@mui/icons-material": { transform: "@mui/icons-material/{{member}}" }
   },
   webpack(config) {
     config.module.rules.push({

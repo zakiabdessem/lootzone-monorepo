@@ -58,7 +58,7 @@ export const PlatformIcons = {
 const platforms = Object.values(Platform).map((platform) => ({
   name: platform,
   icon: PlatformIcons[platform]
-    ? `${process.env.NEXT_PUBLIC_API_URL}${PlatformIcons[platform]}`
+    ? `https://lootzone.digital${PlatformIcons[platform]}`
     : null,
 }));
 

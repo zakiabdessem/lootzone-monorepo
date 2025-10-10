@@ -6,7 +6,7 @@ export type LoginOutput = RouterOutputs["auth"]["login"];
 export class AuthService {
   async login(input: LoginInput): Promise<LoginOutput> {
     // Use direct HTTP call to the tRPC endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/trpc/auth.login`, {
+    const response = await fetch(`https://lootzone.digital/api/trpc/auth.login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ export class AuthService {
   async verifyToken(token: string) {
     try {
       // Use a direct API call instead of React hooks
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify`, {
+      const response = await fetch(`https://lootzone.digital/api/auth/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
