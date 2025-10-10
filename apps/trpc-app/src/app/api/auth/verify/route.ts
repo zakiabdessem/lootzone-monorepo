@@ -5,6 +5,19 @@ import { db } from "~/server/db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+// Handle CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Credentials": "true",
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { token } = await req.json();
@@ -12,7 +25,13 @@ export async function POST(req: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { valid: false, error: "Token is required" },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+            "Access-Control-Allow-Credentials": "true",
+          },
+        }
       );
     }
 
@@ -37,18 +56,35 @@ export async function POST(req: NextRequest) {
       if (!session) {
         return NextResponse.json(
           { valid: false, error: "Session has been revoked" },
-          { status: 401 }
+          { 
+            status: 401,
+            headers: {
+              "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+              "Access-Control-Allow-Credentials": "true",
+            },
+          }
         );
       }
 
       return NextResponse.json({
         valid: true,
         user: decoded,
+      }, {
+        headers: {
+          "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+          "Access-Control-Allow-Credentials": "true",
+        },
       });
   } catch (error) {
     return NextResponse.json(
       { valid: false, error: "Invalid token" },
-      { status: 401 }
+      { 
+        status: 401,
+        headers: {
+          "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+          "Access-Control-Allow-Credentials": "true",
+        },
+      }
     );
   }
 }

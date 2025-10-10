@@ -11,7 +11,7 @@ import { createTRPCContext } from "~/server/api/trpc";
  */
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type,Authorization,x-trpc-source",
   "Access-Control-Allow-Credentials": "true",
@@ -43,9 +43,9 @@ async function handler(req: NextRequest) {
     return new NextResponse(null, {
       status: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-trpc-source",
         "Access-Control-Allow-Credentials": "true",
       },
     });
