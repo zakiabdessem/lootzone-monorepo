@@ -73,17 +73,20 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 function getBaseUrl() {
   if (typeof window !== "undefined") {
     // In the browser, if we're on localhost, hard-code the tRPC server port.
-    // Otherwise, assume the API is on the same origin.
+    // If we're on admin.lootzone.digital, use lootzone.digital for the API.
     if (window.location.hostname === "localhost") {
       return "http://localhost:3000";
+    }
+    if (window.location.hostname === "admin.lootzone.digital") {
+      return "https://lootzone.digital";
     }
     return window.location.origin;
   }
 
   // For server-side rendering, use Vercel's URL if available.
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
+  // if (process.env.VERCEL_URL) {
+  //   return `https://${process.env.VERCEL_URL}`;
+  // }
 
   // Otherwise, assume we're running locally and hard-code the tRPC server port.
   return "http://localhost:3000";
