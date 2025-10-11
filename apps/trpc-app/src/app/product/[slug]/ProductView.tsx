@@ -46,7 +46,7 @@ export default function ProductView({ product }: { product: ViewProduct }) {
     <div className='min-h-screen bg-[#f8f7ff] text-[#212121] pt-8 pb-12 md:pt-12 relative z-0'>
       <div className='max-w-[1440px] mx-auto px-4 space-y-8'>
         {/* Top section */}
-        <div className='grid lg:grid-cols-2 gap-8'>
+        <div className='grid lg:grid-cols-2 gap-8 mt-18'>
           {/* Images */}
           <ProductImages image={product.image || ''} gallery={product.gallery || []} />
 
