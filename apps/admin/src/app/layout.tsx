@@ -33,7 +33,8 @@ const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-function RootLayout({ children }: { children: React.ReactNode }) {
+// Inner layout that uses the theme context
+function InnerLayout({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
 
   return (
@@ -55,16 +56,11 @@ function RootLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-const withThemeProvider = (Component: React.ComponentType<any>) => {
-  const AppWithThemeProvider = (props: any) => {
-    return (
-      <ThemeProvider>
-        <Component {...props} />
-      </ThemeProvider>
-    );
-  };
-  AppWithThemeProvider.displayName = "AppWithThemeProvider";
-  return AppWithThemeProvider;
-};
-
-export default withThemeProvider(RootLayout);
+// Root layout wraps everything with ThemeProvider first
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <InnerLayout>{children}</InnerLayout>
+    </ThemeProvider>
+  );
+}
