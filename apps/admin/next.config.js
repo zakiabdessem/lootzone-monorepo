@@ -8,6 +8,9 @@ module.exports = {
     // Ignore ESLint errors during builds
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    styledJsx: false,
+  },
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
