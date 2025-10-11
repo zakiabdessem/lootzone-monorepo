@@ -38,29 +38,29 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
 
   return (
-    <html lang="en">
-      <body className={poppins.variable}>
-        <TRPCProvider>
-          <AppRouterCacheProvider>
-            <Provider store={store}>
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <MuiThemeProvider theme={createTheme(theme)}>
-                  <AuthProvider>{children}</AuthProvider>
-                </MuiThemeProvider>
-              </LocalizationProvider>
-            </Provider>
-          </AppRouterCacheProvider>
-        </TRPCProvider>
-      </body>
-    </html>
+    <TRPCProvider>
+      <AppRouterCacheProvider>
+        <Provider store={store}>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <MuiThemeProvider theme={createTheme(theme)}>
+              <AuthProvider>{children}</AuthProvider>
+            </MuiThemeProvider>
+          </LocalizationProvider>
+        </Provider>
+      </AppRouterCacheProvider>
+    </TRPCProvider>
   );
 }
 
 // Root layout wraps everything with ThemeProvider first
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <InnerLayout>{children}</InnerLayout>
-    </ThemeProvider>
+    <html lang="en">
+      <body className={poppins.variable}>
+        <ThemeProvider>
+          <InnerLayout>{children}</InnerLayout>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
