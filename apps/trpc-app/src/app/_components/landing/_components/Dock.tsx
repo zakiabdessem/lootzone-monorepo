@@ -169,7 +169,6 @@ export default function Dock({
 
   return (
     <motion.div 
-      style={{ height, scrollbarWidth: 'none' }} 
       className="mx-2 flex max-w-full items-center justify-center pointer-events-none"
     >
       <motion.div
