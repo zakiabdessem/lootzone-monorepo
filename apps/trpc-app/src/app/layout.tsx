@@ -26,7 +26,13 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   // Fetch initial site settings on the server for better SEO and performance
-  const initialSettings = await getServerSiteSettings();
+  let initialSettings;
+  try {
+    initialSettings = await getServerSiteSettings();
+  } catch (error) {
+    console.error('Failed to fetch initial site settings:', error);
+    initialSettings = undefined;
+  }
 
   return (
     <html lang="en" className={`${geist.variable}`}>
