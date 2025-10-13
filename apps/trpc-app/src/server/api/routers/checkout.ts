@@ -11,6 +11,69 @@ import { PaymentMethod, PaymentStatus } from '~/constants/enums';
 
 export const checkoutRouter = createTRPCRouter({
   /**
+   * Get previous customer info for autofill
+   * Looks up by guest session token or IP address
+   */
+  getPreviousCustomerInfo: publicProcedure
+    .input(
+      z.object({
+        guestSessionToken: z.string().optional(),
+        ipAddress: z.string().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      try {
+        // First try to find by guest session token
+        if (input.guestSessionToken) {
+          const draftBySession = await ctx.db.checkoutDraft.findFirst({
+            where: {
+              guestSessionToken: input.guestSessionToken,
+              email: { not: '' }, // Ensure it has customer info
+            },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              email: true,
+              phone: true,
+              fullName: true,
+            },
+          });
+
+          if (draftBySession) {
+            console.log('[Checkout] Found previous customer info by session token');
+            return draftBySession;
+          }
+        }
+
+        // Fallback: Try to find by IP address (if session expired)
+        if (input.ipAddress) {
+          const draftByIp = await ctx.db.checkoutDraft.findFirst({
+            where: {
+              ipAddress: input.ipAddress,
+              email: { not: '' },
+            },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              email: true,
+              phone: true,
+              fullName: true,
+            },
+          });
+
+          if (draftByIp) {
+            console.log('[Checkout] Found previous customer info by IP address');
+            return draftByIp;
+          }
+        }
+
+        // No previous info found
+        return null;
+      } catch (error) {
+        console.error('[Checkout] Error fetching previous customer info:', error);
+        return null; // Don't throw error, just return null for better UX
+      }
+    }),
+
+  /**
    * Step 1: Save checkout draft with user info and cart snapshot
    */
   saveDraft: publicProcedure
@@ -32,6 +95,8 @@ export const checkoutRouter = createTRPCRouter({
           subtotal: z.number().positive(),
           currency: z.string().default('DZD'),
         }),
+        guestSessionToken: z.string().optional(),
+        ipAddress: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -48,6 +113,8 @@ export const checkoutRouter = createTRPCRouter({
             fullName: input.fullName,
             cartSnapshot: input.cartSnapshot,
             userId: ctx.session?.user?.id, // Optional if user is logged in
+            guestSessionToken: input.guestSessionToken,
+            ipAddress: input.ipAddress,
             tokenExpiresAt,
             paymentStatus: PaymentStatus.DRAFT,
           },

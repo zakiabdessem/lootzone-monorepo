@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '~/hooks/useCart';
+import { useGuestSession } from '~/hooks/useGuestSession';
 import { formatDA } from '@/lib/utils';
 import Stepper, { Step } from '../_components/checkout/Stepper';
 import { CheckCircle, Upload, Clock, AlertCircle, Eye, X, Loader2 } from 'lucide-react';
@@ -14,6 +15,7 @@ import Image from 'next/image';
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartDetails, subtotal, itemCount } = useCart();
+  const { sessionToken, isInitialized: isGuestSessionReady } = useGuestSession();
 
   // TODO: Fetch Flexy phone number from site settings API
   // const { data: siteSettings } = trpc.siteSettings.get.useQuery();
@@ -24,6 +26,7 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [fullName, setFullName] = useState('');
+  const [isAutofilling, setIsAutofilling] = useState(false);
 
   // Payment method state
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
@@ -52,10 +55,26 @@ export default function CheckoutPage() {
     }
   }, [cartDetails.length, orderSubmitted, router]);
 
-  // tRPC mutations
+  // tRPC queries and mutations
+  const { data: previousCustomerInfo } = api.checkout.getPreviousCustomerInfo.useQuery(
+    { guestSessionToken: sessionToken ?? undefined },
+    { enabled: isGuestSessionReady && !!sessionToken }
+  );
+  
   const saveDraftMutation = api.checkout.saveDraft.useMutation();
   const updatePaymentMethodMutation = api.checkout.updatePaymentMethod.useMutation();
   const createPaymentMutation = api.checkout.createPayment.useMutation();
+
+  // Autofill customer info from previous purchases
+  useEffect(() => {
+    if (previousCustomerInfo && !isAutofilling && !email && !phone && !fullName) {
+      console.log('[Checkout] Autofilling customer info from previous purchase');
+      setEmail(previousCustomerInfo.email);
+      setPhone(previousCustomerInfo.phone);
+      setFullName(previousCustomerInfo.fullName);
+      setIsAutofilling(true);
+    }
+  }, [previousCustomerInfo, email, phone, fullName, isAutofilling]);
 
   // Check if content is scrollable and update indicator visibility
   useEffect(() => {
@@ -159,12 +178,13 @@ export default function CheckoutPage() {
         currency: 'DZD',
       };
 
-      // Save draft
+      // Save draft with guest session info for future autofill
       const result = await saveDraftMutation.mutateAsync({
         email,
         phone,
         fullName,
         cartSnapshot,
+        guestSessionToken: sessionToken ?? undefined,
       });
 
       setDraftId(result.draftId);

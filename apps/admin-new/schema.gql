@@ -1,0 +1,795 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+enum AgendaLogistic {
+  OFFLINE
+  ONLINE
+}
+
+type Company {
+  city: String
+  companyType: CompanyType!
+  country: String
+  description: String!
+  email: String!
+  events: [Event!]
+  facebook: String
+  id: Int!
+  instagram: String
+  isRecurrentPayment: Boolean!
+  linkedin: String
+  name: String!
+  phone: String!
+  picture: String
+  postalCode: String
+  state: String
+  status: String!
+  twitter: String
+  users: [User!]
+  website: String
+  youtube: String
+}
+
+input CompanyInput {
+  city: String!
+  country: String!
+  email: String!
+  name: String!
+  phone: String!
+  postalCode: String!
+  state: String!
+}
+
+enum CompanyType {
+  ASSOCIATION
+  ENTERPRISE
+  INFLUENCER
+  NGO
+  ORGANIZATION
+  SALON
+  SCHOOL
+  UNIVERSITY_CLUB
+}
+
+type Coupon {
+  code: String!
+  createdAt: DateTime!
+  discountType: DiscountType!
+  discountValue: Float!
+  expiresAt: DateTime!
+  id: Int!
+  isActive: Boolean!
+  packageId: Int
+  planId: Int!
+  updatedAt: DateTime!
+  usageLimit: Int!
+  usedCount: Int!
+}
+
+input CreateAgendaInput {
+  agendaLines: [CreateEventAgendaLineInput!]!
+}
+
+input CreateCompanyInput {
+  companyType: CompanyType!
+  description: String!
+  email: String!
+  facebook: String
+  instagram: String
+  isRecurrentPayment: Boolean
+  linkedin: String
+  name: String!
+  phone: String!
+  picture: String!
+  twitter: String
+  youtube: String
+}
+
+input CreateCouponDto {
+  code: String!
+  discountType: DiscountType!
+  discountValue: Float!
+  expiresAt: String!
+  packageId: Int
+  planId: Int!
+  usageLimit: Int!
+}
+
+input CreateEventAgendaLineInput {
+  description: String
+  end_date: String!
+  hosts: [CreateEventHostInput!]
+  link: String
+  logistic: AgendaLogistic!
+  start_date: String!
+  title: String!
+}
+
+input CreateEventFAQInput {
+  answer: String!
+  question: String!
+}
+
+input CreateEventHostInput {
+  image: String!
+  name: String!
+  professionality: String!
+}
+
+input CreateEventInput {
+  accessibility: EventAccessibility!
+  acronym: String!
+  agenda: CreateAgendaInput
+  capacity: EventCapacity!
+  companyId: Int!
+  description_en: String!
+  email: String!
+  end_date: String!
+  eventCategoryIds: [Int!]!
+  eventTypeId: Int!
+  event_banner: String
+  event_logo: String
+  event_trailer: String
+  faqs: [CreateEventFAQInput!]
+  formFields: [CreateFormFieldInput!]
+  instagram: String
+  linkedin: String
+  location: String!
+  logistic: EventLogistic!
+  phone: String!
+  photos: [CreateEventPhotoInput!]
+  scope: EventScope!
+  slug: String!
+  sponsors: [CreateEventSponsorInput!]
+  start_date: String!
+  tags: [CreateEventTagInput!]
+  target_niche: EventTargetNiche!
+  title_ar: String!
+  title_en: String!
+  website: String!
+  youtube: String
+}
+
+input CreateEventPhotoInput {
+  photo: String!
+}
+
+input CreateEventSponsorInput {
+  logo: String!
+  name: String!
+}
+
+input CreateEventTagInput {
+  name: String!
+}
+
+input CreateFormFieldInput {
+  helperText: String
+  label: String!
+  options: [String!]
+  placeholder: String
+  required: Boolean!
+  style: String
+  type: String!
+  validation: FormFieldValidationInput
+}
+
+input CreateFormInput {
+  eventId: String!
+  fields: [CreateFormFieldInput!]!
+}
+
+input CreatePaymentInput {
+  base: Boolean! = false
+  company: CompanyInput!
+  couponCode: String
+  packageId: Int
+  paymentMethodId: Int!
+  paymentProof: String
+  planId: Int!
+}
+
+input CreateUserDto {
+  """Description of the company"""
+  companyDescription: String
+
+  """Public email for the company"""
+  companyEmail: String
+
+  """Name of the company"""
+  companyName: String
+
+  """Public phone number for the company"""
+  companyPhone: String
+
+  """Logo/Picture URL for the company"""
+  companyPicture: String
+
+  """Type of the company"""
+  companyType: CompanyType
+
+  """Company website URL"""
+  companyWebsite: String
+  email: String!
+  firstname: String!
+
+  """Does the user represent a company?"""
+  hasCompany: Boolean! = false
+  lastname: String!
+  password: String!
+  phone: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+enum DiscountType {
+  FIXED_AMOUNT
+  PERCENTAGE
+}
+
+type Event {
+  accessibility: EventAccessibility!
+  acronym: String!
+  agenda: EventAgenda
+  capacity: EventCapacity!
+  company: Company!
+  companyId: Int!
+  created_at: DateTime!
+  description_en: String!
+  email: String!
+  end_date: String!
+  eventCategories: [EventCategoryEntity!]
+  eventType: EventTypeEntity
+  event_banner: String
+  event_logo: String
+  event_trailer: String
+  faqs: [EventFAQ!]
+  form: Form
+  id: Int!
+  instagram: String
+  isActive: Boolean!
+  linkedin: String
+  location: String!
+  logistic: EventLogistic!
+  phone: String!
+  photos: [EventPhoto!]
+  scope: EventScope!
+  slug: String!
+  sponsors: [EventSponsor!]
+  start_date: String!
+  tags: [EventTag!]
+  target_niche: EventTargetNiche!
+  title_ar: String!
+  title_en: String!
+  updated_at: DateTime!
+  user: User!
+  userId: Int!
+  userSubscription: UserSubscription!
+  userSubscriptionId: Int!
+  website: String!
+  youtube: String
+}
+
+enum EventAccessibility {
+  FREE_ACCESS
+  INVITATION_ONLY
+  PAID_ACCESS
+  RESTRICTED_ACCESS
+}
+
+type EventAgenda {
+  agendaLines: [EventAgendaLine!]!
+  event: Event!
+  id: Int!
+}
+
+type EventAgendaLine {
+  agenda: EventAgenda!
+  description: String
+  endTime: DateTime!
+  hosts: [Host!]
+  id: Int!
+  link: String
+  logistic: AgendaLogistic!
+  place: String
+  startTime: DateTime!
+  title: String!
+}
+
+enum EventCapacity {
+  EXTRA_LARGE
+  LARGE
+  MEDIUM
+  SMALL
+}
+
+"""The category of an event"""
+enum EventCategory {
+  ACADEMIC
+  ADMINISTRATION
+  AI
+  BLOCKCHAIN
+  BUSINESS_STRATEGY
+  COMMUNITY
+  CONSULTING
+  CYBERSECURITY
+  DESIGN
+  DIGITAL_ART
+  ECOMMERCE
+  EDUCATION
+  ENGINEERING
+  ENTERTAINMENT
+  ENTREPRENEURSHIP
+  FASHION
+  FINANCE
+  GAMING
+  GREEN_TECH
+  HEALTHCARE
+  HR
+  INDUSTRIAL
+  IT
+  LEGAL
+  MAKEUP
+  MANUFACTURING
+  MARKETING
+  MEDIA
+  MEDICAL
+  NON_PROFIT
+  PHOTOGRAPHY
+  RENEWABLE_ENERGY
+  RESEARCH
+  SOCIAL_IMPACT
+  SOFTWARE_DEV
+  SUSTAINABILITY
+  WELLNESS
+}
+
+type EventCategoryEntity {
+  id: Int!
+  name: String!
+}
+
+type EventFAQ {
+  answer: String!
+  event: Event!
+  id: Int!
+  question: String!
+}
+
+enum EventLogistic {
+  HYBRID
+  OFFLINE
+  ONLINE
+}
+
+type EventPackage {
+  eventCount: Int!
+  id: ID!
+  plan: SubscriptionPlan!
+  planId: Int!
+  price: Int!
+}
+
+type EventPhoto {
+  id: Int!
+  photo: String!
+}
+
+type EventResponse {
+  accessibility: EventAccessibility!
+  acronym: String!
+  agenda: EventAgenda
+  capacity: EventCapacity!
+  company: Company!
+  companyId: Int!
+  created_at: DateTime!
+  description_en: String!
+  email: String!
+  end_date: String!
+  eventCategories: [EventCategoryEntity!]
+  eventType: EventTypeEntity
+  event_banner: String
+  event_logo: String
+  event_trailer: String
+  faqs: [EventFAQ!]
+  form: Form
+  id: Int!
+  instagram: String
+  linkedin: String
+  location: String!
+  logistic: EventLogistic!
+  phone: String!
+  photos: [EventPhoto!]
+  scope: EventScope!
+  slug: String!
+  sponsors: [EventSponsor!]
+  start_date: String!
+  tags: [EventTag!]
+  target_niche: EventTargetNiche!
+  title_ar: String!
+  title_en: String!
+  updated_at: DateTime!
+  website: String!
+  youtube: String
+}
+
+enum EventScope {
+  INTERNATIONAL
+  LOCAL
+  NATIONAL
+  REGIONAL
+}
+
+type EventSponsor {
+  id: Int!
+  logo: String!
+  name: String!
+}
+
+type EventTag {
+  id: Int!
+  name: String!
+}
+
+enum EventTargetNiche {
+  INDUSTRY
+  PROFESSIONALS
+  PUBLIC
+  STUDENTS
+}
+
+type EventTypeEntity {
+  id: Int!
+  name: String!
+}
+
+type Form {
+  createdAt: DateTime!
+  event: Event!
+  eventId: Float!
+  fields: JSON!
+  id: ID!
+  updatedAt: DateTime!
+}
+
+input FormFieldValidationInput {
+  maxLength: Float
+  minLength: Float
+  pattern: String
+}
+
+type Host {
+  agendaLine: EventAgendaLine
+  id: Int!
+  image: String!
+  name: String!
+  professionality: String!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type LoginResponse {
+  accessToken: String!
+  user: User!
+}
+
+input LoginUserInput {
+  email: String!
+  password: String!
+  remember_me: Boolean
+}
+
+type Mutation {
+  createCompany(createCompanyInput: CreateCompanyInput!): Company!
+  createCoupon(createCouponInput: CreateCouponDto!): Coupon!
+  createEvent(createEventInput: CreateEventInput!): Event!
+  createForm(input: CreateFormInput!): Form!
+  createPayment(input: CreatePaymentInput!): PaymentResponse!
+  deleteForm(id: ID!): Boolean!
+  login(loginUserInput: LoginUserInput!): LoginResponse!
+  resendVerificationEmail(resendVerificationInput: ResendVerificationInput!): VerificationResponse!
+  signup(signupUserInput: CreateUserDto!): User!
+  updateEvent(updateEventInput: UpdateEventInput!): Event!
+  updateForm(id: ID!, input: CreateFormInput!): Form!
+  validateCoupon(code: String!, packageId: Int, planId: Int!): ValidateCouponResponse!
+  validatePayment(paymentId: Int!): Payment!
+  verifyEmail(verifyEmailInput: VerifyEmailInput!): VerificationResponse!
+}
+
+type PaginatedEventsResponse {
+  events: [Event!]!
+  pagination: PaginationInfo!
+}
+
+type PaginationInfo {
+  currentPage: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  total: Int!
+  totalPages: Int!
+}
+
+type Payment {
+  amount: Int!
+  company: Company!
+  createdAt: DateTime!
+  discountAmount: Int
+  id: ID!
+  method: String
+  paymentMethod: PaymentMethod
+  proofUrl: String
+  status: String!
+  user: User
+}
+
+type PaymentMethod {
+  id: ID!
+  name: String!
+}
+
+type PaymentResponse {
+  message: String!
+  nextStep: String!
+  payment: Payment!
+  subscription: UserSubscription!
+  success: Boolean!
+}
+
+type PlanFeatures {
+  agenda: Boolean!
+  articles: Int!
+  maxPhotos: Int!
+  participationForm: Boolean!
+  socialMedia: Boolean!
+  sponsors: Boolean!
+}
+
+type PlanInfo {
+  basePrice: Int!
+  features: PlanFeatures!
+  id: ID!
+  name: String!
+}
+
+type PublicEventResponse {
+  accessibility: EventAccessibility!
+  acronym: String!
+  agenda: EventAgenda
+  capacity: EventCapacity!
+  company: Company!
+  companyId: Int!
+  created_at: DateTime!
+  description_en: String!
+  email: String!
+  end_date: String!
+  eventCategories: [EventCategoryEntity!]
+  eventType: EventTypeEntity
+  event_banner: String
+  event_logo: String
+  event_trailer: String
+  faqs: [EventFAQ!]
+  form: Form
+  id: Int!
+  instagram: String
+  isActive: Boolean!
+  linkedin: String
+  location: String!
+  logistic: EventLogistic!
+  phone: String!
+  photos: [EventPhoto!]
+  scope: EventScope!
+  slug: String!
+  sponsors: [EventSponsor!]
+  start_date: String!
+  tags: [EventTag!]
+  target_niche: EventTargetNiche!
+  title_ar: String!
+  title_en: String!
+  updated_at: DateTime!
+  userId: Int!
+  userSubscriptionId: Int!
+  website: String!
+  youtube: String
+}
+
+type Query {
+  activeEvents(
+    """Categories to filter events by"""
+    category: [EventCategory!]
+
+    """Number of items per page"""
+    limit: Int! = 12
+
+    """Page number (starts at 1)"""
+    page: Int! = 1
+
+    """Field to sort events by"""
+    sortBy: String = "start_date"
+
+    """Sort order (ASC or DESC)"""
+    sortOrder: SortOrder = DESC
+  ): PaginatedEventsResponse!
+  event(id: Int!): Event!
+  eventCategories: [EventCategoryEntity!]!
+  eventCategory(id: Int!): EventCategoryEntity!
+  eventPublic(id: Int!): PublicEventResponse!
+  eventType(id: Int!): EventTypeEntity!
+  eventTypes: [EventTypeEntity!]!
+  events: [EventResponse!]!
+  eventsByCompany(companyId: Int!): [Event!]!
+  getCurrentSubscriptionUsage: SubscriptionUsageInfo
+  getFormByEventId(eventId: ID!): Form
+  getPaymentMethods: [PaymentMethod!]!
+  getPayments: [Payment!]!
+  getSubscriptionInfo: SubscriptionInfo!
+  getSubscriptionPlans: [PlanInfo!]!
+  getSubscriptions: [UserSubscription!]!
+  getUserSubscriptionDetails: UserSubscriptionInfo
+  isEmailAvailable(email: String!): Boolean!
+  myCompanyEvents: [Event!]!
+  user(email: String!): User!
+  userCompany: Company
+  userEvents(limit: Int!, page: Int!): UserEventsResponse!
+  userMe: UserResponse!
+  users: [User!]!
+}
+
+input ResendVerificationInput {
+  email: String!
+}
+
+"""Sort order for event queries"""
+enum SortOrder {
+  ASC
+  DESC
+}
+
+type SubscriptionInfo {
+  availablePackages: [EventPackage!]!
+  availablePlans: [SubscriptionPlan!]!
+  currentSubscription: UserSubscription
+  usage: SubscriptionUsageInfo
+}
+
+type SubscriptionPlan {
+  basePrice: Int!
+  features: JSON!
+  id: ID!
+  name: String!
+}
+
+type SubscriptionUsageInfo {
+  articlesRemaining: Int!
+  articlesTotal: Int!
+  articlesUsed: Int!
+  eventsRemaining: Int!
+  eventsTotal: Int!
+  eventsUsed: Int!
+  isActive: Boolean!
+}
+
+enum USER_STATUS {
+  ACTIVE
+  UNACTIVE
+}
+
+input UpdateEventInput {
+  accessibility: EventAccessibility
+  acronym: String
+  agenda: CreateAgendaInput
+  capacity: EventCapacity
+  companyId: Int
+  description_en: String
+  email: String
+  end_date: String
+  eventCategoryIds: [Int!]
+  eventTypeId: Int
+  event_banner: String
+  event_logo: String
+  event_trailer: String
+  faqs: [CreateEventFAQInput!]
+  formFields: [CreateFormFieldInput!]
+  id: Int!
+  instagram: String
+  linkedin: String
+  location: String
+  logistic: EventLogistic
+  phone: String
+  photos: [CreateEventPhotoInput!]
+  scope: EventScope
+  slug: String
+  sponsors: [CreateEventSponsorInput!]
+  start_date: String
+  tags: [CreateEventTagInput!]
+  target_niche: EventTargetNiche
+  title_ar: String
+  title_en: String
+  website: String
+  youtube: String
+}
+
+type User {
+  companies: [Company!]
+  email: String!
+  events: [Event!]
+  firstname: String!
+  id: Int!
+  is_email_verified: Boolean!
+  lastname: String!
+  password: String
+  phone: String
+  picture: String
+  role: String!
+  status: USER_STATUS!
+}
+
+type UserEventsResponse {
+  events: [Event!]!
+  pagination: PaginationInfo!
+}
+
+type UserResponse {
+  companies: [Company!]
+  email: String!
+  firstname: String!
+  id: Int!
+  is_email_verified: Boolean!
+  lastname: String!
+  phone: String!
+  role: String!
+  status: USER_STATUS!
+}
+
+type UserSubscription {
+  articlesUsed: Int!
+  company: Company!
+  createdAt: DateTime!
+  eventsUsed: Int!
+  id: ID!
+  package: EventPackage
+  packageId: Int
+  payment: Payment
+  paymentId: Int
+  plan: SubscriptionPlan!
+  planId: Int!
+  status: String!
+  updatedAt: DateTime!
+  user: User
+  userId: Int
+}
+
+type UserSubscriptionInfo {
+  articlesRemaining: Float!
+  articlesTotal: Float!
+  articlesUsed: Float!
+  eventCount: Float!
+  eventsRemaining: Float!
+  eventsUsed: Float!
+  features: PlanFeatures!
+  id: String!
+  planName: String!
+  planPrice: Float!
+  status: String!
+}
+
+type ValidateCouponResponse {
+  discountAmount: Float!
+  message: String!
+  valid: Boolean!
+}
+
+type VerificationResponse {
+  message: String!
+  success: Boolean!
+}
+
+input VerifyEmailInput {
+  token: String!
+}

@@ -284,6 +284,10 @@ model CheckoutDraft {
     // Optional user ID if authenticated
     userId        String?
     
+    // Track guest session for autofill on future purchases
+    guestSessionToken String?
+    ipAddress         String?  // For fallback lookup if session expired
+    
     // Cart snapshot at checkout time
     cartSnapshot  Json     // { items: [], subtotal: number, currency: string }
     
@@ -318,4 +322,6 @@ model CheckoutDraft {
     @@index([paymentStatus])
     @@index([tokenExpiresAt])
     @@index([chargilyCheckoutId])
+    @@index([guestSessionToken])
+    @@index([ipAddress])
 }
