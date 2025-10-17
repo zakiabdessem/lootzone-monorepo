@@ -3,11 +3,12 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "baseUrl": "../../apps/trpc-app",
+    "baseUrl": "./",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["../../apps/trpc-app/src/*"]
     }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
+
