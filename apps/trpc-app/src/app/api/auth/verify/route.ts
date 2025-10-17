@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const getCorsOrigin = () => {
   return process.env.NODE_ENV === "development"
     ? "http://localhost:3000"
-    : "https://admin.lootzone.digital";
+    : "https://lootzone.digital";
 };
 
 // Handle CORS preflight requests
