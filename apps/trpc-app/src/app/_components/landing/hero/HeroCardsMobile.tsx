@@ -48,9 +48,9 @@ export default function HeroCardsMobile() {
           glowIntensity={0.15}
         />
         <div className='section-inner px-4 relative z-10'>
-          <div className='flex justify-center my-4 relative bottom-8'>
+          {/* <div className='flex justify-center my-4 relative bottom-8'>
             <MembershipBadge />
-          </div>
+          </div> */}
           <div className='flex justify-center items-center h-96'>
             {isLoading ? (
               <div className='text-center'>Loading...</div>
@@ -80,9 +80,9 @@ export default function HeroCardsMobile() {
       />
       <div className='section-inner px-4 relative z-10'>
         {/* Membership badge */}
-        <div className='flex justify-center my-4 relative bottom-8'>
+        {/* <div className='flex justify-center my-4 relative bottom-8'>
           <MembershipBadge />
-        </div>
+        </div> */}
 
         <div className='flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar'>
           {products.map((product, idx) => (

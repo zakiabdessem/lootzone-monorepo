@@ -2,6 +2,7 @@
 
 import styled from "@emotion/styled";
 import NextLink from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 import {
@@ -208,6 +209,7 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
 };
 
 function EnhancedTable() {
+  const router = useRouter();
   const [order, setOrder] = React.useState<"desc" | "asc">("desc");
   const [orderBy, setOrderBy] = React.useState("createdAt");
   const [selected, setSelected] = React.useState<Array<string>>([]);
@@ -334,6 +336,10 @@ function EnhancedTable() {
       variants,
       productTitle,
     });
+  };
+
+  const handleViewProduct = (productId: string) => {
+    router.push(`/products/edit/${productId}`);
   };
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
@@ -511,9 +517,15 @@ function EnhancedTable() {
                       <IconButton aria-label="delete" size="large">
                         <ArchiveIcon />
                       </IconButton>
-                      <IconButton aria-label="details" size="large">
-                        <RemoveRedEyeIcon />
-                      </IconButton>
+                      <Tooltip title="View/Edit Product">
+                        <IconButton 
+                          aria-label="view-edit" 
+                          size="large"
+                          onClick={() => handleViewProduct(product.id)}
+                        >
+                          <RemoveRedEyeIcon />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 );

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { ReactElement } from "react";
 import styled from "@emotion/styled";
 import NextLink from "next/link";
@@ -10,7 +10,6 @@ import {
   Breadcrumbs as MuiBreadcrumbs,
   Button,
   Checkbox,
-  Chip as MuiChip,
   Divider as MuiDivider,
   Grid,
   IconButton,
@@ -27,35 +26,30 @@ import {
   Toolbar,
   Tooltip,
   Typography,
+  TextField,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import { green, orange, red } from "@mui/material/colors";
 import {
-  Add as AddIcon,
   Archive as ArchiveIcon,
   FilterList as FilterListIcon,
   RemoveRedEye as RemoveRedEyeIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import { spacing, SpacingProps } from "@mui/system";
+import { api } from "@lootzone/trpc-shared";
+import { OrderStatusBadge, PaymentStatusBadge } from "../../../components/orders/OrderStatusBadge";
+import { OrderDetailsModal } from "../../../components/orders/OrderDetailsModal";
 
 const Divider = styled(MuiDivider)(spacing);
 
 const Breadcrumbs = styled(MuiBreadcrumbs)(spacing);
 
 const Paper = styled(MuiPaper)(spacing);
-
-interface ChipProps extends SpacingProps {
-  shipped?: number;
-  processing?: number;
-  cancelled?: number;
-}
-const Chip = styled(MuiChip)<ChipProps>`
-  ${spacing};
-
-  background: ${(props) => props.shipped && green[500]};
-  background: ${(props) => props.processing && orange[700]};
-  background: ${(props) => props.cancelled && red[500]};
-  color: ${(props) => props.theme.palette.common.white};
-`;
 
 const Spacer = styled.div`
   flex: 1 1 100%;
@@ -65,135 +59,41 @@ const ToolbarTitle = styled.div`
   min-width: 150px;
 `;
 
-function createData(
-  id: string,
-  product: string,
-  date: string,
-  total: string,
-  status: number,
-  method: string
-) {
-  return { id, product, date, total, status, method };
-}
-
-type RowType = {
-  [key: string]: string | number;
+type OrderType = {
   id: string;
-  product: string;
-  date: string;
-  total: string;
-  status: number;
-  method: string;
+  userId: string | null;
+  user: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+  } | null;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  totalAmount: number;
+  currency: string;
+  createdAt: string;
 };
-const rows: Array<RowType> = [
-  createData(
-    "000253",
-    "Salt & Pepper Grinder",
-    "2023-01-02",
-    "$32,00",
-    0,
-    "Visa"
-  ),
-  createData("000254", "Backpack", "2023-01-04", "$130,00", 0, "PayPal"),
-  createData(
-    "000255",
-    "Pocket Speaker",
-    "2023-01-04",
-    "$80,00",
-    2,
-    "Mastercard"
-  ),
-  createData("000256", "Glass Teapot", "2023-01-08", "$45,00", 0, "Visa"),
-  createData(
-    "000257",
-    "Unbreakable Water Bottle",
-    "2023-01-09",
-    "$40,00",
-    0,
-    "PayPal"
-  ),
-  createData("000258", "Spoon Saver", "2023-01-14", "$15,00", 0, "Mastercard"),
-  createData("000259", "Hip Flash", "2023-01-16", "$25,00", 1, "Visa"),
-  createData("000260", "Woven Slippers", "2023-01-22", "$20,00", 0, "PayPal"),
-  createData("000261", "Womens Watch", "2023-01-22", "$65,00", 2, "Visa"),
-  createData(
-    "000262",
-    "Over-Ear Headphones",
-    "2023-01-23",
-    "$210,00",
-    0,
-    "Mastercard"
-  ),
-];
-
-function descendingComparator(a: RowType, b: RowType, orderBy: string) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
-function getComparator(order: "desc" | "asc", orderBy: string) {
-  return order === "desc"
-    ? (a: RowType, b: RowType) => descendingComparator(a, b, orderBy)
-    : (a: RowType, b: RowType) => -descendingComparator(a, b, orderBy);
-}
-
-function stableSort(
-  array: Array<RowType>,
-  comparator: (a: RowType, b: RowType) => number
-) {
-  const stabilizedThis = array.map((el: RowType, index: number) => ({
-    el,
-    index,
-  }));
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a.el, b.el);
-    if (order !== 0) return order;
-    return a.index - b.index;
-  });
-  return stabilizedThis.map((element) => element.el);
-}
-
-type HeadCell = {
-  id: string;
-  alignment: "left" | "center" | "right" | "justify" | "inherit" | undefined;
-  label: string;
-  disablePadding?: boolean;
-};
-const headCells: Array<HeadCell> = [
-  { id: "id", alignment: "right", label: "Order ID" },
-  { id: "product", alignment: "left", label: "Product" },
-  { id: "date", alignment: "left", label: "Date" },
-  { id: "total", alignment: "right", label: "Total" },
-  { id: "status", alignment: "left", label: "Status" },
-  { id: "method", alignment: "left", label: "Payment Method" },
-  { id: "actions", alignment: "right", label: "Actions" },
-];
 
 type EnhancedTableHeadProps = {
   numSelected: number;
-  order: "desc" | "asc";
-  orderBy: string;
   rowCount: number;
   onSelectAllClick: (e: any) => void;
-  onRequestSort: (e: any, property: string) => void;
 };
+
+const headCells = [
+  { id: "id", label: "Order ID" },
+  { id: "customer", label: "Customer" },
+  { id: "date", label: "Date" },
+  { id: "total", label: "Total" },
+  { id: "paymentStatus", label: "Payment" },
+  { id: "status", label: "Status" },
+  { id: "actions", label: "Actions" },
+];
+
 const EnhancedTableHead: React.FC<EnhancedTableHeadProps> = (props) => {
-  const {
-    onSelectAllClick,
-    order,
-    orderBy,
-    numSelected,
-    rowCount,
-    onRequestSort,
-  } = props;
-  const createSortHandler = (property: string) => (event: any) => {
-    onRequestSort(event, property);
-  };
+  const { onSelectAllClick, numSelected, rowCount } = props;
 
   return (
     <TableHead>
@@ -207,33 +107,27 @@ const EnhancedTableHead: React.FC<EnhancedTableHeadProps> = (props) => {
           />
         </TableCell>
         {headCells.map((headCell) => (
-          <TableCell
-            key={headCell.id}
-            align={headCell.alignment}
-            padding={headCell.disablePadding ? "none" : "normal"}
-            sortDirection={orderBy === headCell.id ? order : false}
-          >
-            <TableSortLabel
-              active={orderBy === headCell.id}
-              direction={orderBy === headCell.id ? order : "asc"}
-              onClick={createSortHandler(headCell.id)}
-            >
-              {headCell.label}
-            </TableSortLabel>
-          </TableCell>
+          <TableCell key={headCell.id}>{headCell.label}</TableCell>
         ))}
       </TableRow>
     </TableHead>
   );
 };
 
-type EnhancedTableToolbarProps = { numSelected: number };
+type EnhancedTableToolbarProps = {
+  numSelected: number;
+  statusFilter: string;
+  searchQuery: string;
+  onStatusFilterChange: (value: string) => void;
+  onSearchChange: (value: string) => void;
+  onRefresh: () => void;
+};
+
 const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
-  // Here was 'let'
-  const { numSelected } = props;
+  const { numSelected, statusFilter, searchQuery, onStatusFilterChange, onSearchChange, onRefresh } = props;
 
   return (
-    <Toolbar>
+    <Toolbar sx={{ gap: 2, flexWrap: "wrap" }}>
       <ToolbarTitle>
         {numSelected > 0 ? (
           <Typography color="inherit" variant="subtitle1">
@@ -246,41 +140,65 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
         )}
       </ToolbarTitle>
       <Spacer />
-      <div>
-        {numSelected > 0 ? (
-          <Tooltip title="Delete">
-            <IconButton aria-label="Delete" size="large">
-              <ArchiveIcon />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <Tooltip title="Filter list">
-            <IconButton aria-label="Filter list" size="large">
-              <FilterListIcon />
-            </IconButton>
-          </Tooltip>
-        )}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <TextField
+          size="small"
+          placeholder="Search by Order ID or Customer..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          sx={{ minWidth: 250 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={(e) => onStatusFilterChange(e.target.value)}
+          >
+            <MenuItem value="">All Statuses</MenuItem>
+            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="processing">Processing</MenuItem>
+            <MenuItem value="completed">Completed</MenuItem>
+            <MenuItem value="cancelled">Cancelled</MenuItem>
+            <MenuItem value="refunded">Refunded</MenuItem>
+          </Select>
+        </FormControl>
+        <Tooltip title="Refresh">
+          <IconButton onClick={onRefresh} size="large">
+            <RefreshIcon />
+          </IconButton>
+        </Tooltip>
       </div>
     </Toolbar>
   );
 };
 
 function EnhancedTable() {
-  const [order, setOrder] = React.useState<"desc" | "asc">("asc");
-  const [orderBy, setOrderBy] = React.useState("customer");
-  const [selected, setSelected] = React.useState<Array<string>>([]);
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [selected, setSelected] = useState<Array<string>>([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  const handleRequestSort = (event: any, property: string) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = api.order.getAllOrders.useQuery({
+    limit: rowsPerPage,
+    offset: page * rowsPerPage,
+    status: statusFilter || undefined,
+    search: searchQuery || undefined,
+  });
+
+  const orders = data?.orders || [];
+  const totalCount = data?.totalCount || 0;
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelecteds: Array<string> = rows.map((n: RowType) => n.id);
+      const newSelecteds = orders.map((n: any) => n.id);
       setSelected(newSelecteds);
       return;
     }
@@ -324,15 +242,38 @@ function EnhancedTable() {
     setPage(0);
   };
 
-  const isSelected = (id: string) => selected.indexOf(id) !== -1;
+  const handleViewOrder = (orderId: string) => {
+    setSelectedOrderId(orderId);
+  };
 
-  const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
+  const handleCloseModal = () => {
+    setSelectedOrderId(null);
+  };
+
+  const handleOrderUpdated = () => {
+    refetch();
+  };
+
+  const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
   return (
     <div>
       <Paper>
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <EnhancedTableToolbar
+          numSelected={selected.length}
+          statusFilter={statusFilter}
+          searchQuery={searchQuery}
+          onStatusFilterChange={setStatusFilter}
+          onSearchChange={setSearchQuery}
+          onRefresh={() => refetch()}
+        />
+        
+        {error && (
+          <Box p={3}>
+            <Alert severity="error">Failed to load orders: {error.message}</Alert>
+          </Box>
+        )}
+
         <TableContainer>
           <Table
             aria-labelledby="tableTitle"
@@ -341,18 +282,30 @@ function EnhancedTable() {
           >
             <EnhancedTableHead
               numSelected={selected.length}
-              order={order}
-              orderBy={orderBy}
               onSelectAllClick={handleSelectAllClick}
-              onRequestSort={handleRequestSort}
-              rowCount={rows.length}
+              rowCount={orders.length}
             />
             <TableBody>
-              {stableSort(rows, getComparator(order, orderBy))
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => {
-                  const isItemSelected = isSelected(row.id);
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                    <CircularProgress />
+                  </TableCell>
+                </TableRow>
+              ) : orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                    <Typography color="text.secondary">No orders found</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                orders.map((order: any, index: number) => {
+                  const isItemSelected = isSelected(order.id);
                   const labelId = `enhanced-table-checkbox-${index}`;
+                  const customerName = order.user
+                    ? `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim() ||
+                      order.user.email
+                    : "Guest";
 
                   return (
                     <TableRow
@@ -360,85 +313,80 @@ function EnhancedTable() {
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
-                      key={`${row.id}-${index}`}
+                      key={order.id}
                       selected={isItemSelected}
                     >
                       <TableCell padding="checkbox">
                         <Checkbox
                           checked={isItemSelected}
                           inputProps={{ "aria-labelledby": labelId }}
-                          onClick={(event) => handleClick(event, row.id)}
+                          onClick={(event) => handleClick(event, order.id)}
                         />
                       </TableCell>
 
-                      <TableCell align="right">#{row.id}</TableCell>
-                      <TableCell align="left">{row.product}</TableCell>
-                      <TableCell align="left">{row.date}</TableCell>
-                      <TableCell align="right">{row.total}</TableCell>
                       <TableCell>
-                        {row.status === 0 && (
-                          <Chip
-                            size="small"
-                            mr={1}
-                            mb={1}
-                            label="Shipped"
-                            shipped={+true}
-                          />
-                        )}
-                        {row.status === 1 && (
-                          <Chip
-                            size="small"
-                            mr={1}
-                            mb={1}
-                            label="Processing"
-                            processing={+true}
-                          />
-                        )}
-                        {row.status === 2 && (
-                          <Chip
-                            size="small"
-                            mr={1}
-                            mb={1}
-                            label="Cancelled"
-                            cancelled={+true}
-                          />
-                        )}
+                        <Typography variant="body2" fontFamily="monospace" fontSize={12}>
+                          #{order.id.slice(0, 8)}
+                        </Typography>
                       </TableCell>
-                      <TableCell align="left">{row.method}</TableCell>
+                      <TableCell>{customerName}</TableCell>
+                      <TableCell>
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={500}>
+                          {order.totalAmount.toFixed(2)} {order.currency}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <PaymentStatusBadge status={order.paymentStatus} />
+                      </TableCell>
+                      <TableCell>
+                        <OrderStatusBadge status={order.status} />
+                      </TableCell>
                       <TableCell padding="none" align="right">
                         <Box mr={2}>
-                          <IconButton aria-label="delete" size="large">
-                            <ArchiveIcon />
-                          </IconButton>
-                          <IconButton aria-label="details" size="large">
-                            <RemoveRedEyeIcon />
-                          </IconButton>
+                          <Tooltip title="View Details">
+                            <IconButton
+                              aria-label="details"
+                              size="large"
+                              onClick={() => handleViewOrder(order.id)}
+                            >
+                              <RemoveRedEyeIcon />
+                            </IconButton>
+                          </Tooltip>
                         </Box>
                       </TableCell>
                     </TableRow>
                   );
-                })}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={8} />
-                </TableRow>
+                })
               )}
             </TableBody>
           </Table>
         </TableContainer>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
-          count={rows.length}
+          count={totalCount}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+
+      {selectedOrderId && (
+        <OrderDetailsModal
+          open={!!selectedOrderId}
+          onClose={handleCloseModal}
+          orderId={selectedOrderId}
+          onOrderUpdated={handleOrderUpdated}
+        />
+      )}
     </div>
   );
 }
+
 
 function OrderList() {
   return (
@@ -453,19 +401,8 @@ function OrderList() {
             <Link component={NextLink} href="/">
               Dashboard
             </Link>
-            <Link component={NextLink} href="/">
-              Pages
-            </Link>
             <Typography>Orders</Typography>
           </Breadcrumbs>
-        </Grid>
-        <Grid>
-          <div>
-            <Button variant="contained" color="primary">
-              <AddIcon />
-              New Order
-            </Button>
-          </div>
         </Grid>
       </Grid>
       <Divider my={6} />
