@@ -5,14 +5,20 @@ import { db } from "~/server/db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+const getCorsOrigin = () => {
+  return process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : "https://admin.lootzone.digital";
+};
+
 // Handle CORS preflight requests
 export async function OPTIONS(req: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+      "Access-Control-Allow-Origin": getCorsOrigin(),
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-trpc-source, trpc-accept",
       "Access-Control-Allow-Credentials": "true",
     },
   });
@@ -25,10 +31,10 @@ export async function POST(req: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { valid: false, error: "Token is required" },
-        { 
+        {
           status: 400,
           headers: {
-            "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+            "Access-Control-Allow-Origin": getCorsOrigin(),
             "Access-Control-Allow-Credentials": "true",
           },
         }
@@ -56,10 +62,10 @@ export async function POST(req: NextRequest) {
       if (!session) {
         return NextResponse.json(
           { valid: false, error: "Session has been revoked" },
-          { 
+          {
             status: 401,
             headers: {
-              "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+              "Access-Control-Allow-Origin": getCorsOrigin(),
               "Access-Control-Allow-Credentials": "true",
             },
           }
@@ -71,17 +77,17 @@ export async function POST(req: NextRequest) {
         user: decoded,
       }, {
         headers: {
-          "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+          "Access-Control-Allow-Origin": getCorsOrigin(),
           "Access-Control-Allow-Credentials": "true",
         },
       });
   } catch (error) {
     return NextResponse.json(
       { valid: false, error: "Invalid token" },
-      { 
+      {
         status: 401,
         headers: {
-          "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+          "Access-Control-Allow-Origin": getCorsOrigin(),
           "Access-Control-Allow-Credentials": "true",
         },
       }

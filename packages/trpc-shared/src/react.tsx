@@ -9,7 +9,8 @@ import { useState } from "react";
 // Import the AppRouter type from the trpc-app. This is a type-only import and
 // will be removed in the compiled JavaScript, so it's safe to reach across
 // the workspace.
-import type { AppRouter } from "./router";
+// Note: Using dynamic approach to avoid path resolution issues in monorepo
+import type { AppRouter } from "../../../apps/trpc-app/src/server/api/root";
 
 import SuperJSON from "superjson";
 import { createQueryClient } from "./query-client";

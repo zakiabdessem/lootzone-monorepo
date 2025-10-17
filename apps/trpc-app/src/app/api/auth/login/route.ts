@@ -5,14 +5,20 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+const getCorsOrigin = () => {
+  return process.env.NODE_ENV === "development"
+    ? "http://localhost:3000"
+    : "https://admin.lootzone.digital";
+};
+
 // Handle CORS preflight requests
 export async function OPTIONS(req: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+      "Access-Control-Allow-Origin": getCorsOrigin(),
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-trpc-source, trpc-accept",
       "Access-Control-Allow-Credentials": "true",
     },
   });

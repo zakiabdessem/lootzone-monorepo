@@ -10,10 +10,16 @@ import { createTRPCContext } from "~/server/api/trpc";
  * handling a HTTP request (e.g. when you make requests from Client Components).
  */
 
+const getCorsOrigin = () => {
+  return process.env.NODE_ENV === "development"
+    ? "http://localhost:3002"
+    : "https://admin.lootzone.digital";
+};
+
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+  "Access-Control-Allow-Origin": getCorsOrigin(),
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization,x-trpc-source",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization,x-trpc-source,trpc-accept",
   "Access-Control-Allow-Credentials": "true",
 };
 
@@ -43,9 +49,9 @@ async function handler(req: NextRequest) {
     return new NextResponse(null, {
       status: 200,
       headers: {
-        "Access-Control-Allow-Origin": "https://admin.lootzone.digital",
+        "Access-Control-Allow-Origin": getCorsOrigin(),
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-trpc-source",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, x-trpc-source, trpc-accept",
         "Access-Control-Allow-Credentials": "true",
       },
     });

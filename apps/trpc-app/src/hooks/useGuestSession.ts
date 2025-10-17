@@ -55,7 +55,7 @@ export function useGuestSession() {
     }
   }, [isInitialized, createOrGetSession]);
 
-  const utils = api.useUtils();
+  // const utils = api.useUtils(); // This method doesn't exist on tRPC client
 
   // Add to wishlist
   const addToWishlist = api.guestSession.addToWishlist.useMutation({

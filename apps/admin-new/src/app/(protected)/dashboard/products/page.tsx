@@ -16,26 +16,24 @@ import Image from "next/image";
 export default function ProductsPage() {
   const [showArchived, setShowArchived] = useState(false);
 
-  const { data: products, isLoading, refetch } = api.product.getAll.useQuery({
-    includeArchived: showArchived
-  });
+  const { data: products, isLoading, refetch: refetchProducts } = api.product.adminList.useQuery();
 
   const deleteProduct = api.product.delete.useMutation({
     onSuccess: () => {
       toast.success('Product deleted successfully!');
-      refetch();
+      refetchProducts();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
 
-  const archiveProduct = api.product.archive.useMutation({
+  const toggleActiveProduct = api.product.toggleActive.useMutation({
     onSuccess: () => {
-      toast.success('Product archived successfully!');
-      refetch();
+      toast.success('Product status updated successfully!');
+      refetchProducts();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -43,9 +41,9 @@ export default function ProductsPage() {
   const restoreProduct = api.product.restore.useMutation({
     onSuccess: () => {
       toast.success('Product restored successfully!');
-      refetch();
+      refetchProducts();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -53,9 +51,9 @@ export default function ProductsPage() {
   const toggleActive = api.product.toggleActive.useMutation({
     onSuccess: () => {
       toast.success('Product status updated!');
-      refetch();
+      refetchProducts();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -67,8 +65,8 @@ export default function ProductsPage() {
   };
 
   const handleArchive = (id: string) => {
-    if (confirm('Are you sure you want to archive this product?')) {
-      archiveProduct.mutate({ id });
+    if (confirm('Are you sure you want to change this product\'s active status?')) {
+      toggleActiveProduct.mutate({ id });
     }
   };
 
@@ -127,7 +125,7 @@ export default function ProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products?.map((product) => (
+                {products?.map((product: any) => (
                   <TableRow key={product.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

@@ -13,3 +13,4 @@ export type AppRouter = typeof appRouter;
  *       ^? Post[]
  */
 export declare const createCaller: any;
+//# sourceMappingURL=root.d.ts.map

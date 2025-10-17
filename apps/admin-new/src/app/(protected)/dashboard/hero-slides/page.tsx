@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, Edit, Trash2 } from "lucide-react";
 
 const validationSchema = z.object({
@@ -30,8 +29,8 @@ export default function HeroSlidesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSlide, setEditingSlide] = useState<any>(null);
 
-  const { data: slides, isLoading, refetch } = api.heroSlide.getAllForAdmin.useQuery();
-  const { data: products } = api.product.getAll.useQuery();
+  const { data: slides, isLoading, refetch: refetchSlides } = api.heroSlide.getAllForAdmin.useQuery();
+  const { data: products } = api.product.list.useQuery();
   
   const form = useForm<HeroSlideFormData>({
     resolver: zodResolver(validationSchema),
@@ -46,11 +45,11 @@ export default function HeroSlidesPage() {
   const createSlide = api.heroSlide.create.useMutation({
     onSuccess: () => {
       toast.success('Hero slide created successfully!');
-      refetch();
+      refetchSlides();
       setDialogOpen(false);
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -58,12 +57,12 @@ export default function HeroSlidesPage() {
   const updateSlide = api.heroSlide.update.useMutation({
     onSuccess: () => {
       toast.success('Hero slide updated successfully!');
-      refetch();
+      refetchSlides();
       setDialogOpen(false);
       setEditingSlide(null);
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -71,9 +70,9 @@ export default function HeroSlidesPage() {
   const deleteSlide = api.heroSlide.delete.useMutation({
     onSuccess: () => {
       toast.success('Hero slide deleted successfully!');
-      refetch();
+      refetchSlides();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -145,7 +144,7 @@ export default function HeroSlidesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {slides?.map((slide) => (
+                {slides?.map((slide: any) => (
                   <TableRow key={slide.id}>
                     <TableCell className="whitespace-pre-line">{slide.label}</TableCell>
                     <TableCell>{slide.product?.title || 'N/A'}</TableCell>
@@ -219,7 +218,7 @@ export default function HeroSlidesPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {products?.map((product) => (
+                        {products?.map((product: any) => (
                           <SelectItem key={product.id} value={product.id}>
                             {product.title}
                           </SelectItem>

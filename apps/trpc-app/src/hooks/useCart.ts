@@ -30,7 +30,7 @@ export function useCart() {
     }
   }, [guestSession.cartItems]);
 
-  const utils = api.useUtils();
+  // const utils = api.useUtils(); // This method doesn't exist on tRPC client
 
   // Mutations for guest cart with cache invalidation
   const addToGuestCart = api.guestSession.addToCart.useMutation({

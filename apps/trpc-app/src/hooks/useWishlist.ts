@@ -12,7 +12,7 @@ import { useGuestSession } from './useGuestSession';
  */
 export function useWishlist() {
   // We consider user authenticated if product.getFavorites query is permitted
-  const utils = api.useUtils();
+  // const utils = api.useUtils(); // This method doesn't exist on tRPC client
 
   const favoritesQuery = api.product.getFavorites.useQuery(undefined, {
     retry: false, // Don't retry on auth failures

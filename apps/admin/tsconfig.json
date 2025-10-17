@@ -1,0 +1,104 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "typeRoots": [
+      "src/types",
+      "node_modules/@types"
+    ],
+    "noFallthroughCasesInSwitch": true,
+    "incremental": true,
+    "baseUrl": "src/",
+    "paths": {
+      // Folders
+      "@/components/*": [
+        "components/*"
+      ],
+      "@/contexts/*": [
+        "contexts/*"
+      ],
+      "@/hooks/*": [
+        "hooks/*"
+      ],
+      "@/layouts/*": [
+        "layouts/*"
+      ],
+      "@/mocks/*": [
+        "mocks/*"
+      ],
+      "@/redux/*": [
+        "redux/*"
+      ],
+      "@/theme/*": [
+        "theme/*"
+      ],
+      "@/types/*": [
+        "types/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
+      ],
+      "@/vendor/*": [
+        "vendor/*"
+      ],
+      // Files
+      "@/constants": [
+        "constants"
+      ],
+      "@/config": [
+        "config"
+      ],
+      "@/i18n": [
+        "i18n"
+      ],
+      "@/mocks": [
+        "mocks/index"
+      ],
+      "@/theme": [
+        "theme/index"
+      ],
+      "@lootzone/trpc-shared": [
+        "../../packages/trpc-shared/src"
+      ],
+      "@lootzone/trpc-shared/*": [
+        "../../packages/trpc-shared/src/*"
+      ],
+      "@lootzone/trpc-shared/react": [
+        "../../packages/trpc-shared/src/react"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "composite": true
+  },
+  "include": [
+    "src",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ],
+  "references": [
+    { "path": "../../packages/trpc-shared" },
+    { "path": "../trpc-app" }
+  ]
+}

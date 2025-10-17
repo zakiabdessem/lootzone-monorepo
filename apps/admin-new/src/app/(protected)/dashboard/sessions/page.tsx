@@ -31,7 +31,7 @@ export default function SessionsPage() {
       refetch();
       setConfirmDialog({ open: false, type: 'session' });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -42,7 +42,7 @@ export default function SessionsPage() {
       refetch();
       setConfirmDialog({ open: false, type: 'user' });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -53,7 +53,7 @@ export default function SessionsPage() {
       refetch();
       setConfirmDialog({ open: false, type: 'cleanup' });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -137,7 +137,7 @@ export default function SessionsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sessionsData?.sessions?.map((session) => (
+              {sessionsData?.sessions?.map((session: any) => (
                 <TableRow key={session.id}>
                   <TableCell>
                     <div>

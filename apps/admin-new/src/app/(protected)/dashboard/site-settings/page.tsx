@@ -64,7 +64,7 @@ export default function SiteSettingsPage() {
       toast.success("Settings updated successfully!");
       refetch();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
