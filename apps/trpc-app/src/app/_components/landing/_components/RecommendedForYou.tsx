@@ -13,8 +13,8 @@ import { Button } from '../ui/button';
 gsap.registerPlugin(ScrollToPlugin);
 
 export default function RecommendedForYou() {
-  const { data, isLoading } = api.product.list.useQuery({ limit: 16 });
-  const items = data?.items ?? [];
+  const { data, isLoading } = api.product.getRecommended.useQuery({ limit: 16 });
+  const items = data ?? [];
 
   const containerRef = useRef<HTMLDivElement>(null);
   // Number of cards visible per page (adjust to allow scrolling)

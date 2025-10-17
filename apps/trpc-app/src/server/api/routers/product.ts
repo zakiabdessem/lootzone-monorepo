@@ -26,6 +26,8 @@ const createProductSchema = z.object({
   region: z.nativeEnum(Region).default(Region.GLOBAL),
   category: z.string(), // Accept categoryId as string instead of enum
   isActive: z.boolean().default(true),
+  showInRecentlyViewed: z.boolean().optional().default(false),
+  showInRecommended: z.boolean().optional().default(false),
   variants: z
     .array(
       z.object({
@@ -249,6 +251,100 @@ export const productRouter = createTRPCRouter({
       };
     }),
 
+  // Get products for "Recently Viewed" landing section
+  getRecentlyViewed: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(16),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const products = await ctx.db.product.findMany({
+        where: {
+          isActive: true,
+          showInRecentlyViewed: true,
+        },
+        take: input.limit,
+        include: {
+          variants: {
+            where: { isActive: true },
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+            },
+            orderBy: { price: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return products.map(p => ({
+        id: p.id,
+        slug: p.slug,
+        image: p.image,
+        platformShow: !!p.platformIcon,
+        platformIcon: p.platformIcon,
+        platformName: p.platformName as Platform | null,
+        title: p.title,
+        region: p.region as unknown as Region,
+        variants: p.variants.map(v => ({
+          id: v.id,
+          name: v.name,
+          price: Number(v.price),
+          originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+        })),
+      }));
+    }),
+
+  // Get products for "Recommended For You" landing section
+  getRecommended: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(16),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const products = await ctx.db.product.findMany({
+        where: {
+          isActive: true,
+          showInRecommended: true,
+        },
+        take: input.limit,
+        include: {
+          variants: {
+            where: { isActive: true },
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+            },
+            orderBy: { price: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return products.map(p => ({
+        id: p.id,
+        slug: p.slug,
+        image: p.image,
+        platformShow: !!p.platformIcon,
+        platformIcon: p.platformIcon,
+        platformName: p.platformName as Platform | null,
+        title: p.title,
+        region: p.region as unknown as Region,
+        variants: p.variants.map(v => ({
+          id: v.id,
+          name: v.name,
+          price: Number(v.price),
+          originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+        })),
+      }));
+    }),
+
   // Protected procedures - requires authentication
   getFavorites: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
@@ -463,6 +559,62 @@ export const productRouter = createTRPCRouter({
       return product;
     }),
 
+  toggleRecentlyViewed: adminProcedure
+    .input(z.object({ id: z.string(), showInRecentlyViewed: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const product = await ctx.db.product.update({
+        where: { id: input.id },
+        data: { showInRecentlyViewed: input.showInRecentlyViewed },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+              isActive: true,
+            },
+          },
+        },
+      });
+
+      return product;
+    }),
+
+  toggleRecommended: adminProcedure
+    .input(z.object({ id: z.string(), showInRecommended: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const product = await ctx.db.product.update({
+        where: { id: input.id },
+        data: { showInRecommended: input.showInRecommended },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          variants: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              originalPrice: true,
+              isActive: true,
+            },
+          },
+        },
+      });
+
+      return product;
+    }),
+
   create: adminProcedure.input(createProductSchema).mutation(async ({ input, ctx }) => {
     console.log('Creating product with input:', input);
 
@@ -493,6 +645,8 @@ export const productRouter = createTRPCRouter({
         terms: input.terms,
         importantNotes: input.importantNotes,
         isActive: input.isActive,
+        showInRecentlyViewed: input.showInRecentlyViewed || false,
+        showInRecommended: input.showInRecommended || false,
         variants: {
           create: input.variants.map(variant => ({
             name: variant.name,
@@ -530,55 +684,91 @@ export const productRouter = createTRPCRouter({
       }
     }
 
-    // Update the product
-    const updatedProduct = await ctx.db.product.update({
-      where: { id },
-      data: {
-        ...updateData,
-        ...(category && { categoryId: category }),
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
+    // Start a transaction to ensure all updates succeed or fail together
+    const result = await ctx.db.$transaction(async (tx) => {
+      // Update the product
+      const updatedProduct = await tx.product.update({
+        where: { id },
+        data: {
+          ...updateData,
+          ...(category && { categoryId: category }),
         },
-        variants: {
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            originalPrice: true,
-            isActive: true,
-            stock: true,
-            isInfiniteStock: true,
-          },
-        },
-      },
-    });
-
-    // Handle variants update if provided
-    if (variants && variants.length > 0) {
-      // Delete existing variants and create new ones
-      await ctx.db.productVariant.deleteMany({
-        where: { productId: id },
       });
 
-      await ctx.db.productVariant.createMany({
-        data: variants.map(variant => ({
-          productId: id,
-          name: variant.name,
-          price: variant.price,
-          originalPrice: variant.originalPrice,
-          isActive: true,
-          stock: 0,
-          isInfiniteStock: true,
-        })),
-      });
+      // Handle variants update if provided
+      if (variants && variants.length > 0) {
+        // Get existing variants
+        const existingVariants = await tx.productVariant.findMany({
+          where: { productId: id },
+        });
 
-      // Fetch updated product with new variants
-      const productWithNewVariants = await ctx.db.product.findUnique({
+        const existingVariantIds = new Set(existingVariants.map(v => v.id));
+        const inputVariantIds = new Set(
+          variants.filter(v => v.id).map(v => v.id!)
+        );
+
+        // Update existing variants and create new ones
+        for (const variant of variants) {
+          if (variant.id && existingVariantIds.has(variant.id)) {
+            // Update existing variant
+            await tx.productVariant.update({
+              where: { id: variant.id },
+              data: {
+                name: variant.name,
+                price: variant.price,
+                originalPrice: variant.originalPrice,
+              },
+            });
+          } else {
+            // Create new variant
+            await tx.productVariant.create({
+              data: {
+                productId: id,
+                name: variant.name,
+                price: variant.price,
+                originalPrice: variant.originalPrice,
+                isActive: true,
+                stock: 0,
+                isInfiniteStock: true,
+              },
+            });
+          }
+        }
+
+        // Delete variants that are no longer in the input (only if not referenced)
+        const variantsToDelete = existingVariants
+          .filter(v => !inputVariantIds.has(v.id))
+          .map(v => v.id);
+
+        if (variantsToDelete.length > 0) {
+          try {
+            await tx.productVariant.deleteMany({
+              where: {
+                id: { in: variantsToDelete },
+                productId: id,
+              },
+            });
+          } catch (error: any) {
+            // If deletion fails due to foreign key constraint, just mark as inactive
+            if (error.code === 'P2003' || error.message?.includes('foreign key constraint')) {
+              await tx.productVariant.updateMany({
+                where: {
+                  id: { in: variantsToDelete },
+                  productId: id,
+                },
+                data: {
+                  isActive: false,
+                },
+              });
+            } else {
+              throw error;
+            }
+          }
+        }
+      }
+
+      // Fetch and return the updated product with all relations
+      const productWithRelations = await tx.product.findUnique({
         where: { id },
         include: {
           category: {
@@ -601,10 +791,10 @@ export const productRouter = createTRPCRouter({
         },
       });
 
-      return productWithNewVariants;
-    }
+      return productWithRelations;
+    });
 
-    return updatedProduct;
+    return result;
   }),
 
   // Soft delete - sets isActive to false instead of removing from DB

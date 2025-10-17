@@ -4,154 +4,20 @@ import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { ArrowLeft, ArrowRight, Info } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Platform, Region } from '~/constants/enums';
-import type { IProductCard } from '~/types/product';
+import { api } from '~/trpc/react';
 import { ProductCard } from '../product/ProductCard';
 import { ProductCardHorizontal } from '../product/ProductCardHorizontal';
 
 gsap.registerPlugin(ScrollToPlugin);
 
 export default function RecentlyViewed() {
-  const items: IProductCard[] = [
-    {
-      id: '1',
-      slug: 'netflix-gift-card-50',
-      image: '/product-placeholder.jpg',
-      platformShow: false,
-      platformIcon: null,
-      platformName: null,
-      title: 'Netflix Gift Card 50 USD',
-      region: Region.GLOBAL,
-      variants: [
-        {
-          id: 'netflix-gift-card-50',
-          name: 'Netflix Gift Card 50 USD',
-          price: 4599,
-          originalPrice: 5000,
-        },
-      ],
-      liked: true,
-    },
-    {
-      id: '2',
-      slug: 'spotify-gift-card-30',
-      image: '/product-placeholder2.jpg',
-      platformShow: false,
-      platformIcon: null,
-      platformName: null,
-      title: 'Spotify Gift Card 30 EUR',
-      region: Region.EU,
-      variants: [
-        {
-          id: 'spotify-gift-card-30',
-          name: 'Spotify Gift Card 30 EUR',
-          price: 2650,
-          originalPrice: 3000,
-        },
-      ],
-      liked: false,
-    },
-    {
-      id: '3',
-      slug: 'apple-gift-card-100',
-      image: '/product-placeholder.jpg',
-      platformShow: true,
-      platformIcon: '/drms/xbox.svg',
-      platformName: Platform.XBOX,
-      title: 'Apple Gift Card 100 USD',
-      region: Region.US,
-      variants: [
-        {
-          id: 'apple-gift-card-100',
-          name: 'Apple Gift Card 100 USD',
-          price: 8999,
-          originalPrice: 10000,
-        },
-      ],
-      liked: false,
-    },
-    {
-      id: '4',
-      slug: 'steam-gift-card-20',
-      image: '/product-placeholder2.jpg',
-      platformShow: true,
-      platformIcon: '/drms/rockstar.svg',
-      platformName: Platform.EPIC_GAMES,
-      title: 'Steam Gift Card 20 EUR',
-      region: Region.EU,
-      variants: [
-        {
-          id: 'steam-gift-card-20',
-          name: 'Steam Gift Card 20 EUR',
-          price: 1850,
-          originalPrice: 2000,
-        },
-      ],
-      liked: false,
-    },
-    {
-      id: '5',
-      slug: 'xbox-gift-card-50',
-      image: '/product-placeholder.jpg',
-      platformShow: true,
-      platformIcon: '/drms/xbox.svg',
-      platformName: Platform.XBOX,
-      title: 'Xbox Gift Card 50 USD',
-      region: Region.GLOBAL,
-      variants: [
-        {
-          id: 'xbox-gift-card-50',
-          name: 'Xbox Gift Card 50 USD',
-          price: 4499,
-          originalPrice: 5000,
-        },
-      ],
-      liked: true,
-    },
-    {
-      id: '6',
-      slug: 'psn-gift-card-25',
-      image: '/product-placeholder2.jpg',
-      platformShow: true,
-      platformIcon: '/drms/steam.svg',
-      platformName: Platform.STEAM,
-      title: 'PlayStation Store Gift Card 25 USD',
-      region: Region.GLOBAL,
-      variants: [
-        {
-          id: 'psn-gift-card-25',
-          name: 'PlayStation Store Gift Card 25 USD',
-          price: 2199,
-          originalPrice: 2500,
-        },
-      ],
-      liked: false,
-    },
-    {
-      id: '7',
-      slug: 'xbox-gift-card-50',
-      image: '/product-placeholder.jpg',
-      platformShow: true,
-      platformIcon: '/drms/xbox.svg',
-      platformName: Platform.XBOX,
-      title: 'Xbox Gift Card 50 USD',
-      region: Region.GLOBAL,
-      variants: [
-        {
-          id: 'xbox-gift-card-50',
-          name: 'Xbox Gift Card 50 USD',
-          price: 4499,
-          originalPrice: 5000,
-        },
-      ],
-      liked: true,
-    },
-  ];
+  const { data: items, isLoading } = api.product.getRecentlyViewed.useQuery({ limit: 16 });
+  const productItems = items ?? [];
 
   const containerRef = useRef<HTMLDivElement>(null);
   // Number of cards visible per page (adjust to allow scrolling)
   const perPage = 4;
-  const totalPages = Math.ceil(items.length / perPage);
+  const totalPages = Math.ceil(productItems.length / perPage) || 1;
   const [page, setPage] = useState(0);
 
   const scrollToPage = (pageIndex: number) => {
@@ -180,6 +46,11 @@ export default function RecentlyViewed() {
     scrollToPage(newPage);
   };
 
+  // Don't render section if no products are available
+  if (!isLoading && productItems.length === 0) {
+    return null;
+  }
+
   return (
     <section className='py-12' style={{ backgroundColor: '#f8f7ff' }}>
       <div className='max-w-[1440px] mx-auto relative px-4'>
@@ -195,9 +66,13 @@ export default function RecentlyViewed() {
 
         {/* Mobile (vertical list) */}
         <div className='md:hidden flex flex-col gap-2'>
-          {items.slice(0, 10).map((item, i) => (
-            <ProductCardHorizontal key={i} {...item} />
-          ))}
+          {isLoading ? (
+            <div className='text-sm text-gray-500'>Loading...</div>
+          ) : (
+            productItems
+              .slice(0, 10)
+              .map((item, i) => <ProductCardHorizontal key={i} {...(item as any)} />)
+          )}
         </div>
 
         {/* Desktop / larger screens (carousel) */}
@@ -208,9 +83,13 @@ export default function RecentlyViewed() {
             className='flex gap-4 overflow-hidden'
             style={{ scrollBehavior: 'smooth' }}
           >
-            {items.map((item, i) => (
+            {(isLoading ? Array.from({ length: 8 }) : productItems).map((item, i) => (
               <div key={i} className='shrink-0'>
-                <ProductCard {...item} platformShow={true} />
+                {isLoading ? (
+                  <div className='w-[200px] h-[395px] bg-gray-200 animate-pulse' />
+                ) : (
+                  <ProductCard {...(item as any)} platformShow={true} />
+                )}
               </div>
             ))}
           </div>
@@ -233,16 +112,6 @@ export default function RecentlyViewed() {
             <ArrowRight className='w-5 h-5' />
           </button>
         </div>
-
-        {/* Pagination dots */}
-        {/* <div className='hidden md:flex justify-center gap-2 mt-4'>
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <span
-              key={i}
-              className={`w-2 h-2 rounded-full ${i === page ? 'bg-[#4618AC]' : 'bg-[#4618AC]/40'}`}
-            />
-          ))}
-        </div> */}
       </div>
     </section>
   );

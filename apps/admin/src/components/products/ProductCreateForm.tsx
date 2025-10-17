@@ -110,6 +110,8 @@ const validationSchema = Yup.object().shape({
     .oneOf(Object.values(Region), "Invalid region")
     .required("Region is required"),
   isActive: Yup.boolean().default(true),
+  showInRecentlyViewed: Yup.boolean().default(false),
+  showInRecommended: Yup.boolean().default(false),
   categoryId: Yup.string()
     .min(1, "Category is required")
     .required("Category is required"),
@@ -179,6 +181,8 @@ const validationSchema = Yup.object().shape({
 interface ProductCreateFormProps {
   onSubmit: (values: any) => void;
   isLoading?: boolean;
+  initialValues?: Partial<ProductFormValues>;
+  isEditMode?: boolean;
 }
 
 interface ProductFormValues {
@@ -191,6 +195,8 @@ interface ProductFormValues {
   platformIcon: string | null;
   region: Region;
   isActive: boolean;
+  showInRecentlyViewed: boolean;
+  showInRecommended: boolean;
   categoryId?: string;
   keyFeatures: string[];
   deliveryInfo: string;
@@ -203,29 +209,38 @@ interface ProductFormValues {
 export default function ProductCreateForm({
   onSubmit,
   isLoading = false,
+  initialValues: providedInitialValues,
+  isEditMode = false,
 }: ProductCreateFormProps) {
   const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
 
+  const defaultInitialValues: ProductFormValues = {
+    title: "",
+    slug: "",
+    description: "",
+    image: "",
+    gallery: [] as string[],
+    platformName: null as Platform | null,
+    platformIcon: null as string | null,
+    region: Region.GLOBAL,
+    isActive: true,
+    showInRecentlyViewed: false,
+    showInRecommended: false,
+    categoryId: "",
+    keyFeatures: [],
+    deliveryInfo: "",
+    deliverySteps: [],
+    terms: "",
+    importantNotes: [],
+    variants: [] as ProductVariant[],
+  };
+
   const formik = useFormik<ProductFormValues>({
-    initialValues: {
-      title: "",
-      slug: "",
-      description: "",
-      image: "",
-      gallery: [] as string[],
-      platformName: null as Platform | null,
-      platformIcon: null as string | null,
-      region: Region.GLOBAL,
-      isActive: true,
-      categoryId: "",
-      keyFeatures: [],
-      deliveryInfo: "",
-      deliverySteps: [],
-      terms: "",
-      importantNotes: [],
-      variants: [] as ProductVariant[],
-    },
+    initialValues: providedInitialValues 
+      ? { ...defaultInitialValues, ...providedInitialValues }
+      : defaultInitialValues,
     validationSchema,
+    enableReinitialize: true,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
         console.log("Form values before submission:", values);
@@ -292,8 +307,11 @@ export default function ProductCreateForm({
   }, [slugCheckData]);
 
   useEffect(() => {
-    setFieldValue("slug", slugify(values.title));
-  }, [values.title, setFieldValue]);
+    // Only auto-generate slug from title in create mode
+    if (!isEditMode) {
+      setFieldValue("slug", slugify(values.title));
+    }
+  }, [values.title, setFieldValue, isEditMode]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -436,7 +454,10 @@ export default function ProductCreateForm({
                     onChange={handleChange}
                     label="Category"
                   >
-                    {categories?.map((category) => (
+                    {categories?.map((category : {
+                      id: string;
+                      name: string;
+                    }) => (
                       <MenuItem key={category.id} value={category.id}>
                         {category.name}
                       </MenuItem>
@@ -459,6 +480,34 @@ export default function ProductCreateForm({
                     />
                   }
                   label="Is Active"
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      name="showInRecentlyViewed"
+                      checked={values.showInRecentlyViewed}
+                      onChange={handleChange}
+                      color="secondary"
+                    />
+                  }
+                  label="Show in Recently Viewed"
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      name="showInRecommended"
+                      checked={values.showInRecommended}
+                      onChange={handleChange}
+                      color="info"
+                    />
+                  }
+                  label="Show in Recommended"
                 />
               </Grid>
 

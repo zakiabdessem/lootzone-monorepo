@@ -143,9 +143,9 @@ export default function HeroCarousel() {
           glowIntensity={0.15}
         />
         <div className='flex flex-col justify-center items-center relative bottom-12 w-full z-10'>
-          <div className='flex justify-center py-6 relative bottom-8 w-full'>
+          {/* <div className='flex justify-center py-6 relative bottom-8 w-full'>
             <MembershipBadge />
-          </div>
+          </div> */}
           <div className='flex justify-center items-center h-96'>
             {isLoading ? (
               <div className='text-center'>Loading...</div>

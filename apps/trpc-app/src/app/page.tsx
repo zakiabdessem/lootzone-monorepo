@@ -11,9 +11,10 @@ import HeroCarousel from "./_components/landing/hero/HeroCarousel";
 export const revalidate = 60;
 
 export default async function Home() {
-  // SEO & performance: prefetch recommended products and categories
-  await api.product.list.prefetch({ limit: 16 });
-  // categories are fetched client-side already; leave as-is
+  // SEO & performance: prefetch recommended products and recently viewed
+  await api.product.getRecommended.prefetch({ limit: 16 });
+  await api.product.getRecentlyViewed.prefetch({ limit: 16 });
+  
   return (
     <HydrateClient>
       <main className="content min-h-screen">

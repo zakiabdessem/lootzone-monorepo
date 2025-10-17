@@ -98,23 +98,27 @@ model Product {
     category          Category         @relation(fields: [categoryId], references: [id])
     variants          ProductVariant[]
     keyFeatures       String[]
-    deliveryInfo      String?
-    deliverySteps     String[]
-    terms             String?          @db.Text
-    importantNotes    String[]
-    isActive          Boolean          @default(true)
-    orderItems        OrderItem[]
-    favorites         UserFavorite[]
-    slides            Slide[]          // Slides featuring this product
-    heroSlides        HeroSlide[]      // Hero carousel slides
-    createdAt         DateTime         @default(now())
-    updatedAt         DateTime         @updatedAt
+    deliveryInfo          String?
+    deliverySteps         String[]
+    terms                 String?          @db.Text
+    importantNotes        String[]
+    isActive              Boolean          @default(true)
+    showInRecentlyViewed  Boolean          @default(false)
+    showInRecommended     Boolean          @default(false)
+    orderItems            OrderItem[]
+    favorites             UserFavorite[]
+    slides                Slide[]          // Slides featuring this product
+    heroSlides            HeroSlide[]      // Hero carousel slides
+    createdAt             DateTime         @default(now())
+    updatedAt             DateTime         @updatedAt
 
     @@index([slug])
     @@index([categoryId])
     @@index([region])
     @@index([isActive])
     @@index([createdAt])
+    @@index([showInRecentlyViewed])
+    @@index([showInRecommended])
 }
 
 model ProductVariant {

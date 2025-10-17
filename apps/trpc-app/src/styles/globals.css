@@ -132,13 +132,13 @@
   position: relative;
   z-index: 2;
   /* Mobile: account for navbar (64px) + potential announcement (32-40px) */
-  padding-top: 64px;
+  /* padding-top: 64px; */
 }
 
 @media (min-width: 768px) {
   .content {
     /* Desktop: account for navbar (80px) + category bar (48px) + potential announcement */
-    padding-top: 112px;
+    /* padding-top: 112px; */
   }
 }
 

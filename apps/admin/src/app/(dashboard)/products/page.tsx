@@ -83,6 +83,8 @@ type ProductType = {
   region: string;
   platformName: string | null;
   isActive: boolean;
+  showInRecentlyViewed?: boolean;
+  showInRecommended?: boolean;
   category: {
     id: string;
     name: string;
@@ -109,6 +111,8 @@ const headCells: Array<HeadCell> = [
   { id: "region", alignment: "left", label: "Region" },
   { id: "variants", alignment: "center", label: "Variants" },
   { id: "status", alignment: "center", label: "Status" },
+  { id: "recentlyViewed", alignment: "center", label: "Recently Viewed" },
+  { id: "recommended", alignment: "center", label: "Recommended" },
   { id: "actions", alignment: "right", label: "Actions" },
 ];
 
@@ -237,6 +241,20 @@ function EnhancedTable() {
     },
   });
 
+  // Toggle recently viewed status
+  const toggleRecentlyViewedMutation = api.product.toggleRecentlyViewed.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
+  // Toggle recommended status
+  const toggleRecommendedMutation = api.product.toggleRecommended.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
   const handleRequestSort = (event: any, property: string) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -293,6 +311,20 @@ function EnhancedTable() {
     toggleActiveMutation.mutate({
       id: productId,
       isActive: !currentStatus,
+    });
+  };
+
+  const handleToggleRecentlyViewed = (productId: string, currentStatus: boolean) => {
+    toggleRecentlyViewedMutation.mutate({
+      id: productId,
+      showInRecentlyViewed: !currentStatus,
+    });
+  };
+
+  const handleToggleRecommended = (productId: string, currentStatus: boolean) => {
+    toggleRecommendedMutation.mutate({
+      id: productId,
+      showInRecommended: !currentStatus,
     });
   };
 
@@ -454,6 +486,24 @@ function EnhancedTable() {
                         onChange={() => handleToggleActive(product.id, product.isActive)}
                         disabled={toggleActiveMutation.isPending}
                         color="primary"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Switch
+                        checked={product.showInRecentlyViewed ?? false}
+                        onChange={() => handleToggleRecentlyViewed(product.id, product.showInRecentlyViewed ?? false)}
+                        disabled={toggleRecentlyViewedMutation.isPending}
+                        color="secondary"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Switch
+                        checked={product.showInRecommended ?? false}
+                        onChange={() => handleToggleRecommended(product.id, product.showInRecommended ?? false)}
+                        disabled={toggleRecommendedMutation.isPending}
+                        color="info"
                         size="small"
                       />
                     </TableCell>
