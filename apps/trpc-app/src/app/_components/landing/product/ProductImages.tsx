@@ -12,11 +12,14 @@ const ProductImages: React.FC<ProductImagesProps> = ({ image, gallery = [] }) =>
   // Ensure main image is first and unique
   const images = [image, ...gallery.filter(img => img !== image)];
   const remainingCount = images.length > 4 ? images.length - 3 : 0;
+  const hasGallery = images.length > 1;
 
   return (
-    <div className='space-y-3'>
+    <div className={hasGallery ? 'space-y-3' : 'h-full'}>
       {/* Main image - Large, fills container */}
-      <div className='relative w-full aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg overflow-hidden shadow-md'>
+      <div className={`relative w-full bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg overflow-hidden shadow-md ${
+        hasGallery ? 'aspect-[16/10]' : 'h-full min-h-[500px]'
+      }`}>
         <Image
           src={selected || '/product-placeholder.jpg'}
           alt='Product image'
@@ -29,7 +32,7 @@ const ProductImages: React.FC<ProductImagesProps> = ({ image, gallery = [] }) =>
       </div>
 
       {/* Thumbnails row */}
-      {images.length > 1 && (
+      {hasGallery && (
         <div className='grid grid-cols-4 gap-2'>
           {images.slice(0, 4).map((img, idx) => (
             <div

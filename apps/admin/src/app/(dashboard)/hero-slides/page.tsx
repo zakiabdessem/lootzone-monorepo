@@ -45,11 +45,17 @@ export default function HeroSlidesPage() {
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({ page: 0, pageSize: 10 });
   const { data: slides, isLoading, refetch } = api.heroSlide.getAllForAdmin.useQuery();
-  const { data: productsData } = api.product.getByIds.useQuery({ ids: slides?.map(slide => slide.productId || '') || [] });
-  const products = productsData?.map(product => ({
+  
+  // Fetch all products for the dropdown (not just the ones used in slides)
+  const { data: productsResponse } = api.product.adminList.useQuery({ 
+    limit: 100, 
+    offset: 0,
+    isActive: true // Only show active products
+  });
+  const products = productsResponse?.products?.map((product: any) => ({
     id: product.id,
     title: product.title,
-  }));
+  })) || [];
 
   const createSlide = api.heroSlide.create.useMutation({
     onSuccess: () => {
@@ -58,7 +64,7 @@ export default function HeroSlidesPage() {
       setDialogOpen(false);
       setTimeout(() => setAlert(null), 3000);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setAlert({ type: 'error', message: error.message });
       setTimeout(() => setAlert(null), 5000);
     },
@@ -72,7 +78,7 @@ export default function HeroSlidesPage() {
       setEditingSlide(null);
       setTimeout(() => setAlert(null), 3000);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setAlert({ type: 'error', message: error.message });
       setTimeout(() => setAlert(null), 5000);
     },
@@ -84,7 +90,7 @@ export default function HeroSlidesPage() {
       refetch();
       setTimeout(() => setAlert(null), 3000);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setAlert({ type: 'error', message: error.message });
       setTimeout(() => setAlert(null), 5000);
     },
@@ -239,7 +245,7 @@ export default function HeroSlidesPage() {
                   fullWidth
                   margin="normal"
                 >
-                  {products?.map((product) => (
+                  {products?.map((product: any) => (
                     <MenuItem key={product.id} value={product.id}>
                       {product.title}
                     </MenuItem>
