@@ -93,7 +93,7 @@ export default function ProductCategories() {
                   alt={category.name ?? ""}
                   width={32}
                   height={32}
-                  className="w-8 h-8"
+                  className="w-8 h-8 invert"
                 />
               </div>
               <span className="text-white text-sm font-medium">
