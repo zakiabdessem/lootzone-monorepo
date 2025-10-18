@@ -305,7 +305,7 @@ function EnhancedTable() {
                   const customerName = order.user
                     ? `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim() ||
                       order.user.email
-                    : "Guest";
+                    : order.checkoutDraft?.fullName || "Guest";
 
                   return (
                     <TableRow
