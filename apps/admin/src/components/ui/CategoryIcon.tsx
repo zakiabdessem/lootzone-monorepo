@@ -88,7 +88,8 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
     return (
       <IconComponent 
         size={size} 
-        className={`text-gray-600 ${className}`}
+        className={`text-white ${className}`}
+        style={{ filter: 'brightness(0) invert(1)' }}
       />
     );
   }
@@ -103,6 +104,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
           width={size}
           height={size}
           className="object-contain"
+          style={{ filter: 'brightness(0) invert(1)' }}
           onError={(e) => {
             // On error, replace with fallback icon
             const target = e.target as HTMLImageElement;
@@ -112,7 +114,8 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
         />
         <FallbackIcon 
           size={size} 
-          className={`text-gray-400 hidden absolute inset-0`}
+          className={`text-white hidden absolute inset-0`}
+          style={{ filter: 'brightness(0) invert(1)' }}
         />
       </div>
     );
@@ -122,7 +125,8 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
   return (
     <FallbackIcon 
       size={size} 
-      className={`text-gray-400 ${className}`}
+      className={`text-white ${className}`}
+      style={{ filter: 'brightness(0) invert(1)' }}
     />
   );
 };
