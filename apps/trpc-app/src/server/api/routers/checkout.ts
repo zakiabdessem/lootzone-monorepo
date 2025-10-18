@@ -301,6 +301,16 @@ export const checkoutRouter = createTRPCRouter({
 
           console.log('[Checkout] Creating order for Flexy payment. Subtotal:', subtotal, 'Fee:', flexyFee, 'Total:', totalAmount);
 
+          // Update draft with Flexy receipt info first
+          await ctx.db.checkoutDraft.update({
+            where: { id: draft.id },
+            data: {
+              flexyReceiptUrl: input.flexyData.receiptUrl,
+              flexyPaymentTime: input.flexyData.paymentTime,
+              paymentStatus: PaymentStatus.PENDING, // Awaiting admin verification
+            },
+          });
+
           // Create order immediately (status pending, awaiting admin verification)
           const order = await ctx.db.order.create({
             data: {
@@ -310,6 +320,7 @@ export const checkoutRouter = createTRPCRouter({
               paymentStatus: 'pending', // Awaiting admin verification
               totalAmount: totalAmount,
               currency: cartSnapshot.currency || 'DZD',
+              checkoutDraftId: draft.id, // Link order to draft (correct relation direction)
               items: {
                 create: cartSnapshot.items.map((item: any) => ({
                   productId: item.productId,
@@ -325,17 +336,6 @@ export const checkoutRouter = createTRPCRouter({
           });
 
           console.log('[Checkout] Order created:', order.id);
-
-          // Update draft with Flexy receipt info and link to order
-          await ctx.db.checkoutDraft.update({
-            where: { id: draft.id },
-            data: {
-              flexyReceiptUrl: input.flexyData.receiptUrl,
-              flexyPaymentTime: input.flexyData.paymentTime,
-              paymentStatus: PaymentStatus.PENDING, // Awaiting admin verification
-              orderId: order.id, // Link draft to order
-            },
-          });
 
           console.log('[Checkout] Flexy payment submitted successfully. Order ID:', order.id);
 
