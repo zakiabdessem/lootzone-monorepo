@@ -371,6 +371,16 @@ export const orderRouter = createTRPCRouter({
                 phone: true,
               },
             },
+            checkoutDraft: {
+              select: {
+                id: true,
+                email: true,
+                phone: true,
+                fullName: true,
+                flexyReceiptUrl: true,
+                flexyPaymentTime: true,
+              },
+            },
             items: {
               include: {
                 product: {
@@ -405,6 +415,16 @@ export const orderRouter = createTRPCRouter({
                 lastName: order.user.lastName,
                 email: order.user.email,
                 phone: order.user.phone,
+              }
+            : null,
+          checkoutDraft: order.checkoutDraft
+            ? {
+                id: order.checkoutDraft.id,
+                email: order.checkoutDraft.email,
+                phone: order.checkoutDraft.phone,
+                fullName: order.checkoutDraft.fullName,
+                flexyReceiptUrl: order.checkoutDraft.flexyReceiptUrl,
+                flexyPaymentTime: order.checkoutDraft.flexyPaymentTime,
               }
             : null,
           status: order.status,
