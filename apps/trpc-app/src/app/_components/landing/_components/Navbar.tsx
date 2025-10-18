@@ -76,6 +76,8 @@ const highlightMatches = (text: string, term: string) => {
   });
 };
 
+//.
+
 function SearchResultCard({
   product,
   query,
@@ -83,12 +85,12 @@ function SearchResultCard({
 }: {
   product: SearchProduct;
   query: string;
-  onSelect: (term: string) => void;
+  onSelect: (slug: string) => void;
 }) {
   return (
     <button
       type='button'
-      onClick={() => onSelect(product.title)}
+      onClick={() => onSelect(product.slug)}
       className='group relative flex w-full items-center overflow-hidden rounded-xl border border-[#63e3c2]/40 bg-[#2c1269] text-left transition hover:border-[#63e3c2] hover:bg-[#34157d] focus:outline-none focus:ring-2 focus:ring-[#63e3c2] focus:ring-offset-2 focus:ring-offset-[#120932]'
     >
       <div className='relative flex h-full items-center justify-center bg-[#1b0b48] px-3 py-2'>
@@ -150,7 +152,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
   
-  // Hide search bar and mobile dock on products page
+  // Hide search bar on products page
   const isProductsPage = pathname === '/products';
   const desktopSearchRef = useRef<HTMLDivElement | null>(null);
   const mobileSearchRef = useRef<HTMLDivElement | null>(null);
@@ -212,7 +214,18 @@ export function Navbar() {
   };
 
   const handleSearchSubmit = () => navigateToQuery(searchQuery);
-  const handleSelectProduct = (term: string) => navigateToQuery(term);
+  
+  const handleSelectProduct = (slug: string) => {
+    // Navigate directly to product details page
+
+
+    router.push(`/product/${slug}`);
+    setSearchQuery(''); 
+
+    //sdgff
+    closeSearch();
+  };
+  
   const handleSelectSuggestion = (term: string) => navigateToQuery(term);
 
   const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -717,8 +730,8 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dock Navigation - Hide when menu is open, near footer, or on products page */}
-      {!isMenuOpen && showDock && !isProductsPage && (
+      {/* Mobile Dock Navigation - Hide when menu is open or near footer */}
+      {!isMenuOpen && showDock && (
         <div className="md:hidden cursor-pointer">
           <Dock 
             items={dockItems}
