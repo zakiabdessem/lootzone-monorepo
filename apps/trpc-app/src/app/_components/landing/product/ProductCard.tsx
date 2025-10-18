@@ -33,15 +33,49 @@ export const ProductCard: React.FC<IProductCard> = ({
   const { addToCart, isInCart, isUpdating: isCartUpdating } = useCart();
   const [showCartSuccess, setShowCartSuccess] = useState(false);
 
-  // Get price/originalPrice from first variant OR use direct price (for Algolia results)
-  const firstVariant = variants?.[0] || (price !== undefined ? {
-    id: `${id}-default`,
-    name: 'Default',
-    price: price,
-    originalPrice: originalPrice,
-  } : null);
+  // Get cheapest AVAILABLE variant (not out of stock)
+  const availableVariants = useMemo(() => {
+    if (!variants || variants.length === 0) return [];
+    return variants.filter(v => v.isInfiniteStock || (v.stock ?? 0) > 0);
+  }, [variants]);
+
+  // Get price from cheapest available variant OR use direct price (for Algolia results)
+  const firstVariant = useMemo(() => {
+    if (availableVariants.length > 0) {
+      // Sort by price ascending and get cheapest available variant
+      return [...availableVariants].sort((a, b) => a.price - b.price)[0];
+    }
+    // Fallback for Algolia results or products without variants
+    if (price !== undefined) {
+      return {
+        id: `${id}-default`,
+        name: 'Default',
+        price: price,
+        originalPrice: originalPrice,
+      };
+    }
+    // If no available variants, return first variant (for out of stock display)
+    return variants?.[0] || null;
+  }, [availableVariants, variants, price, originalPrice, id]);
 
   const discount = getDiscountPercent(firstVariant?.originalPrice ?? 0, firstVariant?.price ?? 0);
+
+  // Check if out of stock
+  // A product is out of stock if ALL variants have finite stock (isInfiniteStock: false) AND stock is 0
+  const isOutOfStock = useMemo(() => {
+    if (!variants || variants.length === 0) return false;
+    
+    return variants.every(v => {
+      // If infinite stock is enabled, product is available
+      if (v.isInfiniteStock) return false;
+      
+      // If stock is undefined or null, treat as 0
+      const currentStock = v.stock ?? 0;
+      
+      // Out of stock if stock is 0 and not infinite
+      return currentStock === 0;
+    });
+  }, [variants]);
 
   const likedComputed = useMemo(() => liked || isLiked(id), [liked, id, isLiked]);
 
@@ -71,7 +105,18 @@ export const ProductCard: React.FC<IProductCard> = ({
   const inCart = firstVariant ? isInCart(id, firstVariant.id) : false;
 
   return (
-    <div className='group relative flex flex-col bg-[#4618AC] border border-[#63e3c2] overflow-hidden hover:shadow-lg transition-shadow duration-200 w-[200px] h-[405.2px]'>
+    <div className={`group relative flex flex-col bg-[#4618AC] border border-[#63e3c2] overflow-hidden hover:shadow-lg transition-all duration-200 w-[200px] h-[405.2px] ${
+      isOutOfStock ? 'opacity-60 grayscale' : ''
+    }`}>
+      {/* Out of Stock Overlay */}
+      {isOutOfStock && (
+        <div className='absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none'>
+          <div className='bg-red-600 text-white px-6 py-3 rounded-lg font-bold text-lg transform -rotate-12 shadow-2xl border-2 border-red-400'>
+            OUT OF STOCK
+          </div>
+        </div>
+      )}
+      
       {/* Image */}
       <div className='relative aspect-[4/5] w-full'>
         <Link href={`/product/${slug}`} className='absolute inset-0'>
@@ -162,16 +207,20 @@ export const ProductCard: React.FC<IProductCard> = ({
           <Button
             style={{ fontFamily: '"Metropolis", Arial, Helvetica, sans-serif' }}
             className={`w-full cursor-pointer h-[35px] text-[0.75rem] font-extrabold transition-colors ${
-              showCartSuccess
+              isOutOfStock
+                ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                : showCartSuccess
                 ? 'bg-green-500 hover:bg-green-600 text-white'
                 : inCart
                 ? 'bg-gray-400 hover:bg-gray-500 text-white'
                 : 'bg-[#fad318] hover:bg-primary-600 text-black'
-            } ${isCartUpdating ? 'opacity-50 pointer-events-none' : ''}`}
+            } ${isCartUpdating || isOutOfStock ? 'opacity-50 pointer-events-none' : ''}`}
             onClick={handleAddToCart}
-            disabled={isCartUpdating}
+            disabled={isCartUpdating || isOutOfStock}
           >
-            {isCartUpdating
+            {isOutOfStock
+              ? 'OUT OF STOCK'
+              : isCartUpdating
               ? 'ADDING...'
               : showCartSuccess
               ? '✓ ADDED!'
