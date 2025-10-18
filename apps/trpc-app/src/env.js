@@ -37,6 +37,8 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
+    TELEGRAM_BOT_TOKEN: z.string().optional(),
+    TELEGRAM_CHAT_ID: z.string().optional(),
   },
 
   /**
@@ -66,6 +68,8 @@ export const env = createEnv({
     ALGOLIA_SEARCH_KEY: process.env.ALGOLIA_SEARCH_KEY,
     ALGOLIA_PRODUCTS_INDEX: process.env.ALGOLIA_PRODUCTS_INDEX,
     ALGOLIA_ADMIN_KEY: process.env.ALGOLIA_ADMIN_KEY,
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
   /**

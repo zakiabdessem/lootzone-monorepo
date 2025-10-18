@@ -333,9 +333,50 @@ export const checkoutRouter = createTRPCRouter({
               chargilyWebhookEvents: [], // Empty for Flexy
               notes: `Flexy Payment - Was made at ${input.flexyData.paymentTime}`,
             },
+            include: {
+              items: {
+                include: {
+                  product: true,
+                  variant: true,
+                },
+              },
+            },
           });
 
           console.log('[Checkout] Flexy payment submitted successfully. Order ID:', order.id);
+
+          // Send Telegram notification asynchronously (non-blocking)
+          void (async () => {
+            try {
+              const { telegramService } = await import('~/server/services/telegram.service');
+              await telegramService.sendOrderNotification({
+                orderId: order.id,
+                orderStatus: order.status,
+                customerName: draft.fullName,
+                customerEmail: draft.email,
+                customerPhone: draft.phone,
+                paymentMethod: order.paymentMethod,
+                paymentStatus: order.paymentStatus,
+                items: order.items.map(item => ({
+                  product: { title: item.product.title },
+                  variant: { sku: item.variant.id, title: item.variant.name },
+                  quantity: item.quantity,
+                  price: Number(item.price),
+                  totalPrice: Number(item.totalPrice),
+                })),
+                subtotal: subtotal,
+                fees: flexyFee,
+                totalAmount: Number(order.totalAmount),
+                currency: order.currency,
+                createdAt: order.createdAt,
+                notes: order.notes || undefined,
+                flexyReceiptUrl: input.flexyData.receiptUrl,
+                flexyPaymentTime: input.flexyData.paymentTime,
+              });
+            } catch (error) {
+              console.error('[Checkout] Failed to send Telegram notification:', error);
+            }
+          })();
 
           console.log('[Checkout] Flexy payment submitted successfully. Order ID:', order.id);
 

@@ -88,6 +88,14 @@ export async function POST(req: NextRequest) {
             })),
           },
         },
+        include: {
+          items: {
+            include: {
+              product: true,
+              variant: true,
+            },
+          },
+        },
       });
 
       console.log('[Webhook] Order created:', order.id);
@@ -100,6 +108,36 @@ export async function POST(req: NextRequest) {
           orderId: order.id,
         },
       });
+
+      // Send Telegram notification asynchronously (non-blocking)
+      void (async () => {
+        try {
+          const { telegramService } = await import('~/server/services/telegram.service');
+          await telegramService.sendOrderNotification({
+            orderId: order.id,
+            orderStatus: order.status,
+            customerName: draft.fullName,
+            customerEmail: draft.email,
+            customerPhone: draft.phone,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            items: order.items.map(item => ({
+              product: { title: item.product.title },
+              variant: { sku: item.variant.id, title: item.variant.name },
+              quantity: item.quantity,
+              price: Number(item.price),
+              totalPrice: Number(item.totalPrice),
+            })),
+            subtotal: Number(cartSnapshot.subtotal),
+            totalAmount: Number(order.totalAmount),
+            currency: order.currency,
+            createdAt: order.createdAt,
+            notes: `Chargily Payment - Checkout ID: ${checkoutId}`,
+          });
+        } catch (error) {
+          console.error('[Webhook] Failed to send Telegram notification:', error);
+        }
+      })();
 
       // TODO: Send confirmation email
       // await emailService.sendOrderConfirmation(draft.email, order);
