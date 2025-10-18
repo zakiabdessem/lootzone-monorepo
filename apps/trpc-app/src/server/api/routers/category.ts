@@ -8,6 +8,7 @@ const createCategorySchema = z.object({
   slug: z.string().min(1).max(255),
   type: z.nativeEnum(ProductCategory),
   parentId: z.string().nullable().optional(),
+  icon: z.string().optional(),
   displayOrder: z.number().optional(),
   isActive: z.boolean().default(true),
 });
@@ -18,6 +19,7 @@ const updateCategorySchema = z.object({
   slug: z.string().min(1).max(255).optional(),
   type: z.nativeEnum(ProductCategory).optional(),
   parentId: z.string().nullable().optional(),
+  icon: z.string().optional(),
   displayOrder: z.number().optional(),
   isActive: z.boolean().optional(),
 });
@@ -192,6 +194,7 @@ export const categoryRouter = createTRPCRouter({
           slug: input.slug,
           type: input.type,
           parentId: input.parentId ?? null,
+          icon: input.icon,
           displayOrder: input.displayOrder,
           isActive: input.isActive,
         },
