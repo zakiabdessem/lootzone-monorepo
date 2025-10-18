@@ -253,9 +253,29 @@ export default function CheckoutPage() {
         // Flexy payment flow - upload receipt first
         console.log('[Checkout] Processing Flexy payment...');
         
-        // TODO: Upload receipt to your storage (Cloudinary, S3, etc.) and get URL
-        // For now, we'll use a placeholder
-        const receiptUrl = 'https://placeholder.com/receipt.jpg'; // Replace with actual upload
+        if (!receiptImage) {
+          alert('Please upload your payment receipt');
+          setIsProcessing(false);
+          return;
+        }
+
+        // Upload receipt to Cloudinary
+        const formData = new FormData();
+        formData.append('receipt', receiptImage);
+
+        console.log('[Checkout] Uploading receipt to Cloudinary...');
+        const uploadResponse = await fetch('/api/upload-receipt', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.error || 'Failed to upload receipt');
+        }
+
+        const { receiptUrl } = await uploadResponse.json();
+        console.log('[Checkout] Receipt uploaded successfully:', receiptUrl);
         
         await createPaymentMutation.mutateAsync({
           draftId,

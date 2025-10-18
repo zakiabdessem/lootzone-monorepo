@@ -168,28 +168,28 @@ export default function Dock({
   const height = useSpring(heightRow, spring);
 
   return (
-    <motion.div 
-      className="mx-2 flex max-w-full items-center justify-center pointer-events-none"
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
+      onMouseMove={({ pageX } : { pageX: number }) => {
+        isHovered.set(1);
+        mouseX.set(pageX);
+      }}
+      onMouseLeave={() => {
+        isHovered.set(0);
+        mouseX.set(Infinity);
+      }}
+      className={`${className} fixed bottom-0 left-0 right-0 flex items-center justify-center pb-4 px-2 pointer-events-none z-[9999]`}
+      role="toolbar"
+      aria-label="Mobile navigation dock"
     >
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
-        onMouseMove={({ pageX } : { pageX: number }) => {
-          isHovered.set(1);
-          mouseX.set(pageX);
-        }}
-        onMouseLeave={() => {
-          isHovered.set(0);
-          mouseX.set(Infinity);
-        }}
-        className={`${className} fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-end w-fit gap-3 rounded-[24px] border border-gray-200/50 bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl shadow-2xl pb-2 px-4 pointer-events-auto z-50`}
+      <div
+        className="flex items-end w-fit gap-3 rounded-[24px] border border-gray-200/50 bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl shadow-2xl pb-2 px-4 pointer-events-auto"
         style={{ 
           height: panelHeight,
           boxShadow: '0 20px 60px -15px rgba(70, 24, 172, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.8) inset'
         }}
-        role="toolbar"
-        aria-label="Mobile navigation dock"
       >
         {items.map((item, index) => (
           <DockItem
@@ -207,7 +207,7 @@ export default function Dock({
             <DockLabel>{item.label}</DockLabel>
           </DockItem>
         ))}
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

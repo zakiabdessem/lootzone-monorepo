@@ -34,6 +34,8 @@ import {
   Close as CloseIcon,
   ExpandMore as ExpandMoreIcon,
   Save as SaveIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
 } from "@mui/icons-material";
 import { api } from "@lootzone/trpc-shared";
 import { OrderStatusBadge, PaymentStatusBadge } from "./OrderStatusBadge";
@@ -108,6 +110,24 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     },
   });
 
+  const approveFlexyMutation = api.order.approveFlexyPayment.useMutation({
+    onSuccess: () => {
+      utils.order.adminGetOrder.invalidate({ orderId });
+      utils.order.getAllOrders.invalidate();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    },
+  });
+
+  const rejectFlexyMutation = api.order.rejectFlexyPayment.useMutation({
+    onSuccess: () => {
+      utils.order.adminGetOrder.invalidate({ orderId });
+      utils.order.getAllOrders.invalidate();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    },
+  });
+
   const handleStatusChange = (newStatus: OrderStatus) => {
     setOrderStatus(newStatus);
     setHasChanges(true);
@@ -152,6 +172,26 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     setHasChanges(false);
     setSaveSuccess(false);
     onClose();
+  };
+
+  const handleApproveFlexyPayment = async (orderId: string) => {
+    const notes = prompt('Enter admin notes (optional):');
+    await approveFlexyMutation.mutateAsync({
+      orderId,
+      adminNotes: notes || undefined,
+    });
+  };
+
+  const handleRejectFlexyPayment = async (orderId: string) => {
+    const reason = prompt('Enter rejection reason (required):');
+    if (!reason) {
+      alert('Rejection reason is required');
+      return;
+    }
+    await rejectFlexyMutation.mutateAsync({
+      orderId,
+      reason,
+    });
   };
 
   const isSaving = updateStatusMutation.isLoading || updateNotesMutation.isLoading;
@@ -463,6 +503,88 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 )}
               </Paper>
             </Grid>
+
+            {/* Flexy Payment Verification (Admin Only) */}
+            {order.paymentMethod === 'flexy' && order.checkoutDraft && (
+              <Grid size={{ xs: 12 }}>
+                <Paper sx={{ p: 3, bgcolor: 'warning.50', border: '1px solid', borderColor: 'warning.200' }}>
+                  <Typography variant="h6" gutterBottom color="warning.main">
+                    Flexy Payment Verification
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+
+                  {order.checkoutDraft.flexyReceiptUrl && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Payment Receipt
+                      </Typography>
+                      <Box
+                        component="a"
+                        href={order.checkoutDraft.flexyReceiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          display: 'block',
+                          mt: 1,
+                          maxWidth: 400,
+                          border: '2px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          '&:hover': { borderColor: 'primary.main' },
+                        }}
+                      >
+                        <img
+                          src={order.checkoutDraft.flexyReceiptUrl}
+                          alt="Payment Receipt"
+                          style={{ width: '100%', display: 'block' }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
+
+                  {order.checkoutDraft.flexyPaymentTime && (
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                      <strong>Payment Time:</strong> {order.checkoutDraft.flexyPaymentTime}
+                    </Typography>
+                  )}
+
+                  {order.paymentStatus === 'pending' && (
+                    <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => handleApproveFlexyPayment(order.id)}
+                        disabled={approveFlexyMutation.isLoading}
+                      >
+                        {approveFlexyMutation.isLoading ? 'Approving...' : 'Approve Payment'}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleRejectFlexyPayment(order.id)}
+                        disabled={rejectFlexyMutation.isLoading}
+                      >
+                        {rejectFlexyMutation.isLoading ? 'Rejecting...' : 'Reject Payment'}
+                      </Button>
+                    </Box>
+                  )}
+
+                  {order.paymentStatus === 'paid' && (
+                    <Alert severity="success">
+                      Payment has been verified and approved
+                    </Alert>
+                  )}
+
+                  {order.paymentStatus === 'failed' && (
+                    <Alert severity="error">
+                      Payment was rejected. See notes for details.
+                    </Alert>
+                  )}
+                </Paper>
+              </Grid>
+            )}
 
             {/* Admin Notes Section */}
             <Grid size={{ xs: 12 }}>

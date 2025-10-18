@@ -293,19 +293,56 @@ export const checkoutRouter = createTRPCRouter({
             });
           }
 
-          // Update draft with Flexy receipt info
+          // Calculate total with 20% Flexy fee
+          const cartSnapshot = draft.cartSnapshot as any;
+          const subtotal = cartSnapshot.subtotal || 0;
+          const flexyFee = subtotal * 0.2; // 20% fee
+          const totalAmount = subtotal + flexyFee;
+
+          console.log('[Checkout] Creating order for Flexy payment. Subtotal:', subtotal, 'Fee:', flexyFee, 'Total:', totalAmount);
+
+          // Create order immediately (status pending, awaiting admin verification)
+          const order = await ctx.db.order.create({
+            data: {
+              userId: draft.userId || null, // null for guest checkout
+              status: 'pending', // Will be updated after admin verification
+              paymentMethod: 'flexy',
+              paymentStatus: 'pending', // Awaiting admin verification
+              totalAmount: totalAmount,
+              currency: cartSnapshot.currency || 'DZD',
+              items: {
+                create: cartSnapshot.items.map((item: any) => ({
+                  productId: item.productId,
+                  variantId: item.variantId,
+                  quantity: item.quantity,
+                  price: item.price,
+                  totalPrice: item.price * item.quantity,
+                })),
+              },
+              chargilyWebhookEvents: [], // Empty for Flexy
+              notes: `Flexy Payment - Receipt uploaded at ${input.flexyData.paymentTime}`,
+            },
+          });
+
+          console.log('[Checkout] Order created:', order.id);
+
+          // Update draft with Flexy receipt info and link to order
           await ctx.db.checkoutDraft.update({
             where: { id: draft.id },
             data: {
               flexyReceiptUrl: input.flexyData.receiptUrl,
               flexyPaymentTime: input.flexyData.paymentTime,
-              paymentStatus: PaymentStatus.PENDING, // Admin will verify
+              paymentStatus: PaymentStatus.PENDING, // Awaiting admin verification
+              orderId: order.id, // Link draft to order
             },
           });
 
+          console.log('[Checkout] Flexy payment submitted successfully. Order ID:', order.id);
+
           return {
             success: true,
-            message: 'Flexy payment submitted for verification',
+            orderId: order.id,
+            message: 'Flexy payment submitted for verification. You will receive an email once verified.',
           };
         }
 

@@ -535,4 +535,161 @@ export const orderRouter = createTRPCRouter({
         notes: updatedOrder.notes,
       };
     }),
+
+  // Admin: Approve Flexy payment
+  approveFlexyPayment: adminProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+        adminNotes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const order = await ctx.db.order.findUnique({
+        where: { id: input.orderId },
+        include: {
+          checkoutDraft: true,
+        },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Order not found',
+        });
+      }
+
+      if (order.paymentMethod !== 'flexy') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Order is not a Flexy payment',
+        });
+      }
+
+      if (order.paymentStatus === 'paid') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Payment already approved',
+        });
+      }
+
+      console.log('[Order] Approving Flexy payment for order:', order.id);
+
+      // Update order status
+      const updatedOrder = await ctx.db.order.update({
+        where: { id: input.orderId },
+        data: {
+          paymentStatus: 'paid',
+          status: 'processing', // Move to processing
+          notes: input.adminNotes 
+            ? `${order.notes || ''}\n\nAdmin approved: ${input.adminNotes}`
+            : order.notes,
+        },
+      });
+
+      // Update linked checkout draft
+      if (order.checkoutDraftId) {
+        await ctx.db.checkoutDraft.update({
+          where: { id: order.checkoutDraftId },
+          data: {
+            paymentStatus: 'paid',
+          },
+        });
+      }
+
+      console.log('[Order] Flexy payment approved successfully');
+
+      // TODO: Send confirmation email to customer
+      // await emailService.sendPaymentApprovedEmail({
+      //   customerEmail: order.checkoutDraft?.email,
+      //   orderId: order.id,
+      // });
+
+      return { 
+        success: true, 
+        order: {
+          id: updatedOrder.id,
+          status: updatedOrder.status,
+          paymentStatus: updatedOrder.paymentStatus,
+        }
+      };
+    }),
+
+  // Admin: Reject Flexy payment
+  rejectFlexyPayment: adminProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+        reason: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const order = await ctx.db.order.findUnique({
+        where: { id: input.orderId },
+        include: {
+          checkoutDraft: true,
+        },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Order not found',
+        });
+      }
+
+      if (order.paymentMethod !== 'flexy') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Order is not a Flexy payment',
+        });
+      }
+
+      if (order.paymentStatus === 'failed') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Payment already rejected',
+        });
+      }
+
+      console.log('[Order] Rejecting Flexy payment for order:', order.id, 'Reason:', input.reason);
+
+      // Update order status
+      const updatedOrder = await ctx.db.order.update({
+        where: { id: input.orderId },
+        data: {
+          paymentStatus: 'failed',
+          status: 'cancelled',
+          notes: `${order.notes || ''}\n\nPayment Rejected: ${input.reason}`,
+        },
+      });
+
+      // Update linked checkout draft
+      if (order.checkoutDraftId) {
+        await ctx.db.checkoutDraft.update({
+          where: { id: order.checkoutDraftId },
+          data: {
+            paymentStatus: 'failed',
+          },
+        });
+      }
+
+      console.log('[Order] Flexy payment rejected successfully');
+
+      // TODO: Send rejection email to customer
+      // await emailService.sendPaymentRejectedEmail({
+      //   customerEmail: order.checkoutDraft?.email,
+      //   orderId: order.id,
+      //   reason: input.reason,
+      // });
+
+      return { 
+        success: true, 
+        order: {
+          id: updatedOrder.id,
+          status: updatedOrder.status,
+          paymentStatus: updatedOrder.paymentStatus,
+        }
+      };
+    }),
 });
