@@ -320,7 +320,7 @@ export const checkoutRouter = createTRPCRouter({
                 })),
               },
               chargilyWebhookEvents: [], // Empty for Flexy
-              notes: `Flexy Payment - Receipt uploaded at ${input.flexyData.paymentTime}`,
+              notes: `Flexy Payment - Was made at ${input.flexyData.paymentTime}`,
             },
           });
 

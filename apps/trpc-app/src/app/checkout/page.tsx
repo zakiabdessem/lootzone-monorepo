@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const [paymentHour, setPaymentHour] = useState('');
   const [paymentMinute, setPaymentMinute] = useState('');
   const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [showExampleModal, setShowExampleModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -277,7 +278,7 @@ export default function CheckoutPage() {
         const { receiptUrl } = await uploadResponse.json();
         console.log('[Checkout] Receipt uploaded successfully:', receiptUrl);
         
-        await createPaymentMutation.mutateAsync({
+        const result = await createPaymentMutation.mutateAsync({
           draftId,
           flexyData: {
             receiptUrl,
@@ -286,6 +287,7 @@ export default function CheckoutPage() {
         });
 
         console.log('[Checkout] Flexy payment submitted');
+        setSubmittedOrderId(result.orderId || null);
         setOrderSubmitted(true);
         setIsProcessing(false);
       } else {
@@ -309,16 +311,35 @@ export default function CheckoutPage() {
       <div className='min-h-screen bg-[#f8f7ff] flex items-center justify-center pt-32 pb-12 px-4'>
         <div className='max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center'>
           <CheckCircle className='w-20 h-20 text-green-500 mx-auto mb-4' />
-          <h1 className='text-3xl font-bold text-[#212121] mb-3'>Order Placed!</h1>
+          <h1 className='text-3xl font-bold text-[#212121] mb-3'>
+            {selectedPaymentMethod === 'flexy' ? 'Receipt Submitted!' : 'Order Placed!'}
+          </h1>
           <p className='text-gray-600 mb-6'>
-            Thank you for your order. We'll process your payment and send you a confirmation email shortly.
+            {selectedPaymentMethod === 'flexy' 
+              ? 'Thank you! Your payment receipt has been submitted and is being reviewed by our team.'
+              : 'Thank you for your order. We\'ll process your payment and send you a confirmation email shortly.'}
           </p>
+
+          {/* Order Number Display */}
+          {submittedOrderId && (
+            <div className='bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 mb-6'>
+              <p className='text-sm text-gray-600 mb-1'>Order Number</p>
+              <p className='text-2xl font-bold text-[#4618AC] font-mono tracking-wider'>
+                #{submittedOrderId.slice(0, 8).toUpperCase()}
+              </p>
+              <p className='text-xs text-gray-500 mt-2'>
+                Save this number for your reference
+              </p>
+            </div>
+          )}
+
           {selectedPaymentMethod === 'flexy' && (
             <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6'>
               <Clock className='w-6 h-6 text-yellow-600 mx-auto mb-2' />
               <p className='text-sm text-yellow-800'>
-                <strong>Processing Time:</strong> You have 2 hours to complete your Flexy payment.
-                We'll verify your receipt and confirm your order.
+                <strong>Verification in Progress</strong><br/>
+                Our team will review your receipt and confirm your order within 1-2 hours during business hours.
+                You'll receive a confirmation email once approved.
               </p>
             </div>
           )}
