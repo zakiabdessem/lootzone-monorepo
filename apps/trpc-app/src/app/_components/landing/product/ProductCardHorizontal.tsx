@@ -39,6 +39,12 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
     firstVariant?.price
   );
 
+  // Check if out of stock
+  const isOutOfStock = useMemo(() => {
+    if (!variants || variants.length === 0) return false;
+    return variants.every(v => !v.isInfiniteStock && (v.stock === 0 || v.stock === undefined));
+  }, [variants]);
+
   const inCart = firstVariant ? isInCart(id, firstVariant.id) : false;
 
   const handleAddToCart = async () => {
@@ -54,7 +60,16 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
   };
 
   return (
-    <div className="group relative flex bg-[#4618AC] border border-[#63e3c2] overflow-hidden hover:shadow-lg transition-shadow duration-200 w-full max-w-[640px]">
+    <div className={`group relative flex bg-[#4618AC] border border-[#63e3c2] overflow-hidden hover:shadow-lg transition-all duration-200 w-full max-w-[640px] ${
+      isOutOfStock ? 'opacity-60 grayscale' : ''
+    }`}>
+      {/* Out of Stock Badge */}
+      {isOutOfStock && (
+        <div className='absolute top-2 right-2 z-40 bg-red-600 text-white px-3 py-1 rounded-md font-bold text-xs shadow-lg border border-red-400'>
+          OUT OF STOCK
+        </div>
+      )}
+      
       {/* Cover image */}
       <Link
         href={`/product/${slug}`}
@@ -146,14 +161,16 @@ export const ProductCardHorizontal: React.FC<IProductCard> = ({
               e.stopPropagation();
               handleAddToCart();
             }}
-            disabled={isUpdating}
+            disabled={isUpdating || isOutOfStock}
             style={{ 
               fontFamily: '"Metropolis", Arial, Helvetica, sans-serif',
-              backgroundColor: showSuccess ? '#10b981' : inCart ? '#9ca3af' : '#fad318'
+              backgroundColor: isOutOfStock ? '#6b7280' : showSuccess ? '#10b981' : inCart ? '#9ca3af' : '#fad318'
             }}
-            className="w-full cursor-pointer hover:opacity-90 text-black h-[35px] text-[0.75rem] font-extrabold max-w-[120px] transition-colors pointer-events-auto"
+            className={`w-full cursor-pointer hover:opacity-90 text-black h-[35px] text-[0.75rem] font-extrabold max-w-[120px] transition-colors pointer-events-auto ${
+              isOutOfStock ? 'text-gray-300 cursor-not-allowed' : ''
+            }`}
           >
-            {isUpdating ? 'ADDING...' : showSuccess ? '✓ ADDED!' : inCart ? 'IN CART' : 'Add to cart'}
+            {isOutOfStock ? 'OUT OF STOCK' : isUpdating ? 'ADDING...' : showSuccess ? '✓ ADDED!' : inCart ? 'IN CART' : 'Add to cart'}
           </Button>
         </div>
       </Link>
