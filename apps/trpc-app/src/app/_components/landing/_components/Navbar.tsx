@@ -40,14 +40,6 @@ type SearchProduct = {
   highlightedTitle?: string | null;
 };
 
-const priceFormatter = new Intl.NumberFormat('fr-FR', {
-  style: 'currency',
-  currency: 'EUR',
-  minimumFractionDigits: 2,
-});
-
-const formatPrice = (value: number) => priceFormatter.format(value);
-
 const TRENDING_QUERIES = [
   'Netflix',
   'Chatgpt Plus',
@@ -129,10 +121,10 @@ function SearchResultCard({
         </p>
         <div className='flex items-baseline gap-2 text-xs text-gray-300'>
           <span className='text-base font-bold text-white'>
-            {typeof product.price === 'number' ? formatPrice(product.price) : 'See details'}
+            {typeof product.price === 'number' ? formatDA(product.price) : 'See details'}
           </span>
           {typeof product.originalPrice === 'number' && typeof product.price === 'number' && (
-            <span className='line-through'>{formatPrice(product.originalPrice)}</span>
+            <span className='line-through'>{formatDA(product.originalPrice)}</span>
           )}
         </div>
       </div>
