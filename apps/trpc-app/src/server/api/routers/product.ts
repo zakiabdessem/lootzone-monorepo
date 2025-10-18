@@ -98,6 +98,8 @@ const createProductSchema = z.object({
         name: z.string().min(1),
         price: z.number().positive(),
         originalPrice: z.number().positive(),
+        stock: z.number().int().min(0).optional(),
+        isInfiniteStock: z.boolean().optional().default(true),
         region: z.nativeEnum(Region).optional(),
       })
     )
@@ -721,8 +723,8 @@ export const productRouter = createTRPCRouter({
             price: variant.price,
             originalPrice: variant.originalPrice,
             isActive: true,
-            stock: 0,
-            isInfiniteStock: true,
+            stock: variant.isInfiniteStock ? 0 : (variant.stock ?? 0),
+            isInfiniteStock: variant.isInfiniteStock ?? true,
           })),
         },
       } as any,
@@ -834,6 +836,8 @@ export const productRouter = createTRPCRouter({
                 name: variant.name,
                 price: variant.price,
                 originalPrice: variant.originalPrice,
+                stock: variant.isInfiniteStock ? 0 : (variant.stock ?? 0),
+                isInfiniteStock: variant.isInfiniteStock ?? true,
               },
             });
           } else {
@@ -845,8 +849,8 @@ export const productRouter = createTRPCRouter({
                 price: variant.price,
                 originalPrice: variant.originalPrice,
                 isActive: true,
-                stock: 0,
-                isInfiniteStock: true,
+                stock: variant.isInfiniteStock ? 0 : (variant.stock ?? 0),
+                isInfiniteStock: variant.isInfiniteStock ?? true,
               },
             });
           }

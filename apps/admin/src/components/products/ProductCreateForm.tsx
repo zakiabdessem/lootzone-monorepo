@@ -265,6 +265,8 @@ export default function ProductCreateForm({
             name: variant.name,
             price: variant.price,
             originalPrice: variant.originalPrice,
+            stock: variant.isInfiniteStock ? undefined : variant.stock,
+            isInfiniteStock: variant.isInfiniteStock,
             region: values.region, // Use product region for variants
           })),
         };
