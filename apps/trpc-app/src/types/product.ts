@@ -20,10 +20,6 @@ export interface ProductVariant {
   originalPrice?: number;
   /** Region code using enum */
   region?: Region;
-  /** Stock quantity */
-  stock?: number;
-  /** Whether stock is infinite */
-  isInfiniteStock?: boolean;
 }
 
 /**
