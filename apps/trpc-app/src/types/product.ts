@@ -40,8 +40,12 @@ export interface IProductCard {
   /** Platform info using enum */
   platformIcon?: string | null | undefined;
   platformName?: Platform | null | undefined;
-  /** Array of purchasable variants */
-  variants: ProductVariant[];
+  /** Array of purchasable variants (optional for Algolia results) */
+  variants?: ProductVariant[];
+  /** Direct price (for Algolia results without variants) */
+  price?: number;
+  /** Direct originalPrice (for Algolia results without variants) */
+  originalPrice?: number;
   /** Whether to show platform badge */
   platformShow?: boolean;
   /** Local UI state */

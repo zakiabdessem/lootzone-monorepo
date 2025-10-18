@@ -150,7 +150,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
   
-  // Hide search bar on products page
+  // Hide search bar and mobile dock on products page
   const isProductsPage = pathname === '/products';
   const desktopSearchRef = useRef<HTMLDivElement | null>(null);
   const mobileSearchRef = useRef<HTMLDivElement | null>(null);
@@ -717,8 +717,8 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dock Navigation - Hide when menu is open or near footer */}
-      {!isMenuOpen && showDock && (
+      {/* Mobile Dock Navigation - Hide when menu is open, near footer, or on products page */}
+      {!isMenuOpen && showDock && !isProductsPage && (
         <div className="md:hidden cursor-pointer">
           <Dock 
             items={dockItems}

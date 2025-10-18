@@ -24,6 +24,8 @@ export const ProductCard: React.FC<IProductCard> = ({
   platformName = null,
   title,
   variants,
+  price,
+  originalPrice,
   region = 'GLOBAL',
   liked = false,
 }) => {
@@ -31,10 +33,15 @@ export const ProductCard: React.FC<IProductCard> = ({
   const { addToCart, isInCart, isUpdating: isCartUpdating } = useCart();
   const [showCartSuccess, setShowCartSuccess] = useState(false);
 
-  // Get price/originalPrice from first variant
-  const firstVariant = variants[0];
+  // Get price/originalPrice from first variant OR use direct price (for Algolia results)
+  const firstVariant = variants?.[0] || (price !== undefined ? {
+    id: `${id}-default`,
+    name: 'Default',
+    price: price,
+    originalPrice: originalPrice,
+  } : null);
 
-  const discount = getDiscountPercent(firstVariant?.originalPrice ?? 0, firstVariant?.price);
+  const discount = getDiscountPercent(firstVariant?.originalPrice ?? 0, firstVariant?.price ?? 0);
 
   const likedComputed = useMemo(() => liked || isLiked(id), [liked, id, isLiked]);
 
