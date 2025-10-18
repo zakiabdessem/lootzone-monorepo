@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRef } from "react";
 import { api } from "~/trpc/react";
 
@@ -51,23 +52,27 @@ export default function CategoryBar() {
         ref={containerRef}
         className="flex items-center gap-10 overflow-x-auto lg:overflow-visible px-6 md:px-10 max-w-7xl mx-auto no-scrollbar"
       >
-        {categories.map((cat) => (
-          <div
-            key={cat.id}
-            className="flex flex-col items-center justify-center shrink-0 min-w-[72px] cursor-pointer group"
-          >
-            <Image
-              src={cat.icon ?? ""}
-              alt={cat.name ?? ""}
-              width={32}
-              height={32}
-              className="w-8 h-8 md:w-10 md:h-10 opacity-70 grayscale transition duration-200 group-hover:opacity-100 group-hover:grayscale-0"
-            />
-            <span className="mt-1 text-xs md:text-sm text-text-primary whitespace-nowrap font-medium transition-colors duration-200 group-hover:text-black">
-              {cat.name ?? ""}
-            </span>
-          </div>
-        ))}
+        {categories.map((cat) => {
+          const categorySlug = cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-');
+          return (
+            <Link
+              key={cat.id}
+              href={`/products?cats=${categorySlug}`}
+              className="flex flex-col items-center justify-center shrink-0 min-w-[72px] cursor-pointer group"
+            >
+              <Image
+                src={cat.icon ?? ""}
+                alt={cat.name ?? ""}
+                width={32}
+                height={32}
+                className="w-8 h-8 md:w-10 md:h-10 opacity-70 grayscale transition duration-200 group-hover:opacity-100 group-hover:grayscale-0"
+              />
+              <span className="mt-1 text-xs md:text-sm text-text-primary whitespace-nowrap font-medium transition-colors duration-200 group-hover:text-black">
+                {cat.name ?? ""}
+              </span>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Right Arrow */}

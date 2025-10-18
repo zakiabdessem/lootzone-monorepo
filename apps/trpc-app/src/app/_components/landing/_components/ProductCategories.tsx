@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "../ui/button";
@@ -79,28 +80,32 @@ export default function ProductCategories() {
 
         {/* Categories Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-          {displayedCategories.map((category) => (
-            <div
-              key={category.id}
-              className="UCOPAE rounded-none cursor-pointer hover:bg-primary/10 hover:text-primary"
-            >
-              <span className="text-white text-lg font-semibold mb-2">
-                {category._count?.products ?? 0}
-              </span>
-              <div className="flex-1 flex items-center justify-center mb-2">
-                <Image
-                  src={category.icon ?? ""}
-                  alt={category.name ?? ""}
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 invert"
-                />
-              </div>
-              <span className="text-white text-sm font-medium">
-                {category.name ?? ""}
-              </span>
-            </div>
-          ))}
+          {displayedCategories.map((category) => {
+            const categorySlug = category.slug || category.name.toLowerCase().replace(/\s+/g, '-');
+            return (
+              <Link
+                key={category.id}
+                href={`/products?cats=${categorySlug}`}
+                className="UCOPAE rounded-none cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors"
+              >
+                <span className="text-white text-lg font-semibold mb-2">
+                  {category._count?.products ?? 0}
+                </span>
+                <div className="flex-1 flex items-center justify-center mb-2">
+                  <Image
+                    src={category.icon ?? ""}
+                    alt={category.name ?? ""}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 invert"
+                  />
+                </div>
+                <span className="text-white text-sm font-medium">
+                  {category.name ?? ""}
+                </span>
+              </Link>
+            );
+          })}
         </div>
 
         {/* Show More/Less Button */}
