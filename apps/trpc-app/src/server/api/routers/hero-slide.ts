@@ -3,7 +3,7 @@ import { adminProcedure, createTRPCRouter, publicProcedure } from '~/server/api/
 
 export const heroSlideRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    const slides = await ctx.db.heroSlide.findMany({
+    return await ctx.db.heroSlide.findMany({
       where: { isActive: true },
       orderBy: { displayOrder: 'asc' },
       include: {
@@ -20,23 +20,11 @@ export const heroSlideRouter = createTRPCRouter({
                 isInfiniteStock: true,
               },
               orderBy: { price: 'asc' },
-              take: 1,
             },
           },
         },
       },
     });
-    
-    // Debug: Log what we're returning from the server
-    console.log('🚀 Hero Slide API Response:');
-    slides.forEach((slide, idx) => {
-      console.log(`  Slide ${idx}: ${slide.product.title}`);
-      slide.product.variants.forEach((variant, vIdx) => {
-        console.log(`    Variant ${vIdx}: ${variant.name}, stock: ${variant.stock}, isInfiniteStock: ${variant.isInfiniteStock}`);
-      });
-    });
-    
-    return slides;
   }),
 
   getAllForAdmin: adminProcedure.query(async ({ ctx }) => {
@@ -56,7 +44,6 @@ export const heroSlideRouter = createTRPCRouter({
                 isInfiniteStock: true,
               },
               orderBy: { price: 'asc' },
-              take: 1,
             },
           },
         },

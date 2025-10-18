@@ -32,15 +32,32 @@ type ViewProduct = {
 
 export default function ProductView({ product }: { product: ViewProduct }) {
   const variants = product.variants ?? [];
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
-    variants[0] ?? {
-      id: '',
-      name: '',
-      price: 0,
-      originalPrice: 0,
-      region: Region.GLOBAL,
+  
+  // Get cheapest available variant as default
+  const getDefaultVariant = () => {
+    if (variants.length === 0) {
+      return {
+        id: '',
+        name: '',
+        price: 0,
+        originalPrice: 0,
+        region: Region.GLOBAL,
+      };
     }
-  );
+    
+    // Filter available variants (in stock or infinite stock)
+    const availableVariants = variants.filter(v => v.isInfiniteStock || (v.stock ?? 0) > 0);
+    
+    // If there are available variants, return the cheapest one
+    if (availableVariants.length > 0) {
+      return [...availableVariants].sort((a, b) => a.price - b.price)[0]!;
+    }
+    
+    // If no available variants, return the cheapest variant overall
+    return [...variants].sort((a, b) => a.price - b.price)[0]!;
+  };
+  
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(getDefaultVariant());
 
   return (
     <div className='min-h-screen bg-[#f8f7ff] text-[#212121] pt-8 pb-12 md:pt-12 relative z-0'>
