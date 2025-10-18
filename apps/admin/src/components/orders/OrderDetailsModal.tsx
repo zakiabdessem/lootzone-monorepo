@@ -295,9 +295,45 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                       {order.user.id}
                     </Typography>
                   </Box>
+                ) : order.checkoutDraft ? (
+                  <Box>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      Guest Checkout
+                    </Alert>
+
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Name
+                    </Typography>
+                    <Typography variant="body1" gutterBottom fontWeight={500}>
+                      {order.checkoutDraft.fullName || "N/A"}
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
+                      Email
+                    </Typography>
+                    <Typography variant="body1" gutterBottom>
+                      {order.checkoutDraft.email || "N/A"}
+                    </Typography>
+
+                    {order.checkoutDraft.phone && (
+                      <>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          gutterBottom
+                          sx={{ mt: 2 }}
+                        >
+                          Phone
+                        </Typography>
+                        <Typography variant="body1" gutterBottom>
+                          {order.checkoutDraft.phone}
+                        </Typography>
+                      </>
+                    )}
+                  </Box>
                 ) : (
                   <Typography variant="body1" color="text.secondary">
-                    Guest Checkout
+                    No customer information available
                   </Typography>
                 )}
               </Paper>

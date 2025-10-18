@@ -335,7 +335,7 @@ export const checkoutRouter = createTRPCRouter({
             },
           });
 
-          console.log('[Checkout] Order created:', order.id);
+          console.log('[Checkout] Flexy payment submitted successfully. Order ID:', order.id);
 
           console.log('[Checkout] Flexy payment submitted successfully. Order ID:', order.id);
 
