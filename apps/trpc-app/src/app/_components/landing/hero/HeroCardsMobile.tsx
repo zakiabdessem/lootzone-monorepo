@@ -28,6 +28,8 @@ export default function HeroCardsMobile() {
         price: Number(variant.price),
         originalPrice: variant.originalPrice ? Number(variant.originalPrice) : undefined,
         region: slide.product.region as Region,
+        stock: variant.stock,
+        isInfiniteStock: variant.isInfiniteStock,
       })),
     })) || [];
 

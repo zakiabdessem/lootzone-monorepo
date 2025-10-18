@@ -16,6 +16,17 @@ export default function HeroCarousel() {
   const [progress, setProgress] = useState(0);
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Debug: Log the raw data from API
+  useEffect(() => {
+    if (heroSlides) {
+      console.log('🔍 HeroCarousel - Raw heroSlides data:', heroSlides);
+      heroSlides.forEach((slide, idx) => {
+        console.log(`Slide ${idx} - Product:`, slide.product.title);
+        console.log(`Slide ${idx} - Variants:`, slide.product.variants);
+      });
+    }
+  }, [heroSlides]);
+
   // Transform database slides to component format
   const slides: Slide[] =
     heroSlides?.map(slide => ({
@@ -30,15 +41,28 @@ export default function HeroCarousel() {
         title: slide.product.title,
         region: slide.product.region as Region,
         liked: false, // This would need to be determined by user preferences
-        variants: slide.product.variants.map(variant => ({
-          id: variant.id,
-          name: variant.name,
-          price: Number(variant.price),
-          originalPrice: variant.originalPrice ? Number(variant.originalPrice) : undefined,
-          region: slide.product.region as Region,
-        })),
+        variants: slide.product.variants.map(variant => {
+          const mapped = {
+            id: variant.id,
+            name: variant.name,
+            price: Number(variant.price),
+            originalPrice: variant.originalPrice ? Number(variant.originalPrice) : undefined,
+            region: slide.product.region as Region,
+            stock: variant.stock,
+            isInfiniteStock: variant.isInfiniteStock,
+          };
+          console.log('🔄 Mapped variant:', mapped);
+          return mapped;
+        }),
       },
     })) || [];
+
+  // Debug: Log transformed slides
+  useEffect(() => {
+    if (slides.length > 0) {
+      console.log('✅ Transformed slides:', slides);
+    }
+  }, [slides]);
 
   /* -----------------------------
    * Auto-cycle every 7 seconds (uses fresh index)
