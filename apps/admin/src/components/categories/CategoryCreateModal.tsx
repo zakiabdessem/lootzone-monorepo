@@ -35,6 +35,7 @@ export const CategoryCreateModal: React.FC<CategoryCreateModalProps> = ({
     name: '',
     slug: '',
     type: 'product',
+    icon: '',
     displayOrder: 0,
     isActive: true,
     selectedIcon: ''
@@ -57,6 +58,7 @@ export const CategoryCreateModal: React.FC<CategoryCreateModalProps> = ({
       name: '',
       slug: '',
       type: 'product',
+      icon: '',
       displayOrder: 0,
       isActive: true,
       selectedIcon: ''
@@ -71,6 +73,7 @@ export const CategoryCreateModal: React.FC<CategoryCreateModalProps> = ({
         name: formData.name,
         slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
         type: formData.type as any,
+        icon: formData.icon || undefined,
         displayOrder: formData.displayOrder,
         isActive: formData.isActive
       });
@@ -113,6 +116,17 @@ export const CategoryCreateModal: React.FC<CategoryCreateModalProps> = ({
               />
             </Grid>
             
+            <Grid item xs={12}>
+              <TextField
+                label="Icon URL"
+                value={formData.icon}
+                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                fullWidth
+                placeholder="e.g., /drms/capcut.svg"
+                helperText="Path to the icon file in the public/drms folder"
+              />
+            </Grid>
+            
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth>
                 <InputLabel>Type</InputLabel>
@@ -144,7 +158,8 @@ export const CategoryCreateModal: React.FC<CategoryCreateModalProps> = ({
                 Icon Preview:
               </Typography>
               <CategoryIcon 
-                name={formData.selectedIcon || formData.name}
+                name={formData.name}
+                iconPath={formData.icon || undefined}
                 size={32}
               />
             </Grid>

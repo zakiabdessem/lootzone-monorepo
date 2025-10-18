@@ -35,6 +35,13 @@ const columns: GridColDef[] = [
     sortable: false,
   },
   {
+    field: "iconPath",
+    headerName: "Icon URL",
+    flex: 1,
+    minWidth: 200,
+    editable: true,
+  },
+  {
     field: "name",
     headerName: "Name",
     flex: 1,
@@ -137,9 +144,11 @@ const CategoryTablePage: React.FC = () => {
     const changedFields: any = {};
     let hasChanges = false;
 
-    ['name', 'type', 'displayOrder'].forEach(field => {
+    ['name', 'type', 'displayOrder', 'iconPath'].forEach(field => {
       if (newRow[field] !== oldRow[field]) {
-        changedFields[field] = newRow[field];
+        // Map iconPath field to icon for the API
+        const apiField = field === 'iconPath' ? 'icon' : field;
+        changedFields[apiField] = newRow[field];
         hasChanges = true;
       }
     });
@@ -160,6 +169,7 @@ const CategoryTablePage: React.FC = () => {
 
   const rows = categories.map((cat) => ({
     ...cat,
+    iconPath: cat.icon || '',
     onEdit: () => {
       // Double-click or use the edit button to start editing
       console.log('Edit category:', cat.id);
