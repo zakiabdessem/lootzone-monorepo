@@ -188,6 +188,7 @@ export const productRouter = createTRPCRouter({
             stock: true,
             isInfiniteStock: true,
           },
+          orderBy: { price: 'asc' },
         },
         ...productCategoryInclude,
       },
