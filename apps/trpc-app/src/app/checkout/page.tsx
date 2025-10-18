@@ -48,11 +48,11 @@ export default function CheckoutPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Redirect to cart if empty, avoid navigation during render
-  useEffect(() => {
-    if (cartDetails.length === 0 && !orderSubmitted) {
-      router.replace('/cart');
-    }
-  }, [cartDetails.length, orderSubmitted, router]);
+  // useEffect(() => {
+  //   if (cartDetails.length === 0 && !orderSubmitted) {
+  //     router.replace('/cart');
+  //   }
+  // }, [cartDetails.length, orderSubmitted, router]);
 
   // tRPC queries and mutations
   const { data: previousCustomerInfo } = api.checkout.getPreviousCustomerInfo.useQuery(

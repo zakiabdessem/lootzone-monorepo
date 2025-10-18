@@ -84,6 +84,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   // Update state when order data is loaded
   React.useEffect(() => {
     if (order) {
+      console.log('Order data:', order);
+      console.log('CheckoutDraft:', order.checkoutDraft);
+      console.log('Flexy Receipt URL:', order.checkoutDraft?.flexyReceiptUrl);
       setOrderStatus(order.status as OrderStatus);
       setNotes(order.notes || "");
       setHasChanges(false);
@@ -501,6 +504,19 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     </Accordion>
                   </Box>
                 )}
+              </Paper>
+            </Grid>
+
+            {/* DEBUG: Show raw data */}
+            <Grid size={{ xs: 12 }}>
+              <Paper sx={{ p: 2, bgcolor: 'info.50' }}>
+                <Typography variant="caption" component="pre">
+                  Payment Method: {order.paymentMethod}
+                  {'\n'}
+                  Has CheckoutDraft: {order.checkoutDraft ? 'YES' : 'NO'}
+                  {'\n'}
+                  {order.checkoutDraft && `Flexy Receipt URL: ${order.checkoutDraft.flexyReceiptUrl || 'NULL'}`}
+                </Typography>
               </Paper>
             </Grid>
 
