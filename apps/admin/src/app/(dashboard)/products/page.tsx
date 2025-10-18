@@ -86,10 +86,12 @@ type ProductType = {
   isActive: boolean;
   showInRecentlyViewed?: boolean;
   showInRecommended?: boolean;
-  category: {
+  categories: Array<{
     id: string;
+    categoryId: string;
     name: string;
-  };
+    slug?: string;
+  }>;
   variants: Array<{
     id: string;
     name: string;
@@ -108,7 +110,7 @@ type HeadCell = {
 
 const headCells: Array<HeadCell> = [
   { id: "product", alignment: "left", label: "Product" },
-  { id: "category", alignment: "left", label: "Category" },
+  { id: "categories", alignment: "left", label: "Categories" },
   { id: "region", alignment: "left", label: "Region" },
   { id: "variants", alignment: "center", label: "Variants" },
   { id: "status", alignment: "center", label: "Status" },
@@ -373,13 +375,19 @@ function EnhancedTable() {
   };
 
   // Convert Decimal fields to number for compatibility with ProductType
-  const products: ProductType[] = (productsData?.products || []).map((product) => ({
+  const products: ProductType[] = (productsData?.products || []).map((product: any) => ({
     ...product,
-    variants: product.variants.map((variant) => ({
+    categories: (product.categories || []).map((productCategory: any) => ({
+      id: productCategory.id,
+      categoryId: productCategory.categoryId,
+      name: productCategory.category.name,
+      slug: productCategory.category.slug,
+    })),
+    variants: (product.variants || []).map((variant: any) => ({
       ...variant,
       price: coerceDecimalToNumber(variant.price),
-      originalPrice: coerceDecimalToNumber(variant.originalPrice)
-    }))
+      originalPrice: coerceDecimalToNumber(variant.originalPrice),
+    })),
   }));
   const totalCount = productsData?.totalCount || 0;
 
@@ -457,12 +465,23 @@ function EnhancedTable() {
                       </ProductInfo>
                     </TableCell>
                     <TableCell>
-                      <Chip
-                        label={product.category.name}
-                        color="primary"
-                        variant="outlined"
-                        size="small"
-                      />
+                      {product.categories.length ? (
+                        <Box display="flex" gap={0.5} flexWrap="wrap">
+                          {product.categories.map((category) => (
+                            <Chip
+                              key={category.id}
+                              label={category.name}
+                              color="primary"
+                              variant="outlined"
+                              size="small"
+                            />
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">
+                          No categories
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Chip

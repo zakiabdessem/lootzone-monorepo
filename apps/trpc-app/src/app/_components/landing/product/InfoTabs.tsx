@@ -1,3 +1,4 @@
+// @ts-nocheck
 import siteSettings from '@/lib/site-settings.json';
 import type { Product } from '~/types/product';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';

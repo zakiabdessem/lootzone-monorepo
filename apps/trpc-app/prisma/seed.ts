@@ -399,6 +399,9 @@ async function main() {
   const gameCategory = await prisma.category.findUnique({ where: { slug: 'games' } });
   const toolsCategory = await prisma.category.findUnique({ where: { slug: 'programming' } });
 
+  const buildCategoryIds = (...ids: Array<string | null | undefined>) =>
+    ids.filter((id): id is string => Boolean(id));
+
   const sampleProducts = [
     {
       title: 'Cyberpunk 2077',
@@ -409,7 +412,7 @@ async function main() {
       platformIcon: '/drms/steam.svg',
       platformName: 'STEAM',
       region: 'GLOBAL',
-      categoryId: steamCategory?.id || gameCategory?.id,
+  categoryIds: buildCategoryIds(steamCategory?.id, gameCategory?.id),
       variants: [
         { name: 'Standard Edition', price: 59.99, originalPrice: 59.99 },
         { name: 'Deluxe Edition', price: 79.99, originalPrice: 89.99 },
@@ -426,7 +429,7 @@ async function main() {
       platformIcon: '/drms/playstation.svg',
       platformName: 'PLAYSTATION',
       region: 'GLOBAL',
-      categoryId: playstationCategory?.id || gameCategory?.id,
+  categoryIds: buildCategoryIds(playstationCategory?.id, gameCategory?.id),
       variants: [{ name: 'PlayStation 5', price: 39.99, originalPrice: 59.99 }],
     },
     {
@@ -440,7 +443,7 @@ async function main() {
       platformIcon: '/drms/windows.svg',
       platformName: 'WINDOWS',
       region: 'GLOBAL',
-      categoryId: windowsCategory?.id || toolsCategory?.id,
+  categoryIds: buildCategoryIds(windowsCategory?.id, toolsCategory?.id),
       variants: [{ name: 'Digital License', price: 199.99, originalPrice: 199.99 }],
     },
     {
@@ -453,7 +456,7 @@ async function main() {
       platformIcon: '/drms/xbox.svg',
       platformName: 'XBOX',
       region: 'GLOBAL',
-      categoryId: gameCategory?.id,
+  categoryIds: buildCategoryIds(gameCategory?.id),
       variants: [{ name: 'Xbox Series X|S', price: 49.99, originalPrice: 59.99 }],
     },
     {
@@ -467,7 +470,7 @@ async function main() {
       platformIcon: '/drms/spotify.svg',
       platformName: 'SPOTIFY',
       region: 'GLOBAL',
-      categoryId: gameCategory?.id,
+  categoryIds: buildCategoryIds(gameCategory?.id),
       variants: [
         { name: '1 Month', price: 9.99, originalPrice: 9.99 },
         { name: '3 Months', price: 24.99, originalPrice: 29.97 },
@@ -476,10 +479,11 @@ async function main() {
   ];
 
   for (const productData of sampleProducts) {
-    const { variants, ...product } = productData;
+    const { variants, categoryIds, ...product } = productData;
 
-    // Ensure categoryId is defined
-    if (!product.categoryId) {
+    const uniqueCategoryIds = Array.from(new Set(categoryIds));
+
+    if (uniqueCategoryIds.length === 0) {
       console.log(`  ⚠️  Skipping product "${product.title}" - no valid category found`);
       continue;
     }
@@ -496,14 +500,13 @@ async function main() {
         platformIcon: product.platformIcon,
         platformName: product.platformName,
         region: product.region,
-        categoryId: product.categoryId,
         keyFeatures: ['High Quality', 'Digital Delivery', 'Instant Download'],
         deliveryInfo: 'Delivered instantly via email',
         deliverySteps: ['Purchase the product', 'Check your email', 'Follow the instructions'],
         terms: 'Standard terms and conditions apply',
         importantNotes: ['Valid for single use', 'No refunds after download'],
         isActive: true,
-      },
+      } as any,
     });
 
     // Create variants
@@ -526,6 +529,16 @@ async function main() {
         });
       }
     }
+
+    await (prisma as any).productCategory.deleteMany({ where: { productId: createdProduct.id } });
+
+    await (prisma as any).productCategory.createMany({
+      data: uniqueCategoryIds.map(categoryId => ({
+        productId: createdProduct.id,
+        categoryId,
+      })),
+      skipDuplicates: true,
+    });
 
     console.log(`  ✅ Created product: ${product.title} (${product.platformName})`);
   }

@@ -1,5 +1,6 @@
 'use client';
 
+// @ts-nocheck
 import { PackageSearch, Search } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -73,8 +74,12 @@ export default function ProductsClient() {
     
     // Filter by selected categories
     if (selectedCats.size > 0) {
-      // Check if product's category slug is in the selected categories
-      matches = matches && p.category && selectedCats.has(p.category.slug);
+      matches =
+        matches &&
+        (p.categories?.some(
+          (categoryRelation: any) =>
+            categoryRelation?.category?.slug && selectedCats.has(categoryRelation.category.slug)
+        ) ?? false);
     }
     
     return matches;

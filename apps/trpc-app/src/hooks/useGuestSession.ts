@@ -13,6 +13,7 @@ const GUEST_SESSION_COOKIE = 'guest_session_token';
 export function useGuestSession() {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const utils = api.useUtils();
 
   // Get session data
   const { data: sessionData, isLoading } = api.guestSession.getWishlist.useQuery(
@@ -69,7 +70,7 @@ export function useGuestSession() {
       });
 
       // Optimistically update to the new value
-      utils.guestSession.getWishlist.setData({ sessionToken: variables.sessionToken }, old => {
+      utils.guestSession.getWishlist.setData({ sessionToken: variables.sessionToken }, (old: any) => {
         if (!old) return { wishlistItems: [variables.productId], cartItems: [] };
         const newWishlist = [...old.wishlistItems];
         if (!newWishlist.includes(variables.productId)) {
@@ -107,9 +108,9 @@ export function useGuestSession() {
       });
 
       // Optimistically update to the new value
-      utils.guestSession.getWishlist.setData({ sessionToken: variables.sessionToken }, old => {
+      utils.guestSession.getWishlist.setData({ sessionToken: variables.sessionToken }, (old: any) => {
         if (!old) return { wishlistItems: [], cartItems: [] };
-        const newWishlist = old.wishlistItems.filter(id => id !== variables.productId);
+        const newWishlist = old.wishlistItems.filter((id: any) => id !== variables.productId);
         return { ...old, wishlistItems: newWishlist };
       });
 

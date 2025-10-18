@@ -21,6 +21,22 @@ export const env = createEnv({
       .default("development"),
     CHARGILY_SECRET_KEY: z.string(),
     CHARGILY_MODE: z.enum(["test", "live"]).default("test"),
+    ALGOLIA_APP_ID:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
+    ALGOLIA_SEARCH_KEY:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
+    ALGOLIA_PRODUCTS_INDEX:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
+    ALGOLIA_ADMIN_KEY:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
   },
 
   /**
@@ -46,6 +62,10 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     CHARGILY_MODE: process.env.CHARGILY_MODE,
     CHARGILY_SECRET_KEY: process.env.CHARGILY_SECRET_KEY,
+    ALGOLIA_APP_ID: process.env.ALGOLIA_APP_ID,
+    ALGOLIA_SEARCH_KEY: process.env.ALGOLIA_SEARCH_KEY,
+    ALGOLIA_PRODUCTS_INDEX: process.env.ALGOLIA_PRODUCTS_INDEX,
+    ALGOLIA_ADMIN_KEY: process.env.ALGOLIA_ADMIN_KEY,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
   /**

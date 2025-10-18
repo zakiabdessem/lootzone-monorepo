@@ -5,10 +5,14 @@ import { guestSessionRouter } from '~/server/api/routers/guest-session';
 import { heroSlideRouter } from '~/server/api/routers/hero-slide';
 import { orderRouter } from '~/server/api/routers/order';
 import { productRouter } from '~/server/api/routers/product';
+import { searchRouter } from '~/server/api/routers/search';
 import { sessionRouter } from '~/server/api/routers/session';
 import { siteSettingsRouter } from '~/server/api/routers/site-settings';
 import { userRouter } from '~/server/api/routers/user';
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
+
+console.log('🚀 [tRPC] Root router initializing...');
+console.log('🔍 [tRPC] searchRouter type:', typeof searchRouter);
 
 /**
  * This is the primary router for your server.
@@ -26,7 +30,24 @@ export const appRouter = createTRPCRouter({
   heroSlide: heroSlideRouter,
   siteSettings: siteSettingsRouter,
   checkout: checkoutRouter,
+  search: searchRouter,
 });
+
+console.log('✅ [tRPC] Root router created with keys:', Object.keys(appRouter._def.record ?? {}));
+
+console.log('✅ [tRPC] Root router created with keys:', Object.keys(appRouter._def.record ?? {}));
+
+if (process.env.NODE_ENV === 'development') {
+  const routerDef = appRouter as unknown as {
+    _def?: {
+      record?: Record<string, unknown>;
+      procedures?: Record<string, unknown>;
+    };
+  };
+
+  const registeredRouters = Object.keys(routerDef._def?.record ?? routerDef._def?.procedures ?? {});
+  console.log('[tRPC] registered routers:', registeredRouters.join(', '));
+}
 
 // export type definition of API
 export type AppRouter = typeof appRouter;

@@ -1,7 +1,70 @@
+import type { PrismaClient } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { Platform, Region } from '~/constants/enums';
 import { adminProcedure, createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc';
+import { syncProductToAlgolia, removeProductFromAlgolia } from '~/lib/algolia-sync';
+
+const productCategoryInclude = {
+  categories: {
+    select: {
+      id: true,
+      categoryId: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          parentId: true,
+        },
+      },
+    },
+  },
+} as const;
+
+type ProductCategoryWithCategory = {
+  id: string;
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string | null;
+    parentId: string | null;
+  };
+};
+
+const mapProductCategories = (categories: ProductCategoryWithCategory[]) =>
+  categories.map(pc => ({
+    id: pc.id,
+    categoryId: pc.categoryId,
+    category: pc.category,
+  }));
+
+async function getCategoryWithDescendants(
+  categoryId: string,
+  db: PrismaClient,
+  visited: Set<string> = new Set()
+): Promise<string[]> {
+  if (visited.has(categoryId)) {
+    return [];
+  }
+
+  visited.add(categoryId);
+
+  const ids = [categoryId];
+
+  const children = await db.category.findMany({
+    where: { parentId: categoryId },
+    select: { id: true },
+  });
+
+  for (const child of children) {
+    const descendantIds = await getCategoryWithDescendants(child.id, db, visited);
+    ids.push(...descendantIds);
+  }
+
+  return ids;
+}
 
 // Zod schemas for input validation
 const createProductSchema = z.object({
@@ -24,7 +87,7 @@ const createProductSchema = z.object({
     z.nativeEnum(Platform).optional().nullable()
   ),
   region: z.nativeEnum(Region).default(Region.GLOBAL),
-  category: z.string(), // Accept categoryId as string instead of enum
+  categories: z.array(z.string()).min(1),
   isActive: z.boolean().default(true),
   showInRecentlyViewed: z.boolean().optional().default(false),
   showInRecommended: z.boolean().optional().default(false),
@@ -83,6 +146,7 @@ export const productRouter = createTRPCRouter({
               originalPrice: true,
             },
           },
+          ...productCategoryInclude,
         },
       });
 
@@ -95,6 +159,7 @@ export const productRouter = createTRPCRouter({
         platformName: p.platformName as Platform | null,
         title: p.title,
         region: p.region as unknown as Region,
+        categories: mapProductCategories(p.categories as ProductCategoryWithCategory[]),
         variants: p.variants.map(v => ({
           id: v.id,
           name: v.name,
@@ -116,13 +181,7 @@ export const productRouter = createTRPCRouter({
             originalPrice: true,
           },
         },
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
+        ...productCategoryInclude,
       },
     });
 
@@ -143,7 +202,7 @@ export const productRouter = createTRPCRouter({
       platformIcon: product.platformIcon,
       platformName: product.platformName as Platform,
       region: product.region as Region,
-      category: product.category,
+      categories: mapProductCategories(product.categories as ProductCategoryWithCategory[]),
       variants: product.variants.map(v => ({
         id: v.id,
         name: v.name,
@@ -177,7 +236,15 @@ export const productRouter = createTRPCRouter({
       };
 
       if (input.categoryId) {
-        where.categoryId = input.categoryId;
+        const descendantCategoryIds = await getCategoryWithDescendants(input.categoryId, ctx.db);
+        const uniqueCategoryIds = Array.from(new Set(descendantCategoryIds));
+        where.categories = {
+          some: {
+            categoryId: {
+              in: uniqueCategoryIds,
+            },
+          },
+        };
       }
 
       if (input.platform) {
@@ -203,13 +270,7 @@ export const productRouter = createTRPCRouter({
             },
             orderBy: { price: 'asc' },
           },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
+          ...productCategoryInclude,
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -231,7 +292,7 @@ export const productRouter = createTRPCRouter({
           platformIcon: p.platformIcon,
           platformName: p.platformName as Platform,
           region: p.region as Region,
-          category: p.category,
+          categories: mapProductCategories(p.categories as ProductCategoryWithCategory[]),
           variants: p.variants.map(v => ({
             id: v.id,
             name: v.name,
@@ -276,6 +337,7 @@ export const productRouter = createTRPCRouter({
             },
             orderBy: { price: 'asc' },
           },
+          ...productCategoryInclude,
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -289,6 +351,7 @@ export const productRouter = createTRPCRouter({
         platformName: p.platformName as Platform | null,
         title: p.title,
         region: p.region as unknown as Region,
+        categories: mapProductCategories(p.categories as ProductCategoryWithCategory[]),
         variants: p.variants.map(v => ({
           id: v.id,
           name: v.name,
@@ -323,6 +386,7 @@ export const productRouter = createTRPCRouter({
             },
             orderBy: { price: 'asc' },
           },
+          ...productCategoryInclude,
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -336,6 +400,7 @@ export const productRouter = createTRPCRouter({
         platformName: p.platformName as Platform | null,
         title: p.title,
         region: p.region as unknown as Region,
+        categories: mapProductCategories(p.categories as ProductCategoryWithCategory[]),
         variants: p.variants.map(v => ({
           id: v.id,
           name: v.name,
@@ -366,6 +431,7 @@ export const productRouter = createTRPCRouter({
             variants: {
               select: { id: true, name: true, price: true, originalPrice: true },
             },
+              ...productCategoryInclude,
           },
         },
       },
@@ -383,6 +449,7 @@ export const productRouter = createTRPCRouter({
         platformName: p.platformName as Platform | null,
         title: p.title,
         region: p.region as unknown as Region,
+        categories: mapProductCategories(p.categories as ProductCategoryWithCategory[]),
         variants: p.variants.map(v => ({
           id: v.id,
           name: v.name,
@@ -431,12 +498,7 @@ export const productRouter = createTRPCRouter({
     const product = await ctx.db.product.findUnique({
       where: { id: input.id },
       include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        ...productCategoryInclude,
         variants: {
           select: {
             id: true,
@@ -460,6 +522,7 @@ export const productRouter = createTRPCRouter({
 
     return {
       ...product,
+      categories: mapProductCategories(product.categories as ProductCategoryWithCategory[]),
       variants: product.variants.map(v => ({
         ...v,
         price: Number(v.price),
@@ -474,7 +537,7 @@ export const productRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).default(20),
         offset: z.number().min(0).default(0),
         search: z.string().optional(),
-        category: z.string().optional(),
+        categories: z.array(z.string()).optional(),
         isActive: z.boolean().optional(),
       })
     )
@@ -488,8 +551,18 @@ export const productRouter = createTRPCRouter({
         ];
       }
 
-      if (input.category) {
-        where.categoryId = input.category;
+      if (input.categories?.length) {
+        const descendantIdsSets = await Promise.all(
+          input.categories.map(categoryId => getCategoryWithDescendants(categoryId, ctx.db))
+        );
+        const uniqueCategoryIds = Array.from(new Set(descendantIdsSets.flat()));
+        where.categories = {
+          some: {
+            categoryId: {
+              in: uniqueCategoryIds,
+            },
+          },
+        };
       }
 
       if (input.isActive !== undefined) {
@@ -502,12 +575,7 @@ export const productRouter = createTRPCRouter({
           take: input.limit,
           skip: input.offset,
           include: {
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            ...productCategoryInclude,
             variants: {
               select: {
                 id: true,
@@ -525,8 +593,13 @@ export const productRouter = createTRPCRouter({
         ctx.db.product.count({ where }),
       ]);
 
+      const formattedProducts = products.map(product => ({
+        ...product,
+        categories: mapProductCategories(product.categories as ProductCategoryWithCategory[]),
+      }));
+
       return {
-        products,
+        products: formattedProducts,
         totalCount,
       };
     }),
@@ -538,12 +611,7 @@ export const productRouter = createTRPCRouter({
         where: { id: input.id },
         data: { isActive: input.isActive },
         include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          ...productCategoryInclude,
           variants: {
             select: {
               id: true,
@@ -556,7 +624,10 @@ export const productRouter = createTRPCRouter({
         },
       });
 
-      return product;
+      return {
+        ...product,
+        categories: mapProductCategories(product.categories as ProductCategoryWithCategory[]),
+      };
     }),
 
   toggleRecentlyViewed: adminProcedure
@@ -566,12 +637,7 @@ export const productRouter = createTRPCRouter({
         where: { id: input.id },
         data: { showInRecentlyViewed: input.showInRecentlyViewed },
         include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          ...productCategoryInclude,
           variants: {
             select: {
               id: true,
@@ -584,7 +650,10 @@ export const productRouter = createTRPCRouter({
         },
       });
 
-      return product;
+      return {
+        ...product,
+        categories: mapProductCategories(product.categories as ProductCategoryWithCategory[]),
+      };
     }),
 
   toggleRecommended: adminProcedure
@@ -594,12 +663,7 @@ export const productRouter = createTRPCRouter({
         where: { id: input.id },
         data: { showInRecommended: input.showInRecommended },
         include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          ...productCategoryInclude,
           variants: {
             select: {
               id: true,
@@ -612,22 +676,27 @@ export const productRouter = createTRPCRouter({
         },
       });
 
-      return product;
+      return {
+        ...product,
+        categories: mapProductCategories(product.categories as ProductCategoryWithCategory[]),
+      };
     }),
 
   create: adminProcedure.input(createProductSchema).mutation(async ({ input, ctx }) => {
-    console.log('Creating product with input:', input);
+    const uniqueCategoryIds = Array.from(new Set(input.categories));
 
-    // Validate that the category exists
-    const categoryExists = await ctx.db.category.findUnique({
-      where: { id: input.category },
+    const categories = await ctx.db.category.findMany({
+      where: { id: { in: uniqueCategoryIds } },
+      select: { id: true },
     });
 
-    if (!categoryExists) {
-      throw new Error('Category not found');
+    if (categories.length !== uniqueCategoryIds.length) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'One or more categories are invalid.',
+      });
     }
 
-    // Create the product
     const product = await ctx.db.product.create({
       data: {
         title: input.title,
@@ -638,7 +707,6 @@ export const productRouter = createTRPCRouter({
         platformIcon: input.platformIcon || null,
         platformName: input.platformName || null,
         region: input.region,
-        categoryId: input.category,
         keyFeatures: input.keyFeatures,
         deliveryInfo: input.deliveryInfo,
         deliverySteps: input.deliverySteps,
@@ -657,29 +725,79 @@ export const productRouter = createTRPCRouter({
             isInfiniteStock: true,
           })),
         },
-      },
-      include: {
-        variants: true,
-        category: true,
+      } as any,
+      select: {
+        id: true,
       },
     });
 
-    return product;
+    await (ctx.db as any).productCategory.createMany({
+      data: uniqueCategoryIds.map(categoryId => ({
+        productId: product.id,
+        categoryId,
+      })),
+      skipDuplicates: true,
+    });
+
+    const productWithRelations = await ctx.db.product.findUnique({
+      where: { id: product.id },
+      include: {
+        ...productCategoryInclude,
+        variants: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            originalPrice: true,
+            isActive: true,
+            stock: true,
+            isInfiniteStock: true,
+          },
+        },
+      },
+    });
+
+    if (!productWithRelations) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Failed to load product after creation.',
+      });
+    }
+
+    const categoriesWithData = (productWithRelations as any)
+      .categories as ProductCategoryWithCategory[];
+
+    const result = {
+      ...(productWithRelations as any),
+      categories: mapProductCategories(categoriesWithData),
+      variants: (productWithRelations as any).variants.map((v: any) => ({
+        ...v,
+        price: Number(v.price),
+        originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+      })),
+    };
+
+    // Auto-sync to Algolia
+    await syncProductToAlgolia(productWithRelations);
+
+    return result;
   }),
 
   update: adminProcedure.input(updateProductSchema).mutation(async ({ input, ctx }) => {
-    const { id, variants, category, ...updateData } = input;
+    const { id, variants, categories: categoryIds, ...updateData } = input;
 
-    // Validate that the category exists if provided
-    if (category) {
-      const categoryExists = await ctx.db.category.findUnique({
-        where: { id: category },
+    let uniqueCategoryIds: string[] = [];
+    if (categoryIds) {
+      uniqueCategoryIds = Array.from(new Set(categoryIds));
+      const categories = await ctx.db.category.findMany({
+        where: { id: { in: uniqueCategoryIds } },
+        select: { id: true },
       });
 
-      if (!categoryExists) {
+      if (categories.length !== uniqueCategoryIds.length) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Category not found',
+          code: 'BAD_REQUEST',
+          message: 'One or more categories are invalid.',
         });
       }
     }
@@ -691,7 +809,6 @@ export const productRouter = createTRPCRouter({
         where: { id },
         data: {
           ...updateData,
-          ...(category && { categoryId: category }),
         },
       });
 
@@ -767,16 +884,51 @@ export const productRouter = createTRPCRouter({
         }
       }
 
+      if (categoryIds) {
+        const existingCategories = await (tx as any).productCategory.findMany({
+          where: { productId: id },
+          select: { categoryId: true },
+        });
+        const existingCategoryIdSet = new Set(
+          (existingCategories as Array<{ categoryId: string }>).map(c => c.categoryId)
+        );
+        const targetCategoryIdSet = new Set(uniqueCategoryIds);
+
+        const categoriesToRemove = Array.from(existingCategoryIdSet).filter(
+          categoryId => !targetCategoryIdSet.has(categoryId)
+        );
+
+        const categoriesToAdd = uniqueCategoryIds.filter(
+          categoryId => !existingCategoryIdSet.has(categoryId)
+        );
+
+        if (categoriesToRemove.length) {
+          await (tx as any).productCategory.deleteMany({
+            where: {
+              productId: id,
+              categoryId: {
+                in: categoriesToRemove,
+              },
+            },
+          });
+        }
+
+        if (categoriesToAdd.length) {
+          await (tx as any).productCategory.createMany({
+            data: categoriesToAdd.map(categoryId => ({
+              productId: id,
+              categoryId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
       // Fetch and return the updated product with all relations
       const productWithRelations = await tx.product.findUnique({
         where: { id },
         include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          ...productCategoryInclude,
           variants: {
             select: {
               id: true,
@@ -791,8 +943,45 @@ export const productRouter = createTRPCRouter({
         },
       });
 
-      return productWithRelations;
+      if (!productWithRelations) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Product not found after update.',
+        });
+      }
+
+      const updatedCategories = (productWithRelations as any)
+        .categories as ProductCategoryWithCategory[];
+
+      return {
+        ...(productWithRelations as any),
+        categories: mapProductCategories(updatedCategories),
+        variants: (productWithRelations as any).variants.map((v: any) => ({
+          ...v,
+          price: Number(v.price),
+          originalPrice: v.originalPrice ? Number(v.originalPrice) : Number(v.price),
+        })),
+      };
     });
+
+    // Auto-sync to Algolia after update
+    const productWithRelations = await ctx.db.product.findUnique({
+      where: { id },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        variants: {
+          where: { isActive: true },
+        },
+      } as any,
+    });
+
+    if (productWithRelations) {
+      await syncProductToAlgolia(productWithRelations);
+    }
 
     return result;
   }),
@@ -816,6 +1005,9 @@ export const productRouter = createTRPCRouter({
       where: { id: input.id },
       data: { isActive: false },
     });
+
+    // Remove from Algolia when product is deactivated
+    await removeProductFromAlgolia(input.id);
 
     return { success: true, id: input.id };
   }),
@@ -845,6 +1037,11 @@ export const productRouter = createTRPCRouter({
         data: { isActive: false },
       });
 
+      // Remove from Algolia when products are deactivated
+      for (const id of ids) {
+        await removeProductFromAlgolia(id);
+      }
+
       return { success: true, count: result.count, ids };
     }),
 
@@ -868,6 +1065,25 @@ export const productRouter = createTRPCRouter({
       data: { isActive: true },
     });
 
+    // Re-sync to Algolia when product is restored
+    const productWithRelations = await ctx.db.product.findUnique({
+      where: { id: input.id },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        variants: {
+          where: { isActive: true },
+        },
+      } as any,
+    });
+
+    if (productWithRelations) {
+      await syncProductToAlgolia(productWithRelations);
+    }
+
     return { success: true, id: input.id };
   }),
 
@@ -881,6 +1097,25 @@ export const productRouter = createTRPCRouter({
         where: { id: { in: ids } },
         data: { isActive: true },
       });
+
+      // Re-sync to Algolia when products are restored
+      const productsWithRelations = await ctx.db.product.findMany({
+        where: { id: { in: ids } },
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+          variants: {
+            where: { isActive: true },
+          },
+        } as any,
+      });
+
+      for (const product of productsWithRelations) {
+        await syncProductToAlgolia(product);
+      }
 
       return { success: true, count: result.count, ids };
     }),

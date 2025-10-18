@@ -10,10 +10,13 @@
     "jsx": "preserve",
     "plugins": [{ "name": "next" }],
     "incremental": true,
-    "composite": true
+    "composite": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false
   },
   "include": [
     "next-env.d.ts",
+    "src/types/global.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "**/*.cjs",

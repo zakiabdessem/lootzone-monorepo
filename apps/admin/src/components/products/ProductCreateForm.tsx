@@ -24,12 +24,13 @@ import { FieldArray, FormikProvider, useFormik } from "formik";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
-import { Platform, Region } from "../../../../trpc-app/src/constants/enums";
+import { Platform, ProductCategory, Region } from "../../../../trpc-app/src/constants/enums";
 import BasicInformationSection from "./form-sections/BasicInformationSection";
 import DeliveryStepsManager from "./form-sections/DeliveryStepsManager";
 import ImportantNotesManager from "./form-sections/ImportantNotesManager";
 import KeyFeaturesManager from "./form-sections/KeyFeaturesManager";
 import MediaSection from "./form-sections/MediaSection";
+import CategoryCheckboxSelector from "./form-sections/CategoryCheckboxSelector";
 import VariantCard from "./form-sections/VariantCard";
 
 const Divider = styled(MuiDivider)(spacing);
@@ -112,9 +113,10 @@ const validationSchema = Yup.object().shape({
   isActive: Yup.boolean().default(true),
   showInRecentlyViewed: Yup.boolean().default(false),
   showInRecommended: Yup.boolean().default(false),
-  categoryId: Yup.string()
-    .min(1, "Category is required")
-    .required("Category is required"),
+  categoryIds: Yup.array()
+    .of(Yup.string().min(1, "Category is required"))
+    .min(1, "Select at least one category")
+    .required("Category selection is required"),
   keyFeatures: Yup.array()
     .of(Yup.string().min(1, "Key feature cannot be empty"))
     .min(1, "At least one key feature is required")
@@ -197,7 +199,7 @@ interface ProductFormValues {
   isActive: boolean;
   showInRecentlyViewed: boolean;
   showInRecommended: boolean;
-  categoryId?: string;
+  categoryIds: string[];
   keyFeatures: string[];
   deliveryInfo: string;
   deliverySteps: string[];
@@ -226,7 +228,7 @@ export default function ProductCreateForm({
     isActive: true,
     showInRecentlyViewed: false,
     showInRecommended: false,
-    categoryId: "",
+    categoryIds: [],
     keyFeatures: [],
     deliveryInfo: "",
     deliverySteps: [],
@@ -255,8 +257,8 @@ export default function ProductCreateForm({
                 platformIcon: values.platformIcon || undefined,
               }
             : {}),
-          // Map categoryId to category field expected by backend
-          category: values.categoryId,
+          // Map categoryIds to categories array expected by backend
+          categories: values.categoryIds,
           // Ensure variants have the correct structure
           variants: values.variants.map((variant) => ({
             id: variant.id,
@@ -267,11 +269,9 @@ export default function ProductCreateForm({
           })),
         };
 
-        // Remove categoryId since we're sending it as category
-        delete transformedValues.categoryId;
-
         console.log("Transformed values for submission:", transformedValues);
-        await onSubmit(transformedValues);
+        const { categoryIds: _omitCategoryIds, ...submitPayload } = transformedValues;
+        await onSubmit(submitPayload);
       } catch (error) {
         console.error("Form submission error:", error);
         setSubmitting(false);
@@ -327,7 +327,9 @@ export default function ProductCreateForm({
     };
   }, [values.slug, checkSlug]);
 
-  const { data: categories } = api.category.getProduct.useQuery();
+  const { data: categories, isLoading: categoriesLoading } = api.category.getAll.useQuery({
+    type: ProductCategory.PRODUCT,
+  });
 
   return (
     <FormikProvider value={formik}>
@@ -442,31 +444,19 @@ export default function ProductCreateForm({
                 </FormControl>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
-                <FormControl
-                  fullWidth
-                  error={touched.categoryId && Boolean(errors.categoryId)}
-                >
-                  <InputLabel>Category</InputLabel>
-                  <Select
-                    name="categoryId"
-                    value={values.categoryId}
-                    onChange={handleChange}
-                    label="Category"
-                  >
-                    {categories?.map((category : {
-                      id: string;
-                      name: string;
-                    }) => (
-                      <MenuItem key={category.id} value={category.id}>
-                        {category.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {touched.categoryId && errors.categoryId && (
-                    <FormHelperText>{errors.categoryId}</FormHelperText>
-                  )}
-                </FormControl>
+              <Grid size={12}>
+                <CategoryCheckboxSelector
+                  categories={categories ?? []}
+                  selectedCategoryIds={values.categoryIds}
+                  onChange={(newIds: string[]) => setFieldValue("categoryIds", newIds)}
+                  error={touched.categoryIds && Boolean(errors.categoryIds)}
+                  helperText={
+                    touched.categoryIds && typeof errors.categoryIds === "string"
+                      ? errors.categoryIds
+                      : undefined
+                  }
+                  isLoading={categoriesLoading}
+                />
               </Grid>
 
               <Grid size={{ xs: 12, md: 6 }}>

@@ -73,7 +73,7 @@ model Category {
     parentId    String?
     parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
     children    Category[] @relation("CategoryHierarchy")
-    products    Product[]
+    products    ProductCategory[]
     createdAt   DateTime  @default(now())
     updatedAt   DateTime  @updatedAt
 
@@ -94,8 +94,6 @@ model Product {
     platformIcon      String?
     platformName      String?
     region            String           @default("GLOBAL")
-    categoryId        String
-    category          Category         @relation(fields: [categoryId], references: [id])
     variants          ProductVariant[]
     keyFeatures       String[]
     deliveryInfo          String?
@@ -109,16 +107,29 @@ model Product {
     favorites             UserFavorite[]
     slides                Slide[]          // Slides featuring this product
     heroSlides            HeroSlide[]      // Hero carousel slides
+    categories            ProductCategory[]
     createdAt             DateTime         @default(now())
     updatedAt             DateTime         @updatedAt
 
     @@index([slug])
-    @@index([categoryId])
     @@index([region])
     @@index([isActive])
     @@index([createdAt])
     @@index([showInRecentlyViewed])
     @@index([showInRecommended])
+}
+
+model ProductCategory {
+    id         String   @id @default(cuid())
+    productId  String
+    categoryId String
+    product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    createdAt  DateTime @default(now())
+
+    @@unique([productId, categoryId])
+    @@index([productId])
+    @@index([categoryId])
 }
 
 model ProductVariant {

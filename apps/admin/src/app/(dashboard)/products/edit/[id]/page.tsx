@@ -97,7 +97,8 @@ function EditProductPage() {
     platformIcon: product.platformIcon || null,
     platformName: product.platformName || null,
     region: product.region,
-    categoryId: product.categoryId, // Use categoryId for the form
+    categoryIds:
+      product.categories?.map((productCategory: any) => productCategory.categoryId) || [],
     keyFeatures: product.keyFeatures || [],
     deliveryInfo: product.deliveryInfo || "",
     deliverySteps: product.deliverySteps || [],
