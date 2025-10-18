@@ -11,6 +11,14 @@ export const heroSlideRouter = createTRPCRouter({
           include: {
             variants: {
               where: { isActive: true },
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                originalPrice: true,
+                stock: true,
+                isInfiniteStock: true,
+              },
               orderBy: { price: 'asc' },
               take: 1,
             },
@@ -28,6 +36,14 @@ export const heroSlideRouter = createTRPCRouter({
           include: {
             variants: {
               where: { isActive: true },
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                originalPrice: true,
+                stock: true,
+                isInfiniteStock: true,
+              },
               orderBy: { price: 'asc' },
               take: 1,
             },
