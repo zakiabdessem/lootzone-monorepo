@@ -1,4 +1,3 @@
-// @ts-ignore - algoliasearch types not available
 import algoliasearch from "algoliasearch";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -14,7 +13,7 @@ const ensureAlgoliaIndex = () => {
 
   if (!env.ALGOLIA_APP_ID || !env.ALGOLIA_SEARCH_KEY || !env.ALGOLIA_PRODUCTS_INDEX) {
     throw new TRPCError({
-      code: "BAD_REQUEST",
+      code: "NOT_IMPLEMENTED",
       message: "Algolia search is not configured. Please set ALGOLIA_APP_ID, ALGOLIA_SEARCH_KEY and ALGOLIA_PRODUCTS_INDEX environment variables.",
     });
   }
@@ -98,6 +97,33 @@ const transformHit = (hit: Record<string, unknown>) => {
     highlightResult?.name?.value,
   );
 
+  // Extract variants from Algolia or create default variant
+  let variants: Array<{ id: string; name: string; price: number; originalPrice?: number | null }> = [];
+  
+  console.log('🔍 [Algolia] Raw variants from record:', record.variants);
+  
+  if (Array.isArray(record.variants) && record.variants.length > 0) {
+    // Use variants from Algolia if available
+    console.log('✅ [Algolia] Using variants from Algolia index');
+    variants = record.variants.map((v: any) => ({
+      id: String(v.id ?? `${id}-variant-${Math.random()}`),
+      name: String(v.name ?? "Default"),
+      price: Number(v.price ?? 0),
+      originalPrice: v.originalPrice !== undefined ? Number(v.originalPrice) : undefined,
+    }));
+  } else if (price !== undefined) {
+    // Fallback: create default variant from price fields
+    console.log('⚠️ [Algolia] No variants in index, creating default variant');
+    variants = [{
+      id: `${id}-variant-1`,
+      name: "Default",
+      price: price,
+      originalPrice: originalPrice ?? undefined,
+    }];
+  }
+  
+  console.log('🔍 [Algolia] Final variants:', variants);
+
   return {
     id,
     title,
@@ -109,8 +135,11 @@ const transformHit = (hit: Record<string, unknown>) => {
     badge,
     tags,
     highlightedTitle,
-  } as const;
+    variants,
+  };
 };
+
+console.log('🔍 [Algolia] Search router loaded and initialized');
 
 export const searchRouter = createTRPCRouter({
   products: publicProcedure
@@ -120,58 +149,27 @@ export const searchRouter = createTRPCRouter({
         limit: z.number().min(1).max(20).default(6),
       }),
     )
-    .query(async ({ input, ctx }) => {
-      // Try Algolia first
+    .query(async ({ input }) => {
+      console.log('🔍 [Algolia] Products search called with query:', input.query);
+      const index = ensureAlgoliaIndex();
+
       try {
-        const index = ensureAlgoliaIndex();
         const response = await index.search(input.query, {
           hitsPerPage: input.limit,
           attributesToHighlight: ["title", "name"],
+          attributesToRetrieve: ["*"], // Retrieve all attributes including variants
         });
 
-        return response.hits.map((hit: any) => transformHit(hit as Record<string, unknown>));
-      } catch (error) {
-        console.log("Algolia not available, falling back to database search");
+        console.log('🔍 [Algolia] Search response hits:', response.hits.length);
+        console.log('🔍 [Algolia] First hit sample:', JSON.stringify(response.hits[0], null, 2));
         
-        // Fallback to database search
-        const products = await ctx.db.product.findMany({
-          where: {
-            isActive: true,
-            OR: [
-              { title: { contains: input.query, mode: 'insensitive' } },
-              { description: { contains: input.query, mode: 'insensitive' } },
-              { platformName: { contains: input.query, mode: 'insensitive' } },
-            ],
-          },
-          include: {
-            variants: {
-              where: { isActive: true },
-            },
-            categories: {
-              include: {
-                category: true,
-              },
-            },
-          } as any,
-          take: input.limit,
-          orderBy: { createdAt: 'desc' },
-        });
-
-        return products.map(product => {
-          const productWithVariants = product as any;
-          return {
-            id: product.id,
-            title: product.title,
-            slug: product.slug,
-            image: product.image,
-            region: product.region,
-            price: productWithVariants.variants?.length > 0 ? Math.min(...productWithVariants.variants.map((v: any) => v.price)) : undefined,
-            originalPrice: productWithVariants.variants?.length > 0 ? Math.max(...productWithVariants.variants.map((v: any) => v.originalPrice || v.price)) : undefined,
-            badge: product.platformName,
-            tags: product.keyFeatures,
-            highlightedTitle: product.title,
-          };
-        });
+        const transformedHits = response.hits.map(hit => transformHit(hit as Record<string, unknown>));
+        console.log('🔍 [Algolia] First transformed hit:', JSON.stringify(transformedHits[0], null, 2));
+        
+        return transformedHits;
+      } catch (error) {
+        console.error("Algolia search error", error);
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unable to search products right now." });
       }
     }),
   popular: publicProcedure
@@ -182,54 +180,19 @@ export const searchRouter = createTRPCRouter({
         })
         .optional(),
     )
-    .query(async ({ input, ctx }) => {
-      // Try Algolia first
+    .query(async ({ input }) => {
+      const index = ensureAlgoliaIndex();
+
       try {
-        const index = ensureAlgoliaIndex();
         const response = await index.search("", {
           hitsPerPage: input?.limit ?? 6,
           attributesToHighlight: ["title", "name"],
         });
 
-        return response.hits.map((hit: any) => transformHit(hit as Record<string, unknown>));
+        return response.hits.map(hit => transformHit(hit as Record<string, unknown>));
       } catch (error) {
-        console.log("Algolia not available, falling back to database for popular products");
-        
-        // Fallback to database - get popular products
-        const products = await ctx.db.product.findMany({
-          where: {
-            isActive: true,
-            showInRecommended: true,
-          },
-          include: {
-            variants: {
-              where: { isActive: true },
-            },
-            categories: {
-              include: {
-                category: true,
-              },
-            },
-          } as any,
-          take: input?.limit ?? 6,
-          orderBy: { createdAt: 'desc' },
-        });
-
-        return products.map(product => {
-          const productWithVariants = product as any;
-          return {
-            id: product.id,
-            title: product.title,
-            slug: product.slug,
-            image: product.image,
-            region: product.region,
-            price: productWithVariants.variants?.length > 0 ? Math.min(...productWithVariants.variants.map((v: any) => v.price)) : undefined,
-            originalPrice: productWithVariants.variants?.length > 0 ? Math.max(...productWithVariants.variants.map((v: any) => v.originalPrice || v.price)) : undefined,
-            badge: product.platformName,
-            tags: product.keyFeatures,
-            highlightedTitle: product.title,
-          };
-        });
+        console.error("Algolia popular search error", error);
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unable to fetch suggested products." });
       }
     }),
 });

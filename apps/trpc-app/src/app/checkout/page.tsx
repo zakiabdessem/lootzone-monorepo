@@ -856,7 +856,7 @@ export default function CheckoutPage() {
             <div className='p-6 space-y-4'>
               <div className='bg-gray-50 rounded-none border border-gray-200'>
                 <Image
-                  src='https://res.cloudinary.com/dlua23dqn/image/upload/v1759784340/5944920060281866342_j8ygke.jpg'
+                  src='https://res.cloudinary.com/dlua23dqn/image/upload/v1760899938/5944920060281866342_xyeji7.jpg'
                   alt='Example Flexy receipt'
                   width={400}
                   height={600}
