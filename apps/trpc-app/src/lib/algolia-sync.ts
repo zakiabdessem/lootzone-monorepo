@@ -32,6 +32,9 @@ export function transformProductForAlgolia(product: any) {
       name: variant.name,
       price: variant.price,
       originalPrice: variant.originalPrice,
+      stock: variant.stock,
+      isInfiniteStock: variant.isInfiniteStock,
+      isActive: variant.isActive,
     })) || [],
     minPrice: productWithVariants.variants?.length > 0 
       ? Math.min(...productWithVariants.variants.map((v: any) => v.price)) 

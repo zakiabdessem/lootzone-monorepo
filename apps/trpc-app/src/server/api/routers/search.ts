@@ -110,6 +110,9 @@ const transformHit = (hit: Record<string, unknown>) => {
       name: String(v.name ?? "Default"),
       price: Number(v.price ?? 0),
       originalPrice: v.originalPrice !== undefined ? Number(v.originalPrice) : undefined,
+      stock: v.stock !== undefined ? Number(v.stock) : undefined,
+      isInfiniteStock: v.isInfiniteStock !== undefined ? Boolean(v.isInfiniteStock) : false,
+      isActive: v.isActive !== undefined ? Boolean(v.isActive) : true,
     }));
   } else if (price !== undefined) {
     // Fallback: create default variant from price fields
@@ -119,6 +122,9 @@ const transformHit = (hit: Record<string, unknown>) => {
       name: "Default",
       price: price,
       originalPrice: originalPrice ?? undefined,
+      stock: undefined,
+      isInfiniteStock: false,
+      isActive: true,
     }];
   }
   
