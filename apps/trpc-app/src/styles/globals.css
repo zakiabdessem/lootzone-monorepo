@@ -304,3 +304,12 @@
   background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
   background-size: 16px 16px;
 }
+
+/* ===== Hide Mobile Dock when filters open ===== */
+@media (max-width: 1024px) {
+  body.hide-mobile-dock [role="toolbar"] {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease;
+  }
+}

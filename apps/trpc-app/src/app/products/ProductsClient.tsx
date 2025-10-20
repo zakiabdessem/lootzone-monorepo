@@ -142,15 +142,19 @@ export default function ProductsClient() {
     setIsMobileFiltersOpen(false);
   };
 
-  // Prevent body scroll when mobile filters open
+  // Prevent body scroll and hide dock when mobile filters open
   useEffect(() => {
     if (isMobileFiltersOpen) {
       document.body.style.overflow = 'hidden';
+      // Hide the mobile dock by adding a class to body
+      document.body.classList.add('hide-mobile-dock');
     } else {
       document.body.style.overflow = 'unset';
+      document.body.classList.remove('hide-mobile-dock');
     }
     return () => {
       document.body.style.overflow = 'unset';
+      document.body.classList.remove('hide-mobile-dock');
     };
   }, [isMobileFiltersOpen]);
 
@@ -241,12 +245,12 @@ export default function ProductsClient() {
           <>
             {/* Backdrop - clickable overlay */}
             <div 
-              className='fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm'
+              className='fixed inset-0 bg-black/60 z-[9998] lg:hidden backdrop-blur-sm'
               onClick={() => setIsMobileFiltersOpen(false)}
             />
             
             {/* Filter Panel - Slide from left */}
-            <div className='fixed left-0 top-0 bottom-0 w-[85%] max-w-[320px] z-50 lg:hidden transform transition-transform duration-300 ease-out'>
+            <div className='fixed left-0 top-0 bottom-0 w-[85%] max-w-[320px] z-[9999] lg:hidden transform transition-transform duration-300 ease-out'>
               <div className='bg-white flex flex-col h-full shadow-2xl'>
                 {/* Header */}
                 <div className='flex items-center justify-between border-b border-gray-200 p-4 bg-gradient-to-r from-[#4618AC] to-[#5a2db8]'>
