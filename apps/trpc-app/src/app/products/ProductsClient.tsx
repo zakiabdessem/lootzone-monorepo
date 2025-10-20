@@ -58,6 +58,14 @@ export default function ProductsClient() {
 
   const algoliaResults = algoliaSearch.data ?? [];
 
+  // 🐛 DEBUG: Log Algolia results
+  useEffect(() => {
+    if (shouldSearch && algoliaResults.length > 0) {
+      console.log('🔍 [ProductsClient] Algolia search results:', algoliaResults);
+      console.log('🔍 [ProductsClient] First result variants:', algoliaResults[0]?.variants);
+    }
+  }, [algoliaResults, shouldSearch]);
+
   // Sync helpers
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(window.location.search);
@@ -92,6 +100,10 @@ export default function ProductsClient() {
   // Determine which products to display
   const useAlgoliaResults = shouldSearch;
   const displayProducts = useAlgoliaResults ? algoliaResults : (data?.items ?? []);
+  
+  // 🐛 DEBUG: Log display source
+  console.log('🔍 [ProductsClient] Using Algolia results:', useAlgoliaResults);
+  console.log('🔍 [ProductsClient] Display products count:', displayProducts.length);
   
   const filteredProducts = displayProducts.filter(p => {
     let matches = true;

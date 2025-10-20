@@ -29,6 +29,9 @@ export const ProductCard: React.FC<IProductCard> = ({
   region = 'GLOBAL',
   liked = false,
 }) => {
+  // 🐛 DEBUG: Log product data
+  console.log('🔍 [ProductCard] Rendering product:', { id, title, variants });
+
   const { isLiked, toggle, isUpdating } = useWishlist();
   const { addToCart, isInCart, isUpdating: isCartUpdating } = useCart();
   const [showCartSuccess, setShowCartSuccess] = useState(false);
@@ -63,19 +66,36 @@ export const ProductCard: React.FC<IProductCard> = ({
   // Check if out of stock
   // A product is out of stock if ALL variants have finite stock (isInfiniteStock: false) AND stock is 0
   const isOutOfStock = useMemo(() => {
-    if (!variants || variants.length === 0) return false;
+    if (!variants || variants.length === 0) {
+      console.log('🔍 [ProductCard] No variants found for:', title);
+      return false;
+    }
     
-    return variants.every(v => {
+    const result = variants.every(v => {
       // If infinite stock is enabled, product is available
-      if (v.isInfiniteStock) return false;
+      if (v.isInfiniteStock) {
+        console.log('🔍 [ProductCard] Variant has infinite stock:', { title, variant: v.name, isInfiniteStock: v.isInfiniteStock });
+        return false;
+      }
       
       // If stock is undefined or null, treat as 0
       const currentStock = v.stock ?? 0;
       
+      console.log('🔍 [ProductCard] Checking variant stock:', { 
+        title, 
+        variant: v.name, 
+        stock: v.stock, 
+        currentStock, 
+        isInfiniteStock: v.isInfiniteStock 
+      });
+      
       // Out of stock if stock is 0 and not infinite
       return currentStock === 0;
     });
-  }, [variants]);
+    
+    console.log('🔍 [ProductCard] Out of stock result:', { title, isOutOfStock: result });
+    return result;
+  }, [variants, title]);
 
   const likedComputed = useMemo(() => liked || isLiked(id), [liked, id, isLiked]);
 
