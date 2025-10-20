@@ -239,21 +239,21 @@ export default function ProductsClient() {
         {/* Mobile Filter Panel */}
         {isMobileFiltersOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop - clickable overlay */}
             <div 
-              className='fixed inset-0 bg-black/50 z-40 lg:hidden'
+              className='fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm'
               onClick={() => setIsMobileFiltersOpen(false)}
             />
             
-            {/* Filter Panel */}
-            <div className='fixed inset-x-0 bottom-0 top-0 z-50 lg:hidden'>
-              <div className='absolute inset-0 bg-white flex flex-col h-full'>
+            {/* Filter Panel - Slide from left */}
+            <div className='fixed left-0 top-0 bottom-0 w-[85%] max-w-[320px] z-50 lg:hidden transform transition-transform duration-300 ease-out'>
+              <div className='bg-white flex flex-col h-full shadow-2xl'>
                 {/* Header */}
-                <div className='flex items-center justify-between border-b border-gray-200 p-4'>
-                  <h2 className='text-lg font-bold text-[#212121]'>Filters</h2>
+                <div className='flex items-center justify-between border-b border-gray-200 p-4 bg-gradient-to-r from-[#4618AC] to-[#5a2db8]'>
+                  <h2 className='text-lg font-bold text-white'>Filters</h2>
                   <button
                     onClick={() => setIsMobileFiltersOpen(false)}
-                    className='text-gray-500 hover:text-gray-700'
+                    className='text-white hover:text-gray-200 transition'
                     aria-label='Close filters'
                   >
                     <X className='h-6 w-6' />
@@ -266,16 +266,16 @@ export default function ProductsClient() {
                 </div>
 
                 {/* Footer Actions */}
-                <div className='border-t border-gray-200 p-4 flex gap-3'>
+                <div className='border-t border-gray-200 p-4 flex gap-3 bg-gray-50'>
                   <button
                     onClick={clearFilters}
-                    className='flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg text-sm font-semibold transition'
+                    className='flex-1 bg-white hover:bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-semibold transition border border-gray-300'
                   >
                     🔄 RESET
                   </button>
                   <button
                     onClick={applyFilters}
-                    className='flex-1 bg-[#4618AC] hover:bg-[#381488] text-white px-6 py-3 rounded-lg text-sm font-semibold transition'
+                    className='flex-1 bg-[#4618AC] hover:bg-[#381488] text-white px-4 py-3 rounded-lg text-sm font-semibold transition shadow-md'
                   >
                     ✨ APPLY
                   </button>
