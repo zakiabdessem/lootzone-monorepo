@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { api } from '~/trpc/react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Button } from '~/app/_components/landing/ui/button';
+import { Input } from '~/app/_components/landing/ui/input';
 import { CheckCircle2, XCircle, Loader2, Tag } from 'lucide-react';
 
 interface CouponInputProps {
