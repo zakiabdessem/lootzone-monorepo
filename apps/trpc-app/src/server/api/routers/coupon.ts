@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
+import { createTRPCRouter, adminProcedure, publicProcedure } from '~/server/api/trpc';
 import { TRPCError } from '@trpc/server';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -190,7 +190,7 @@ export const couponRouter = createTRPCRouter({
   /**
    * ADMIN: Get all coupons with pagination and filters
    */
-  getAll: protectedProcedure
+  getAll: adminProcedure
     .input(
       z.object({
         page: z.number().min(1).default(1),
@@ -249,7 +249,7 @@ export const couponRouter = createTRPCRouter({
   /**
    * ADMIN: Get coupon by ID
    */
-  getById: protectedProcedure
+  getById: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       const coupon = await ctx.db.coupon.findUnique({
@@ -295,7 +295,7 @@ export const couponRouter = createTRPCRouter({
   /**
    * ADMIN: Create new coupon
    */
-  create: protectedProcedure
+  create: adminProcedure
     .input(
       z.object({
         code: z.string().min(3).max(20),
@@ -361,7 +361,7 @@ export const couponRouter = createTRPCRouter({
   /**
    * ADMIN: Update coupon
    */
-  update: protectedProcedure
+  update: adminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -438,7 +438,7 @@ export const couponRouter = createTRPCRouter({
   /**
    * ADMIN: Delete coupon (soft delete if used, hard delete otherwise)
    */
-  delete: protectedProcedure
+  delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const coupon = await ctx.db.coupon.findUnique({
@@ -477,7 +477,7 @@ export const couponRouter = createTRPCRouter({
   /**
    * ADMIN: Get usage statistics
    */
-  getStats: protectedProcedure
+  getStats: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       const coupon = await ctx.db.coupon.findUnique({
