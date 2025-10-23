@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '~/server/db';
 import { chargilyService } from '~/server/services/chargily.service';
 import { PaymentStatus } from '~/constants/enums';
+import { validateAndCalculateDiscount } from '~/server/api/routers/coupon';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // Store processed webhook events to prevent duplicates
 const processedEvents = new Set<string>();
@@ -68,15 +70,51 @@ export async function POST(req: NextRequest) {
 
       // Create order from draft
       const cartSnapshot = draft.cartSnapshot as any;
+      const subtotal = cartSnapshot.subtotal || 0;
+      const subtotalBeforeDiscount = subtotal;
+      
+      // Re-validate and calculate coupon discount (security: never trust client)
+      let discountAmount = 0;
+      let couponId: string | undefined;
+      let couponCode: string | undefined;
+
+      if (draft.couponCode) {
+        try {
+          const result = await validateAndCalculateDiscount(
+            db,
+            draft.couponCode,
+            subtotal,
+            draft.email,
+            draft.ipAddress || undefined
+          );
+          
+          discountAmount = result.discountAmount;
+          couponId = result.coupon.id;
+          couponCode = result.coupon.code;
+          
+          console.log('[Webhook] Coupon validated:', couponCode, 'Discount:', discountAmount);
+        } catch (error) {
+          console.error('[Webhook] Coupon validation failed:', error);
+          // Continue without coupon if it's no longer valid
+        }
+      }
+
+      // Calculate final amount with discount
+      const finalAmount = subtotal - discountAmount;
+
       const order = await db.order.create({
         data: {
           userId: draft.userId || undefined,
-          totalAmount: cartSnapshot.subtotal,
+          totalAmount: finalAmount,
           currency: cartSnapshot.currency || 'DZD',
           paymentMethod: draft.paymentMethod || 'edahabia',
           paymentStatus: PaymentStatus.PAID,
           status: 'pending', // Order processing status
           checkoutDraftId: draft.id,
+          couponId: couponId,
+          couponCode: couponCode,
+          discountAmount: new Decimal(discountAmount),
+          subtotalBeforeDiscount: discountAmount > 0 ? new Decimal(subtotalBeforeDiscount) : null,
           chargilyWebhookEvents: [body],
           items: {
             create: cartSnapshot.items.map((item: any) => ({
@@ -97,6 +135,15 @@ export async function POST(req: NextRequest) {
           },
         },
       });
+
+      // Atomically increment coupon usage if coupon was used
+      if (couponId) {
+        await db.coupon.update({
+          where: { id: couponId },
+          data: { currentUses: { increment: 1 } },
+        });
+        console.log('[Webhook] Coupon usage incremented:', couponCode);
+      }
 
       console.log('[Webhook] Order created:', order.id);
 
@@ -128,11 +175,12 @@ export async function POST(req: NextRequest) {
               price: Number(item.price),
               totalPrice: Number(item.totalPrice),
             })),
-            subtotal: Number(cartSnapshot.subtotal),
+            subtotal: subtotalBeforeDiscount,
+            discount: discountAmount > 0 ? { code: couponCode!, amount: discountAmount } : undefined,
             totalAmount: Number(order.totalAmount),
             currency: order.currency,
             createdAt: order.createdAt,
-            notes: `Chargily Payment - Checkout ID: ${checkoutId}`,
+            notes: `Chargily Payment - Checkout ID: ${checkoutId}${couponCode ? ` - Coupon: ${couponCode}` : ''}`,
           });
         } catch (error) {
           console.error('[Webhook] Failed to send Telegram notification:', error);

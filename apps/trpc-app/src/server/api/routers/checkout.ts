@@ -8,6 +8,8 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { chargilyService } from '~/server/services/chargily.service';
 import { PaymentMethod, PaymentStatus } from '~/constants/enums';
+import { validateAndCalculateDiscount, sanitizeCouponCode } from './coupon';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export const checkoutRouter = createTRPCRouter({
   /**
@@ -95,6 +97,7 @@ export const checkoutRouter = createTRPCRouter({
           subtotal: z.number().positive(),
           currency: z.string().default('DZD'),
         }),
+        couponCode: z.string().optional(),
         guestSessionToken: z.string().optional(),
         ipAddress: z.string().optional(),
       })
@@ -105,13 +108,52 @@ export const checkoutRouter = createTRPCRouter({
         const tokenExpiresAt = new Date();
         tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 24);
 
+        let couponData: { code?: string; discountAmount?: Decimal; cartSnapshot: any } = {
+          cartSnapshot: input.cartSnapshot,
+        };
+
+        // Validate and apply coupon if provided
+        if (input.couponCode) {
+          try {
+            const result = await validateAndCalculateDiscount(
+              ctx.db,
+              input.couponCode,
+              input.cartSnapshot.subtotal,
+              input.email,
+              input.ipAddress
+            );
+
+            couponData.code = result.coupon.code;
+            couponData.discountAmount = new Decimal(result.discountAmount);
+            
+            // Add discount info to cart snapshot
+            couponData.cartSnapshot = {
+              ...input.cartSnapshot,
+              discount: {
+                code: result.coupon.code,
+                type: result.coupon.discountType,
+                value: Number(result.coupon.discountValue),
+                amount: result.discountAmount,
+              },
+            };
+
+            console.log('[Checkout] Coupon applied:', result.coupon.code, 'Discount:', result.discountAmount);
+          } catch (error) {
+            // Log but don't fail the draft creation
+            console.warn('[Checkout] Coupon validation failed:', error);
+            throw error; // Re-throw to inform user
+          }
+        }
+
         // Create checkout draft
         const draft = await ctx.db.checkoutDraft.create({
           data: {
             email: input.email,
             phone: input.phone,
             fullName: input.fullName,
-            cartSnapshot: input.cartSnapshot,
+            cartSnapshot: couponData.cartSnapshot,
+            couponCode: couponData.code,
+            discountAmount: couponData.discountAmount,
             userId: ctx.session?.user?.id, // Optional if user is logged in
             guestSessionToken: input.guestSessionToken,
             ipAddress: input.ipAddress,
@@ -129,9 +171,15 @@ export const checkoutRouter = createTRPCRouter({
           draftId: draft.id,
           continueToken: draft.continueToken,
           expiresAt: draft.tokenExpiresAt.toISOString(),
+          discountAmount: couponData.discountAmount ? Number(couponData.discountAmount) : undefined,
         };
       } catch (error) {
         console.error('[Checkout] Error saving draft:', error);
+        
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to save checkout draft',
@@ -293,13 +341,46 @@ export const checkoutRouter = createTRPCRouter({
             });
           }
 
-          // Calculate total with 20% Flexy fee
+          // Get cart snapshot
           const cartSnapshot = draft.cartSnapshot as any;
           const subtotal = cartSnapshot.subtotal || 0;
-          const flexyFee = subtotal * 0.2; // 20% fee
-          const totalAmount = subtotal + flexyFee;
+          const subtotalBeforeDiscount = subtotal;
+          
+          // Re-validate and calculate coupon discount (security: never trust client)
+          let discountAmount = 0;
+          let couponId: string | undefined;
+          let couponCode: string | undefined;
 
-          console.log('[Checkout] Creating order for Flexy payment. Subtotal:', subtotal, 'Fee:', flexyFee, 'Total:', totalAmount);
+          if (draft.couponCode) {
+            try {
+              const result = await validateAndCalculateDiscount(
+                ctx.db,
+                draft.couponCode,
+                subtotal,
+                draft.email,
+                draft.ipAddress || undefined
+              );
+              
+              discountAmount = result.discountAmount;
+              couponId = result.coupon.id;
+              couponCode = result.coupon.code;
+              
+              console.log('[Checkout] Coupon re-validated:', couponCode, 'Discount:', discountAmount);
+            } catch (error) {
+              console.error('[Checkout] Coupon validation failed during payment:', error);
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: 'Coupon is no longer valid. Please try again without the coupon.',
+              });
+            }
+          }
+
+          // Calculate total: apply discount first, then add Flexy fee on discounted amount
+          const discountedSubtotal = subtotal - discountAmount;
+          const flexyFee = discountedSubtotal * 0.2; // 20% fee on discounted amount
+          const totalAmount = discountedSubtotal + flexyFee;
+
+          console.log('[Checkout] Flexy payment calculation - Original:', subtotal, 'Discount:', discountAmount, 'Discounted:', discountedSubtotal, 'Fee:', flexyFee, 'Total:', totalAmount);
 
           // Update draft with Flexy receipt info first
           await ctx.db.checkoutDraft.update({
@@ -321,6 +402,10 @@ export const checkoutRouter = createTRPCRouter({
               totalAmount: totalAmount,
               currency: cartSnapshot.currency || 'DZD',
               checkoutDraftId: draft.id, // Link order to draft (correct relation direction)
+              couponId: couponId,
+              couponCode: couponCode,
+              discountAmount: new Decimal(discountAmount),
+              subtotalBeforeDiscount: discountAmount > 0 ? new Decimal(subtotalBeforeDiscount) : null,
               items: {
                 create: cartSnapshot.items.map((item: any) => ({
                   productId: item.productId,
@@ -331,7 +416,7 @@ export const checkoutRouter = createTRPCRouter({
                 })),
               },
               chargilyWebhookEvents: [], // Empty for Flexy
-              notes: `Flexy Payment - Was made at ${input.flexyData.paymentTime}`,
+              notes: `Flexy Payment - Was made at ${input.flexyData.paymentTime}${couponCode ? ` - Coupon: ${couponCode}` : ''}`,
             },
             include: {
               items: {
@@ -342,6 +427,15 @@ export const checkoutRouter = createTRPCRouter({
               },
             },
           });
+
+          // Atomically increment coupon usage if coupon was used
+          if (couponId) {
+            await ctx.db.coupon.update({
+              where: { id: couponId },
+              data: { currentUses: { increment: 1 } },
+            });
+            console.log('[Checkout] Coupon usage incremented:', couponCode);
+          }
 
           console.log('[Checkout] Flexy payment submitted successfully. Order ID:', order.id);
 
@@ -364,7 +458,8 @@ export const checkoutRouter = createTRPCRouter({
                   price: Number(item.price),
                   totalPrice: Number(item.totalPrice),
                 })),
-                subtotal: subtotal,
+                subtotal: subtotalBeforeDiscount,
+                discount: discountAmount > 0 ? { code: couponCode!, amount: discountAmount } : undefined,
                 fees: flexyFee,
                 totalAmount: Number(order.totalAmount),
                 currency: order.currency,

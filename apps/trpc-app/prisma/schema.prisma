@@ -169,6 +169,13 @@ model Order {
     checkoutDraftId String?      @unique
     checkoutDraft   CheckoutDraft? @relation(fields: [checkoutDraftId], references: [id])
     
+    // Coupon/discount tracking
+    couponId              String?
+    appliedCoupon         Coupon?  @relation("CouponOrders", fields: [couponId], references: [id])
+    couponCode            String?  // Snapshot of code used
+    discountAmount        Decimal  @default(0) @db.Decimal(10, 2)
+    subtotalBeforeDiscount Decimal? @db.Decimal(10, 2)
+    
     // Chargily webhook events for audit
     chargilyWebhookEvents Json[]
     
@@ -179,6 +186,7 @@ model Order {
     @@index([status])
     @@index([paymentStatus])
     @@index([createdAt])
+    @@index([couponId])
 }
 
 model OrderItem {
@@ -287,6 +295,25 @@ model GuestSession {
     @@index([ipAddress])
 }
 
+model Coupon {
+    id                String    @id @default(cuid())
+    code              String    @unique
+    discountType      String    // "percentage" or "fixed"
+    discountValue     Decimal   @db.Decimal(10, 2)
+    minOrderAmount    Decimal?  @db.Decimal(10, 2)
+    maxUses           Int?      // null = unlimited
+    currentUses       Int       @default(0)
+    expiresAt         DateTime?
+    isActive          Boolean   @default(true)
+    orders            Order[]   @relation("CouponOrders")
+    createdAt         DateTime  @default(now())
+    updatedAt         DateTime  @updatedAt
+    
+    @@index([code])
+    @@index([isActive])
+    @@index([expiresAt])
+}
+
 // Checkout draft for multi-step checkout with payment
 model CheckoutDraft {
     id            String   @id @default(cuid())
@@ -304,7 +331,11 @@ model CheckoutDraft {
     ipAddress         String?  // For fallback lookup if session expired
     
     // Cart snapshot at checkout time
-    cartSnapshot  Json     // { items: [], subtotal: number, currency: string }
+    cartSnapshot  Json     // { items: [], subtotal: number, currency: string, discount?: { code, amount, type, value } }
+    
+    // Coupon/discount fields
+    couponCode     String?
+    discountAmount Decimal? @db.Decimal(10, 2)
     
     // Payment details
     paymentMethod String?  // flexy, edahabia, paypal, redotpay

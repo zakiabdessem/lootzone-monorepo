@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { formatDA } from '@/lib/utils';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
@@ -7,9 +8,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '~/hooks/useCart';
 import { Button } from '../_components/landing/ui/button';
+import { CouponInput } from '~/components/CouponInput';
+import { useGuestSession } from '~/hooks/useGuestSession';
 
 export default function CartPage() {
   const router = useRouter();
+  const guestSession = useGuestSession();
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+  
   const {
     cartDetails,
     subtotal,
@@ -21,6 +27,10 @@ export default function CartPage() {
     isLoading,
     isUpdating,
   } = useCart();
+
+  // Calculate discounted total
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const finalTotal = subtotal - discountAmount;
 
   const handleQuantityChange = async (productId: string, variantId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -202,17 +212,45 @@ export default function CartPage() {
                   <span className='text-gray-600'>Subtotal</span>
                   <span className='font-semibold'>{formatDA(subtotal)}</span>
                 </div>
+
+                {/* Coupon Input */}
+                <div className='border-t pt-3'>
+                  <CouponInput
+                    subtotal={subtotal}
+                    onCouponApplied={setAppliedCoupon}
+                    onCouponRemoved={() => setAppliedCoupon(null)}
+                    appliedCoupon={appliedCoupon}
+                    sessionToken={guestSession.sessionToken}
+                  />
+                </div>
+
+                {/* Discount Line */}
+                {appliedCoupon && (
+                  <div className='flex justify-between text-sm text-green-600'>
+                    <span>Discount ({appliedCoupon.code})</span>
+                    <span className='font-semibold'>-{formatDA(discountAmount)}</span>
+                  </div>
+                )}
+
                 <div className='border-t pt-3'>
                   <div className='flex justify-between text-lg font-bold'>
                     <span className='text-[#212121]'>Total</span>
-                    <span className='text-[#4618AC]'>{formatDA(subtotal)}</span>
+                    <span className='text-[#4618AC]'>{formatDA(finalTotal)}</span>
                   </div>
                 </div>
               </div>
 
               <Button
                 className='w-full bg-[#4618AC] hover:bg-[#381488] text-white h-12 text-base font-bold rounded-none'
-                onClick={() => router.push('/checkout')}
+                onClick={() => {
+                  // Store coupon in session storage for checkout
+                  if (appliedCoupon) {
+                    sessionStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
+                  } else {
+                    sessionStorage.removeItem('appliedCoupon');
+                  }
+                  router.push('/checkout');
+                }}
               >
                 Proceed to Checkout
               </Button>

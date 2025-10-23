@@ -79,7 +79,14 @@ export const chargilyService = {
       const product = await client.createProduct(productData);
 
       // 3. Create price (DZD amount in base currency, no conversion needed)
-      const amount = Math.round(draft.cartSnapshot.subtotal);
+      // Apply discount if coupon is present
+      let amount = draft.cartSnapshot.subtotal;
+      if (draft.cartSnapshot.discount) {
+        amount = amount - draft.cartSnapshot.discount.amount;
+        console.log('[Chargily] Applying discount:', draft.cartSnapshot.discount.code, 'Amount:', draft.cartSnapshot.discount.amount);
+      }
+      amount = Math.round(amount);
+      
       const priceData = {
         amount: amount,
         currency: 'dzd',

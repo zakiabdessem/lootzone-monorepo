@@ -23,6 +23,10 @@ interface OrderNotificationData {
   paymentStatus: string;
   items: OrderItem[];
   subtotal: number;
+  discount?: {
+    code: string;
+    amount: number;
+  };
   fees?: number;
   totalAmount: number;
   currency: string;
@@ -83,6 +87,7 @@ export const telegramService = {
       paymentStatus,
       items,
       subtotal,
+      discount,
       fees,
       totalAmount,
       currency,
@@ -124,6 +129,9 @@ export const telegramService = {
     // Totals
     message += `💰 *PAYMENT SUMMARY*\n`;
     message += `Subtotal: ${subtotal.toFixed(2)} ${currency}\n`;
+    if (discount && discount.amount > 0) {
+      message += `🎟️ Discount (${discount.code}): -${discount.amount.toFixed(2)} ${currency}\n`;
+    }
     if (fees && fees > 0) {
       message += `Fees: ${fees.toFixed(2)} ${currency}\n`;
     }

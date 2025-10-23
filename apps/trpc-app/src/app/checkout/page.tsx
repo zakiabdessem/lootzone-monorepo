@@ -11,11 +11,28 @@ import { Button } from '../_components/landing/ui/button';
 import { Input } from '../_components/landing/ui/input';
 import { api } from '~/trpc/react';
 import Image from 'next/image';
+import { CouponInput } from '~/components/CouponInput';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartDetails, subtotal, itemCount } = useCart();
   const { sessionToken, isInitialized: isGuestSessionReady } = useGuestSession();
+  
+  // Coupon state
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+  
+  // Load coupon from session storage on mount
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('appliedCoupon');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setAppliedCoupon(parsed);
+      }
+    } catch (error) {
+      console.error('[Checkout] Failed to load coupon from session storage:', error);
+    }
+  }, []);
 
   // TODO: Fetch Flexy phone number from site settings API
   // const { data: siteSettings } = trpc.siteSettings.get.useQuery();
@@ -100,8 +117,12 @@ export default function CheckoutPage() {
     }
   }, [currentStep, selectedPaymentMethod, receiptPreview]);
 
-  // Calculate Flexy total with 20% fee
-  const flexyTotal = subtotal * 1.2;
+  // Calculate discounted total
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const discountedSubtotal = subtotal - discountAmount;
+  
+  // Calculate Flexy total with 20% fee (applied on discounted amount)
+  const flexyTotal = discountedSubtotal * 1.2;
 
   // Phone number handler - restrict to 10 digits
   const handlePhoneChange = (value: string) => {
@@ -177,12 +198,13 @@ export default function CheckoutPage() {
         currency: 'DZD',
       };
 
-      // Save draft with guest session info for future autofill
+      // Save draft with guest session info for future autofill and coupon code
       const result = await saveDraftMutation.mutateAsync({
         email,
         phone,
         fullName,
         cartSnapshot,
+        couponCode: appliedCoupon?.code,
         guestSessionToken: sessionToken ?? undefined,
       });
 
@@ -811,18 +833,47 @@ export default function CheckoutPage() {
                   <span className='text-gray-600'>Subtotal ({itemCount} items)</span>
                   <span className='font-semibold'>{formatDA(subtotal)}</span>
                 </div>
+
+                {/* Coupon Input (only in step 1 or 2) */}
+                {currentStep <= 2 && (
+                  <div className='py-2'>
+                    <CouponInput
+                      subtotal={subtotal}
+                      onCouponApplied={(coupon) => {
+                        setAppliedCoupon(coupon);
+                        sessionStorage.setItem('appliedCoupon', JSON.stringify(coupon));
+                      }}
+                      onCouponRemoved={() => {
+                        setAppliedCoupon(null);
+                        sessionStorage.removeItem('appliedCoupon');
+                      }}
+                      appliedCoupon={appliedCoupon}
+                      email={email}
+                      sessionToken={sessionToken}
+                    />
+                  </div>
+                )}
+
+                {/* Discount Line */}
+                {appliedCoupon && (
+                  <div className='flex justify-between text-sm text-green-600'>
+                    <span>Discount ({appliedCoupon.code})</span>
+                    <span className='font-semibold'>-{formatDA(discountAmount)}</span>
+                  </div>
+                )}
+
                 {selectedPaymentMethod === 'flexy' && (
                   <div className='flex justify-between text-sm'>
                     <span className='text-gray-600'>Flexy Fee (20%)</span>
                     <span className='font-semibold text-yellow-600'>
-                      +{formatDA(subtotal * 0.2)}
+                      +{formatDA(discountedSubtotal * 0.2)}
                     </span>
                   </div>
                 )}
                 <div className='flex justify-between text-lg font-bold pt-2 border-t'>
                   <span className='text-[#212121]'>Total</span>
                   <span className='text-[#4618AC]'>
-                    {formatDA(selectedPaymentMethod === 'flexy' ? flexyTotal : subtotal)}
+                    {formatDA(selectedPaymentMethod === 'flexy' ? flexyTotal : discountedSubtotal)}
                   </span>
                 </div>
               </div>
