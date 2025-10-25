@@ -170,34 +170,21 @@ export const protectedProcedure = t.procedure
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
   .use(({ ctx, next }) => {
-    console.log('🔍 [ADMIN_PROCEDURE] Starting admin procedure check');
-    console.log('🔍 [ADMIN_PROCEDURE] Session user:', ctx.session?.user);
-    console.log('🔍 [ADMIN_PROCEDURE] Custom user:', ctx.customUser);
-    console.log('🔍 [ADMIN_PROCEDURE] JWT_SECRET set:', !!process.env.JWT_SECRET);
-    console.log('🔍 [ADMIN_PROCEDURE] JWT_SECRET value:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
-
     // Check for either NextAuth session or custom JWT user
     const user = ctx.session?.user || ctx.customUser;
-    console.log('🔍 [ADMIN_PROCEDURE] Resolved user:', user);
 
     if (!user) {
-      console.log('❌ [ADMIN_PROCEDURE] No user found - UNAUTHORIZED');
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
 
-    console.log('🔍 [ADMIN_PROCEDURE] User role:', user.role);
-    console.log('🔍 [ADMIN_PROCEDURE] Required role:', UserRole.ADMIN);
-
     // Type-safe role check using enum
     if (user.role !== UserRole.ADMIN) {
-      console.log('❌ [ADMIN_PROCEDURE] User role does not match admin - FORBIDDEN');
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Admin access required",
       });
     }
 
-    console.log('✅ [ADMIN_PROCEDURE] Admin access granted');
     return next({
       ctx: {
         session: { ...ctx.session, user },

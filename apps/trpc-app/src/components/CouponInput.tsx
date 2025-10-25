@@ -131,7 +131,7 @@ export function CouponInput({
           )}
         </>
       ) : (
-        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200">
           <div className="flex items-center gap-2 text-sm text-green-800">
             <CheckCircle2 className="h-5 w-5 text-green-600" />
             <div>

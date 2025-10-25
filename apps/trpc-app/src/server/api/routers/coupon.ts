@@ -149,26 +149,15 @@ export const couponRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      console.log('🔍 [COUPON_VALIDATE] Starting validation for code:', input.code);
-      console.log('🔍 [COUPON_VALIDATE] Subtotal:', input.subtotal);
-      console.log('🔍 [COUPON_VALIDATE] Email:', input.email);
-      console.log('🔍 [COUPON_VALIDATE] IP:', input.ipAddress);
-      console.log('🔍 [COUPON_VALIDATE] Session token:', input.sessionToken ? 'provided' : 'not provided');
-      console.log('🔍 [COUPON_VALIDATE] Server IP:', ctx.req?.ip);
-
       // Rate limiting
       const identifier = input.sessionToken || input.ipAddress || input.email || 'anonymous';
-      console.log('🔍 [COUPON_VALIDATE] Rate limit identifier:', identifier);
       
       if (!checkRateLimit(identifier)) {
-        console.log('❌ [COUPON_VALIDATE] Rate limit exceeded for:', identifier);
         throw new TRPCError({
           code: 'TOO_MANY_REQUESTS',
           message: 'Too many coupon validation attempts. Please try again later.',
         });
       }
-      
-      console.log('✅ [COUPON_VALIDATE] Rate limit check passed');
       
       try {
         const result = await validateAndCalculateDiscount(
@@ -179,13 +168,6 @@ export const couponRouter = createTRPCRouter({
           input.ipAddress
         );
         
-        console.log('✅ [COUPON_VALIDATE] Validation successful:', {
-          code: result.coupon.code,
-          discountType: result.coupon.discountType,
-          discountValue: Number(result.coupon.discountValue),
-          discountAmount: result.discountAmount
-        });
-        
         return {
           valid: true,
           code: result.coupon.code,
@@ -195,7 +177,6 @@ export const couponRouter = createTRPCRouter({
           message: `Coupon applied! You saved ${result.discountAmount} DA`,
         };
       } catch (error) {
-        console.log('❌ [COUPON_VALIDATE] Validation failed:', error);
         if (error instanceof TRPCError) {
           throw error;
         }
@@ -221,11 +202,6 @@ export const couponRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      console.log('🔍 [COUPON_GET_ALL] Admin request started');
-      console.log('🔍 [COUPON_GET_ALL] User:', ctx.session?.user?.id);
-      console.log('🔍 [COUPON_GET_ALL] User role:', ctx.session?.user?.role);
-      console.log('🔍 [COUPON_GET_ALL] Input:', input);
-
       const { page, limit, search, isActive, sortBy, sortOrder } = input;
       const skip = (page - 1) * limit;
 
@@ -242,45 +218,32 @@ export const couponRouter = createTRPCRouter({
         where.isActive = isActive;
       }
 
-      console.log('🔍 [COUPON_GET_ALL] Where clause:', where);
-
-      try {
-        const [coupons, total] = await Promise.all([
-          ctx.db.coupon.findMany({
-            where,
-            skip,
-            take: limit,
-            orderBy: { [sortBy]: sortOrder },
-            include: {
-              _count: {
-                select: { orders: true },
-              },
+      const [coupons, total] = await Promise.all([
+        ctx.db.coupon.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { [sortBy]: sortOrder },
+          include: {
+            _count: {
+              select: { orders: true },
             },
-          }),
-          ctx.db.coupon.count({ where }),
-        ]);
+          },
+        }),
+        ctx.db.coupon.count({ where }),
+      ]);
 
-        console.log('✅ [COUPON_GET_ALL] Found coupons:', coupons.length);
-        console.log('✅ [COUPON_GET_ALL] Total count:', total);
-
-        return {
-          coupons: coupons.map((coupon) => ({
-            ...coupon,
-            discountValue: Number(coupon.discountValue),
-            minOrderAmount: coupon.minOrderAmount ? Number(coupon.minOrderAmount) : null,
-            orderCount: coupon._count.orders,
-          })),
-          total,
-          page,
-          totalPages: Math.ceil(total / limit),
-        };
-      } catch (error) {
-        console.log('❌ [COUPON_GET_ALL] Database error:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to fetch coupons',
-        });
-      }
+      return {
+        coupons: coupons.map((coupon) => ({
+          ...coupon,
+          discountValue: Number(coupon.discountValue),
+          minOrderAmount: coupon.minOrderAmount ? Number(coupon.minOrderAmount) : null,
+          orderCount: coupon._count.orders,
+        })),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
     }),
 
   /**
@@ -345,13 +308,7 @@ export const couponRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      console.log('🔍 [COUPON_CREATE] Admin create request started');
-      console.log('🔍 [COUPON_CREATE] User:', ctx.session?.user?.id);
-      console.log('🔍 [COUPON_CREATE] User role:', ctx.session?.user?.role);
-      console.log('🔍 [COUPON_CREATE] Input:', input);
-
       const sanitizedCode = sanitizeCouponCode(input.code);
-      console.log('🔍 [COUPON_CREATE] Sanitized code:', sanitizedCode);
 
       // Validate discount value based on type
       if (input.discountType === 'percentage') {

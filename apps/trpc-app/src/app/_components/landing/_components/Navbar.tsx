@@ -76,8 +76,6 @@ const highlightMatches = (text: string, term: string) => {
   });
 };
 
-//.
-
 function SearchResultCard({
   product,
   query,
@@ -85,12 +83,12 @@ function SearchResultCard({
 }: {
   product: SearchProduct;
   query: string;
-  onSelect: (slug: string) => void;
+  onSelect: (slug: string | null | undefined, productId?: string) => void;
 }) {
   return (
     <button
       type='button'
-      onClick={() => onSelect(product.slug)}
+      onClick={() => onSelect(product.slug, product.id)}
       className='group relative flex w-full items-center overflow-hidden rounded-xl border border-[#63e3c2]/40 bg-[#2c1269] text-left transition hover:border-[#63e3c2] hover:bg-[#34157d] focus:outline-none focus:ring-2 focus:ring-[#63e3c2] focus:ring-offset-2 focus:ring-offset-[#120932]'
     >
       <div className='relative flex h-full items-center justify-center bg-[#1b0b48] px-3 py-2'>
@@ -152,7 +150,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
   
-  // Hide search bar on products page
+  // Hide search bar and mobile dock on products page
   const isProductsPage = pathname === '/products';
   const desktopSearchRef = useRef<HTMLDivElement | null>(null);
   const mobileSearchRef = useRef<HTMLDivElement | null>(null);
@@ -215,15 +213,19 @@ export function Navbar() {
 
   const handleSearchSubmit = () => navigateToQuery(searchQuery);
   
-  const handleSelectProduct = (slug: string) => {
-    // Navigate directly to product details page
-
-
-    router.push(`/product/${slug}`);
-    setSearchQuery(''); 
-
-    //sdgff
-    closeSearch();
+  const handleSelectProduct = (slug: string | null | undefined, productId?: string) => {
+    // Navigate directly to product details page if slug exists
+    if (slug && slug !== productId) {
+      // Only navigate if slug is not just the product ID (which means it's a real slug)
+      router.push(`/product/${slug}`);
+      setSearchQuery('');
+      closeSearch();
+    } else if (productId) {
+      // Fallback: navigate to products page with search query
+      router.push(`/products?q=${encodeURIComponent(productId)}`);
+      setSearchQuery('');
+      closeSearch();
+    }
   };
   
   const handleSelectSuggestion = (term: string) => navigateToQuery(term);
@@ -730,8 +732,8 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dock Navigation - Hide when menu is open or near footer */}
-      {!isMenuOpen && showDock && (
+      {/* Mobile Dock Navigation - Hide when menu is open, near footer, or on products page */}
+      {!isMenuOpen && showDock && !isProductsPage && (
         <div className="md:hidden cursor-pointer">
           <Dock 
             items={dockItems}
