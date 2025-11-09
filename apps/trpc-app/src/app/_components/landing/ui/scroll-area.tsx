@@ -10,10 +10,12 @@ const ScrollArea = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}
-    className={cn('relative overflow-hidden', className)}
+    // Prevent scroll chaining to parent (page) and keep element scroll contained
+    className={cn('relative overflow-hidden overscroll-contain', className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport className='h-full w-full rounded-[inherit]'>
+    {/* Make the viewport actually scrollable on Y axis */}
+    <ScrollAreaPrimitive.Viewport className='h-full w-full rounded-[inherit] overflow-y-auto'>
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollAreaPrimitive.Scrollbar
