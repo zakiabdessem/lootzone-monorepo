@@ -7,7 +7,7 @@
   "license": "https://mui.com/store/license/",
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build --webpack",
+    "build": "NODE_OPTIONS='--max-old-space-size=6144' next build --webpack",
     "start": "next start -p 3002",
     "lint": "next lint --fix",
     "type-check": "tsc"

@@ -14,11 +14,7 @@ const nextConfig = {
     "@mui/x-date-pickers",
     "@lootzone/trpc-shared",
   ],
-  // Disable Turbopack to use webpack instead
-  experimental: {
-    turbo: false,
-  },
-  // Empty turbopack config to silence the error
+  // Empty turbopack config to silence the error (Next.js 16 uses Turbopack by default)
   turbopack: {},
   typescript: {
     // Dangerously allow production builds to successfully complete even if
@@ -34,7 +30,8 @@ const nextConfig = {
       transform: "@mui/icons-material//{{member}}",
     },
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    // SVG loader
     config.module.rules.push({
       test: /\.svg$/,
       use: [
@@ -53,6 +50,36 @@ const nextConfig = {
         },
       ],
     });
+
+    // Optimize memory usage for production builds
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Vendor chunk for node_modules
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+            },
+            // Common chunk
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        },
+      };
+    }
 
     return config;
   },
