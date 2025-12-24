@@ -30,11 +30,8 @@ export default async function NetflixAccessPage({ params }: PageProps) {
                 />
             </div>
         );
-    } catch (error: any) {
-        console.error("Error loading Netflix credentials:", error);
-
-        // Check if it's an expired or invalid token error
-        const errorMessage = error?.message || "Unknown error";
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         const isExpired = errorMessage.toLowerCase().includes("expired");
         const isInvalid = errorMessage.toLowerCase().includes("invalid") || errorMessage.toLowerCase().includes("unauthorized");
 
@@ -72,7 +69,6 @@ export default async function NetflixAccessPage({ params }: PageProps) {
             );
         }
 
-        // For other errors, show not found
         notFound();
     }
 }
