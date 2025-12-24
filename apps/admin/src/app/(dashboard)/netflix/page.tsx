@@ -9,6 +9,8 @@ import {
     Edit as EditIcon,
     Link as LinkIcon,
     Lock as LockIcon,
+    VpnKey as VpnKeyIcon,
+    Email as EmailIcon,
 } from "@mui/icons-material";
 import {
     Box,
@@ -36,6 +38,8 @@ import { api } from "@lootzone/trpc-shared";
 import NetflixAccountForm from "@/components/netflix/NetflixAccountForm";
 import EditPinModal from "@/components/netflix/EditPinModal";
 import CreateLinkDialog from "@/components/netflix/CreateLinkDialog";
+import EditPasswordModal from "@/components/netflix/EditPasswordModal";
+import EditEmailModal from "@/components/netflix/EditEmailModal";
 
 const Divider = styled(MuiDivider)(spacing);
 const Breadcrumbs = styled(MuiBreadcrumbs)(spacing);
@@ -48,6 +52,8 @@ const Spacer = styled.div`
 function NetflixPage() {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editPinDialogOpen, setEditPinDialogOpen] = useState(false);
+    const [editPasswordDialogOpen, setEditPasswordDialogOpen] = useState(false);
+    const [editEmailDialogOpen, setEditEmailDialogOpen] = useState(false);
     const [createLinkDialogOpen, setCreateLinkDialogOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<{
         id: string;
@@ -90,6 +96,16 @@ function NetflixPage() {
         setCreateLinkDialogOpen(true);
     };
 
+    const handleEditPassword = (account: { id: string; email: string; rooms: Array<{ id: string; roomCode: string; pinCode: string }> }) => {
+        setSelectedAccount(account);
+        setEditPasswordDialogOpen(true);
+    };
+
+    const handleEditEmail = (account: { id: string; email: string; rooms: Array<{ id: string; roomCode: string; pinCode: string }> }) => {
+        setSelectedAccount(account);
+        setEditEmailDialogOpen(true);
+    };
+
     const getRoomPin = (account: { rooms?: Array<{ roomCode: string; pinCode: string }> }, roomCode: string) => {
         const room = account.rooms?.find((r) => r.roomCode === roomCode);
         return room?.pinCode || "N/A";
@@ -106,7 +122,7 @@ function NetflixPage() {
     if (error) {
         return (
             <Alert severity="error">
-                Error loading Netflix accounts: {(error as Error).message}
+                Error loading Netflix accounts: {error.message || String(error)}
             </Alert>
         );
     }
@@ -195,6 +211,24 @@ function NetflixPage() {
                                             </TableCell>
                                         ))}
                                         <TableCell align="right">
+                                            <Tooltip title="Change Email">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleEditEmail(account)}
+                                                    color="primary"
+                                                >
+                                                    <EmailIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Change Password">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleEditPassword(account)}
+                                                    color="primary"
+                                                >
+                                                    <VpnKeyIcon />
+                                                </IconButton>
+                                            </Tooltip>
                                             <Tooltip title="Create Access Link">
                                                 <IconButton
                                                     size="small"
@@ -249,6 +283,28 @@ function NetflixPage() {
                 onClose={() => {
                     setCreateLinkDialogOpen(false);
                     setSelectedAccount(null);
+                }}
+                account={selectedAccount}
+            />
+
+            {/* Edit Email Dialog */}
+            <EditEmailModal
+                open={editEmailDialogOpen}
+                onClose={() => {
+                    setEditEmailDialogOpen(false);
+                    setSelectedAccount(null);
+                    refetch();
+                }}
+                account={selectedAccount}
+            />
+
+            {/* Edit Password Dialog */}
+            <EditPasswordModal
+                open={editPasswordDialogOpen}
+                onClose={() => {
+                    setEditPasswordDialogOpen(false);
+                    setSelectedAccount(null);
+                    refetch();
                 }}
                 account={selectedAccount}
             />

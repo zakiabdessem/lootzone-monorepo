@@ -39,13 +39,20 @@ const EditPinModal: React.FC<EditPinModalProps> = ({ open, onClose, account, roo
     const [pinCode, setPinCode] = useState("");
     const [error, setError] = useState<string | null>(null);
 
+    // Update selected room when initialRoomCode changes (when modal opens with different room)
+    useEffect(() => {
+        if (open && initialRoomCode) {
+            setSelectedRoomCode(initialRoomCode);
+        }
+    }, [open, initialRoomCode]);
+
     // Get current PIN for selected room
     useEffect(() => {
-        if (account && selectedRoomCode) {
+        if (account && selectedRoomCode && open) {
             const room = account.rooms?.find((r: any) => r.roomCode === selectedRoomCode);
             setPinCode(room?.pinCode || "");
         }
-    }, [account, selectedRoomCode]);
+    }, [account, selectedRoomCode, open]);
 
     const updatePin = api.netflix.updateRoomPin.useMutation({
         onSuccess: () => {

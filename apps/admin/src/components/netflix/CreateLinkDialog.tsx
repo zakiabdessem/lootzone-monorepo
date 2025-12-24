@@ -57,15 +57,10 @@ const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, acco
 
     const createLink = api.netflix.createAccessLink.useMutation({
         onSuccess: (data) => {
-            // Only access window in browser environment (client-side only)
-            if (typeof window !== "undefined") {
-                const baseUrl = window.location.origin;
-                const fullUrl = `${baseUrl}${data.url}`;
-                setGeneratedLink(fullUrl);
-            } else {
-                // Fallback: use relative URL if window is not available
-                setGeneratedLink(data.url);
-            }
+            // Use NEXT_PUBLIC_API_URL (trpc-app) instead of admin dashboard URL
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" ? window.location.origin.replace(':3002', ':3000') : '');
+            const fullUrl = baseUrl ? `${baseUrl}${data.url}` : data.url;
+            setGeneratedLink(fullUrl);
             setError(null);
         },
         onError: (err) => {

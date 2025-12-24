@@ -1,5 +1,5 @@
 import { SidebarItemsType } from "@/types/sidebar";
-import { Layout, List, Package, ShoppingCart, Sliders, Settings, Video } from "lucide-react";
+import { Layout, List, Package, ShoppingCart, Sliders, Settings, Video, Link } from "lucide-react";
 
 const pagesSection = [
   {
@@ -49,6 +49,11 @@ const navItems = [
         href: "/netflix",
         icon: Video,
         title: "Netflix",
+      },
+      {
+        href: "/netflix/links",
+        icon: Link,
+        title: "Netflix Links",
       },
     ] as SidebarItemsType[],
   },
