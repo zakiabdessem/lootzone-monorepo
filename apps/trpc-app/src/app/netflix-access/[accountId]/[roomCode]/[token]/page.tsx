@@ -21,7 +21,7 @@ export default async function NetflixAccessPage({ params }: PageProps) {
         });
 
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#120932] via-[#1b0b48] to-[#2c1269] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-[#f8f7ff] flex items-center justify-center p-4 pt-4 pb-12">
                 <CredentialsCard
                     email={credentials.email}
                     password={credentials.password}
@@ -37,12 +37,12 @@ export default async function NetflixAccessPage({ params }: PageProps) {
 
         if (isExpired || isInvalid) {
             return (
-                <div className="min-h-screen bg-gradient-to-br from-[#120932] via-[#1b0b48] to-[#2c1269] flex items-center justify-center p-4">
-                    <div className="max-w-md w-full text-center">
-                        <div className="bg-[#2c1269] border border-red-500/40 rounded-2xl p-8 shadow-2xl">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-4">
+                <div className="min-h-screen bg-[#f8f7ff] flex items-center justify-center p-4 pt-32 pb-12">
+                    <div className="max-w-md w-full">
+                        <div className="bg-white rounded-none shadow-lg p-8 text-center border border-gray-100">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mb-4">
                                 <svg
-                                    className="w-8 h-8 text-red-400"
+                                    className="w-8 h-8 text-red-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -55,10 +55,10 @@ export default async function NetflixAccessPage({ params }: PageProps) {
                                     />
                                 </svg>
                             </div>
-                            <h1 className="text-3xl font-bold text-white mb-2">
+                            <h1 className="text-2xl font-bold text-[#212121] mb-3">
                                 {isExpired ? "Link Expired" : "Invalid Access Link"}
                             </h1>
-                            <p className="text-gray-300 mb-6">
+                            <p className="text-gray-600 leading-relaxed">
                                 {isExpired
                                     ? "This access link has expired. Please contact the administrator for a new link."
                                     : "This access link is invalid or has been revoked. Please contact the administrator."}

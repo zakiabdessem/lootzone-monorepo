@@ -38,6 +38,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "algoliasearch": "^4.25.2",
+    "axios": "0.30.2",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.5.1",
@@ -47,9 +48,9 @@
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.526.0",
-    "next": "14.2.18",
-    "next-auth": "5.0.0-beta.25",
-    "nodemailer": "^6.9.16",
+    "next": "^15.5.9",
+    "next-auth": "^5.0.0-beta.30",
+    "nodemailer": "^7.0.12",
     "ogl": "^1.0.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -75,5 +76,9 @@
   "ct3aMetadata": {
     "initVersion": "7.39.3"
   },
-  "packageManager": "npm@10.9.2"
+  "packageManager": "npm@10.9.2",
+  "optionalDependencies": {
+    "@tailwindcss/oxide-darwin-arm64": "^4.0.15",
+    "lightningcss-darwin-arm64": "^1.30.1"
+  }
 }

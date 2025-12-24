@@ -18,16 +18,8 @@ const client = algoliasearch(
 const index = client.initIndex(process.env.ALGOLIA_PRODUCTS_INDEX!);
 
 async function deployToProduction() {
-  console.log('🚀 Starting production deployment...');
   
   try {
-    // 1. Run database migrations
-    console.log('📊 Running database migrations...');
-    // This would typically be handled by your deployment platform
-    
-    // 2. Sync products to Algolia
-    console.log('🔄 Syncing products to Algolia...');
-    
     const products = await prisma.product.findMany({
       where: { isActive: true },
       include: {

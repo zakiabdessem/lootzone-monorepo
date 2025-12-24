@@ -13,9 +13,6 @@ import { siteSettingsRouter } from '~/server/api/routers/site-settings';
 import { userRouter } from '~/server/api/routers/user';
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 
-console.log('🚀 [tRPC] Root router initializing...');
-console.log('🔍 [tRPC] searchRouter type:', typeof searchRouter);
-
 /**
  * This is the primary router for your server.
  *

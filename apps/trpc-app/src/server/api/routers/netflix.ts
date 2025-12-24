@@ -117,6 +117,20 @@ export const netflixRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
+      // If email is being updated, check if it already exists
+      if (updateData.email) {
+        const existingAccount = await ctx.db.netflixAccount.findUnique({
+          where: { email: updateData.email },
+        });
+
+        if (existingAccount && existingAccount.id !== id) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "An account with this email already exists",
+          });
+        }
+      }
+
       // Password is stored as-is (not hashed) because it needs to be retrievable
 
       const account = await ctx.db.netflixAccount.update({
@@ -337,6 +351,52 @@ export const netflixRouter = createTRPCRouter({
         roomCode: input.roomCode,
         pinCode: room.pinCode,
       };
+    }),
+
+  // Get all active access links
+  getActiveLinks: adminProcedure.query(async ({ ctx }) => {
+    if (!ctx.db) {
+      console.error("Database context is undefined");
+      return [];
+    }
+
+    try {
+      const now = new Date();
+      const links = await ctx.db.netflixAccessLink.findMany({
+        where: {
+          expiresAt: {
+            gt: now, // Not expired
+          },
+        },
+        include: {
+          account: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          expiresAt: "asc",
+        },
+      });
+
+      return links;
+    } catch (error) {
+      console.error("Error fetching active access links:", error);
+      return [];
+    }
+  }),
+
+  // Revoke/delete access link
+  revokeLink: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.netflixAccessLink.delete({
+        where: { id: input.id },
+      });
+
+      return { success: true };
     }),
 });
 
