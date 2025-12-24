@@ -14,9 +14,12 @@ const nextConfig = {
     "@mui/x-date-pickers",
     "@lootzone/trpc-shared",
   ],
-  eslint: {
-    ignoreDuringBuilds: true,
+  // Disable Turbopack to use webpack instead
+  experimental: {
+    turbo: false,
   },
+  // Empty turbopack config to silence the error
+  turbopack: {},
   typescript: {
     // Dangerously allow production builds to successfully complete even if
     // your project has type errors.
