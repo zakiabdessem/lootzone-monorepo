@@ -4,6 +4,7 @@ import { checkoutRouter } from '~/server/api/routers/checkout';
 import { couponRouter } from '~/server/api/routers/coupon';
 import { guestSessionRouter } from '~/server/api/routers/guest-session';
 import { heroSlideRouter } from '~/server/api/routers/hero-slide';
+import { netflixRouter } from '~/server/api/routers/netflix';
 import { orderRouter } from '~/server/api/routers/order';
 import { productRouter } from '~/server/api/routers/product';
 import { searchRouter } from '~/server/api/routers/search';
@@ -33,6 +34,7 @@ export const appRouter = createTRPCRouter({
   checkout: checkoutRouter,
   search: searchRouter,
   coupon: couponRouter,
+  netflix: netflixRouter,
 });
 
 console.log('✅ [tRPC] Root router created with keys:', Object.keys(appRouter._def.record ?? {}));

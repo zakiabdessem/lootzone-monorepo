@@ -1,4 +1,5 @@
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   transpilePackages: [
     "@fullcalendar/core",
     "@babel/preset-react",
@@ -34,7 +35,7 @@ module.exports = {
       transform: "@mui/icons-material//{{member}}",
     },
   },
-  webpack(config) {
+  webpack: (config) => {
     config.module.rules.push({
       test: /\.svg$/,
       use: [
@@ -57,3 +58,5 @@ module.exports = {
     return config;
   },
 };
+
+module.exports = nextConfig;

@@ -371,3 +371,45 @@ model CheckoutDraft {
     @@index([guestSessionToken])
     @@index([ipAddress])
 }
+
+// Netflix account management
+model NetflixAccount {
+    id            String           @id @default(cuid())
+    email         String           @unique
+    password      String           // Encrypted password
+    rooms         NetflixRoom[]
+    accessLinks   NetflixAccessLink[]
+    createdAt     DateTime         @default(now())
+    updatedAt     DateTime         @updatedAt
+    
+    @@index([email])
+}
+
+model NetflixRoom {
+    id            String           @id @default(cuid())
+    accountId     String
+    account       NetflixAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+    roomCode      String           // "A", "B", "C", "D", or "E"
+    pinCode       String
+    createdAt     DateTime         @default(now())
+    updatedAt     DateTime         @updatedAt
+    
+    @@unique([accountId, roomCode])
+    @@index([accountId])
+}
+
+model NetflixAccessLink {
+    id            String           @id @default(cuid())
+    accountId     String
+    account       NetflixAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+    roomCode      String           // "A" | "B" | "C" | "D" | "E"
+    token         String           @unique
+    expiresAt     DateTime
+    isUsed        Boolean          @default(false)
+    createdAt     DateTime         @default(now())
+    updatedAt     DateTime         @updatedAt
+    
+    @@index([token])
+    @@index([expiresAt])
+    @@index([accountId])
+}
