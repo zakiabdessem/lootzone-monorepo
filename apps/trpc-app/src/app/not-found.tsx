@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from './_components/landing/ui/button';
 
 export default function NotFound() {
   return (
@@ -9,11 +10,10 @@ export default function NotFound() {
         <p className="text-gray-600 mb-8">
           Sorry, we couldn't find the page you're looking for.
         </p>
-        <Link 
-          href="/"
-          className="inline-flex items-center justify-center rounded-md bg-[#4618AC] hover:bg-[#381488] text-white px-4 py-2 text-sm font-medium transition-colors"
-        >
-          Go Back Home
+        <Link href="/">
+          <Button className="bg-[#4618AC] hover:bg-[#381488] text-white">
+            Go Back Home
+          </Button>
         </Link>
       </div>
     </div>
