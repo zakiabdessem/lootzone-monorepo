@@ -23,10 +23,14 @@ import {
     IconButton,
 } from "@mui/material";
 import { ContentCopy as CopyIcon, Check as CheckIcon } from "@mui/icons-material";
-import { DateTimePicker } from "@mui/x-date-pickers";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { api } from "@lootzone/trpc-shared";
+import dynamic from "next/dynamic";
+
+// Dynamically import DateTimePicker to avoid SSR issues
+const DateTimePicker = dynamic(
+    () => import("@mui/x-date-pickers").then((mod) => mod.DateTimePicker),
+    { ssr: false }
+);
 
 type NetflixAccount = {
     id: string;
@@ -53,9 +57,15 @@ const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, acco
 
     const createLink = api.netflix.createAccessLink.useMutation({
         onSuccess: (data) => {
-            const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-            const fullUrl = `${baseUrl}${data.url}`;
-            setGeneratedLink(fullUrl);
+            // Only access window in browser environment (client-side only)
+            if (typeof window !== "undefined") {
+                const baseUrl = window.location.origin;
+                const fullUrl = `${baseUrl}${data.url}`;
+                setGeneratedLink(fullUrl);
+            } else {
+                // Fallback: use relative URL if window is not available
+                setGeneratedLink(data.url);
+            }
             setError(null);
         },
         onError: (err) => {
@@ -113,8 +123,7 @@ const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, acco
     }
 
     return (
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <form onSubmit={handleSubmit}>
                     <DialogTitle>Create Access Link</DialogTitle>
                     <DialogContent>
@@ -231,7 +240,6 @@ const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, acco
                     </DialogActions>
                 </form>
             </Dialog>
-        </LocalizationProvider>
     );
 };
 
