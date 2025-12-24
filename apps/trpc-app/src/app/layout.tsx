@@ -9,7 +9,6 @@ import { Navbar } from "./_components/landing/_components/Navbar";
 import Footer from "./_components/landing/_components/Footer";
 import { SiteSettingsProvider } from "~/contexts/SiteSettingsContext";
 import { getServerSiteSettings } from "~/lib/server-site-settings";
-import { ToastProvider } from "~/lib/toast";
 
 export const metadata: Metadata = {
   title: "LootZone",
@@ -57,7 +56,6 @@ export default async function RootLayout({
           <SiteSettingsProvider initialSettings={initialSettings}>
             <Navbar />
             <main className="flex-grow">{children}</main>
-            <ToastProvider />
             <Footer />
           </SiteSettingsProvider>
         </TRPCReactProvider>

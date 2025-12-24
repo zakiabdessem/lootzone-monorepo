@@ -42,10 +42,12 @@ export function SiteSettingsProvider({
   const [isLoading, setIsLoading] = useState(!initialSettings);
   const [error, setError] = useState<string | null>(null);
 
+  // Only use tRPC query on client side to avoid SSR issues
+  const isClient = typeof window !== 'undefined';
   const { data, isLoading: queryLoading, error: queryError } = api.siteSettings.get.useQuery(
     undefined,
     {
-      enabled: typeof window !== 'undefined', // Only run on client
+      enabled: isClient, // Only run on client
       staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 10, // 10 minutes (renamed from cacheTime in React Query v5)
       refetchOnWindowFocus: false,
