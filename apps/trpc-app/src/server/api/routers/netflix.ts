@@ -46,20 +46,30 @@ const getAccountByTokenSchema = z.object({
 export const netflixRouter = createTRPCRouter({
   // Get all Netflix accounts with rooms
   getAll: adminProcedure.query(async ({ ctx }) => {
-    const accounts = await ctx.db.netflixAccount.findMany({
-      include: {
-        rooms: {
-          orderBy: {
-            roomCode: "asc",
+    if (!ctx.db) {
+      console.error("Database context is undefined");
+      return [];
+    }
+
+    try {
+      const accounts = await ctx.db.netflixAccount.findMany({
+        include: {
+          rooms: {
+            orderBy: {
+              roomCode: "asc",
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-    return accounts;
+      return accounts;
+    } catch (error) {
+      console.error("Error fetching Netflix accounts:", error);
+      return [];
+    }
   }),
 
   // Create new Netflix account with 5 rooms (A-E)
