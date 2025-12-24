@@ -187,6 +187,7 @@ export const adminProcedure = t.procedure
 
     return next({
       ctx: {
+        ...ctx, // Spread existing context to preserve db and other properties
         session: { ...ctx.session, user },
         customUser: ctx.customUser,
       },
