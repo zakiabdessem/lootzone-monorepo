@@ -406,10 +406,14 @@ model NetflixAccessLink {
     token         String           @unique
     expiresAt     DateTime
     isUsed        Boolean          @default(false)
+    username      String?          // Client username
+    notes         String?          @db.Text // Admin-only notes
+    status        String           @default("UNPAID") // "PAID" | "UNPAID"
     createdAt     DateTime         @default(now())
     updatedAt     DateTime         @updatedAt
     
     @@index([token])
     @@index([expiresAt])
     @@index([accountId])
+    @@index([status])
 }

@@ -51,6 +51,9 @@ interface CreateLinkDialogProps {
 const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, account }) => {
     const [selectedRoomCode, setSelectedRoomCode] = useState<"A" | "B" | "C" | "D" | "E">("A");
     const [expiresAt, setExpiresAt] = useState<Date | null>(null);
+    const [username, setUsername] = useState<string>("");
+    const [notes, setNotes] = useState<string>("");
+    const [status, setStatus] = useState<"PAID" | "UNPAID">("UNPAID");
     const [error, setError] = useState<string | null>(null);
     const [generatedLink, setGeneratedLink] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
@@ -87,6 +90,9 @@ const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, acco
             accountId: account.id,
             roomCode: selectedRoomCode,
             expiresAt,
+            username: username || undefined,
+            notes: notes || undefined,
+            status,
         });
     };
 
@@ -106,6 +112,9 @@ const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, acco
         if (!createLink.isPending) {
             setSelectedRoomCode("A");
             setExpiresAt(null);
+            setUsername("");
+            setNotes("");
+            setStatus("UNPAID");
             setError(null);
             setGeneratedLink(null);
             setCopied(false);
@@ -215,6 +224,38 @@ const CreateLinkDialog: React.FC<CreateLinkDialogProps> = ({ open, onClose, acco
                                             margin: "normal",
                                         },
                                     }}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    label="Username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    margin="normal"
+                                    placeholder="Client username (optional)"
+                                />
+
+                                <FormControl fullWidth sx={{ mt: 2 }}>
+                                    <InputLabel>Status</InputLabel>
+                                    <Select
+                                        value={status}
+                                        label="Status"
+                                        onChange={(e) => setStatus(e.target.value as "PAID" | "UNPAID")}
+                                    >
+                                        <MenuItem value="PAID">PAID</MenuItem>
+                                        <MenuItem value="UNPAID">UNPAID</MenuItem>
+                                    </Select>
+                                </FormControl>
+
+                                <TextField
+                                    fullWidth
+                                    label="Notes (Admin Only)"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    margin="normal"
+                                    multiline
+                                    rows={3}
+                                    placeholder="Internal notes for admin reference (optional)"
                                 />
                             </>
                         )}

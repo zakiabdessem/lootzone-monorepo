@@ -35,6 +35,9 @@ const createAccessLinkSchema = z.object({
   accountId: z.string(),
   roomCode: z.enum(["A", "B", "C", "D", "E"]),
   expiresAt: z.date(),
+  username: z.string().optional(),
+  notes: z.string().optional(),
+  status: z.enum(["PAID", "UNPAID"]).default("UNPAID"),
 });
 
 const getAccountByTokenSchema = z.object({
@@ -250,6 +253,9 @@ export const netflixRouter = createTRPCRouter({
           roomCode: input.roomCode,
           token,
           expiresAt: input.expiresAt,
+          username: input.username,
+          notes: input.notes,
+          status: input.status || "UNPAID",
         },
       });
 
@@ -377,7 +383,7 @@ export const netflixRouter = createTRPCRouter({
           },
         },
         orderBy: {
-          expiresAt: "asc",
+          createdAt: "desc",
         },
       });
 
@@ -397,6 +403,24 @@ export const netflixRouter = createTRPCRouter({
       });
 
       return { success: true };
+    }),
+
+  // Update link status
+  updateLinkStatus: adminProcedure
+    .input(z.object({ 
+      id: z.string(),
+      status: z.enum(["PAID", "UNPAID"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updatedLink = await ctx.db.netflixAccessLink.update({
+        where: { id: input.id },
+        data: { status: input.status },
+      });
+
+      return { 
+        id: updatedLink.id,
+        status: updatedLink.status,
+      };
     }),
 });
 
